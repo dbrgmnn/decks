@@ -1,0 +1,8 @@
+fastapi
+uvicorn[standard]
+jinja2
+fsrs
+python-multipart
+argon2-cffi
+itsdangerous
+tzdata

@@ -1,0 +1,117 @@
+import {$} from './dom.js';
+
+export function initAccount({confirmDelete, errText}) {
+  let folderAdded = false;
+
+  $('#account').onclick = () => {
+    $('#folder-add-form').reset();
+    $('#fa-msg').textContent = '';
+    $('#pw-form').reset();
+    $('#pw-msg').textContent = '';
+    $('#tz-msg').textContent = '';
+    $('#export-csv-msg').textContent = '';
+    $('#import-csv-msg').textContent = '';
+    $('#account-sheet').hidden = false;
+  };
+
+  $('#account-sheet .close').onclick = () => {
+    $('#account-sheet').hidden = true;
+    if (folderAdded) location.reload();
+  };
+
+  $('#folder-add-form').onsubmit = async event => {
+    event.preventDefault();
+    const name = event.target.name.value.trim();
+    const msg = $('#fa-msg');
+    const response = await fetch('/api/folders', {method: 'POST', body: new URLSearchParams({name})});
+    if (response.ok) {
+      folderAdded = true;
+      msg.textContent = `Folder “${name}” created ✓`;
+      event.target.reset();
+    } else {
+      msg.textContent = await errText(response);
+    }
+  };
+
+  $('#pw-form').onsubmit = async event => {
+    event.preventDefault();
+    if (event.target.password.value !== event.target.password2.value) {
+      $('#pw-msg').textContent = 'Passwords do not match';
+      return;
+    }
+    const response = await fetch('/api/password', {method: 'POST', body: new URLSearchParams(new FormData(event.target))});
+    if (response.ok) {
+      event.target.reset();
+      $('#pw-msg').textContent = 'Password changed ✓';
+    } else {
+      $('#pw-msg').textContent = await errText(response);
+    }
+  };
+
+  $('#logout').onclick = async () => {
+    await fetch('/api/logout', {method: 'POST'});
+    location.href = '/login';
+  };
+
+  $('#tz').dataset.prev = $('#tz').value;
+  $('#tz').onchange = async event => {
+    const select = event.target;
+    const response = await fetch('/api/settings', {method: 'POST', body: new URLSearchParams({tz: select.value})});
+    if (response.ok) {
+      select.dataset.prev = select.value;
+      $('#tz-msg').textContent = 'Saved ✓';
+    } else {
+      select.value = select.dataset.prev;
+      $('#tz-msg').textContent = await errText(response);
+    }
+  };
+
+  const syncExportScope = () => {
+    const scope = $('#export-scope').value;
+    $('#export-folder').hidden = scope !== 'folder';
+    $('#export-deck').hidden = scope !== 'deck';
+  };
+  $('#export-scope').onchange = syncExportScope;
+  syncExportScope();
+
+  $('#export-csv-form').onsubmit = async event => {
+    event.preventDefault();
+    const form = event.target;
+    const msg = $('#export-csv-msg');
+    const scope = form.scope.value;
+    if (scope === 'folder' && !form.folder_id.value) return msg.textContent = 'Choose a folder to export';
+    if (scope === 'deck' && !form.deck_id.value) return msg.textContent = 'Choose a deck to export';
+    msg.textContent = '';
+    const response = await fetch('/api/export/cards.csv', {method: 'POST', body: new URLSearchParams(new FormData(form))});
+    if (!response.ok) return msg.textContent = await errText(response);
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'decks-cards.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+    msg.textContent = 'CSV downloaded ✓';
+  };
+
+  $('#import-csv-form').onsubmit = async event => {
+    event.preventDefault();
+    const form = event.target;
+    const msg = $('#import-csv-msg');
+    const body = new FormData(form);
+    const response = await fetch('/api/import/cards.csv', {method: 'POST', body});
+    if (response.ok) {
+      const data = await response.json();
+      msg.textContent = `Imported ${data.cards} cards · ${data.decks} decks · ${data.folders} folders ✓`;
+      $('#export-deck').innerHTML = '<option value="0" disabled selected>Choose a deck</option>';
+      $('#export-folder').innerHTML = '<option value="0" disabled selected>Choose a folder</option>';
+      location.reload();
+      form.reset();
+      folderAdded = true;
+    } else {
+      msg.textContent = await errText(response);
+    }
+  };
+
+  $('#delete-account').onclick = () => confirmDelete('account', null);
+}

@@ -1,0 +1,11 @@
+services:
+  decks:
+    build: .
+    container_name: decks
+    ports:
+      - "9000:9000"
+    environment:
+      HTTPS_ONLY: "0"
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
