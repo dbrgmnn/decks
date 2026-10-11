@@ -145,9 +145,12 @@
       <small id="fa-msg"></small>
     </form>
     <h3 class="section">Data</h3>
-    <div class="data-tools">
+    <div class="data-actions">
+      <button type="button" id="show-export">Export</button>
+      <button type="button" id="show-import">Import</button>
+    </div>
+    <div id="export-box" class="data-box" hidden>
       <form id="export-csv-form" class="panel-block">
-        <label class="opt-label" for="export-scope">Export</label>
         <select id="export-scope" name="scope">
           <option value="all">All cards</option>
           <option value="folder">Folder</option>
@@ -162,8 +165,9 @@
         <button>Download CSV</button>
         <small id="export-csv-msg"></small>
       </form>
+    </div>
+    <div id="import-box" class="data-box" hidden>
       <form id="import-csv-form" class="panel-block">
-        <label class="opt-label" for="import-csv-file">Import</label>
         <input id="import-csv-file" name="file" type="file" accept=".csv,text/csv" required>
         <button>Import CSV</button>
         <small id="import-csv-msg"></small>

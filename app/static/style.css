@@ -158,10 +158,14 @@ button:active:not(:disabled){box-shadow:inset 2px 2px 0 var(--lo),inset -2px -2p
 
 /* Deck settings */
 .opt-label,.panel h3.section{display:block;margin:1rem 0 .5rem;font-size:.9rem;font-weight:400;opacity:.8}
-.data-tools{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem;align-items:start}
-.data-tools .panel-block{display:flex;flex-direction:column;height:100%}
-.data-tools .panel-block button,.data-tools .panel-block small{margin-top:auto}
-@media (max-width:640px){.data-tools{grid-template-columns:1fr}}
+.data-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.5rem}
+.data-actions button{width:100%}
+.data-actions button.on,.data-actions button[aria-pressed="true"]{background:var(--fg);color:var(--bg);box-shadow:inset 2px 2px 0 var(--lo),inset -2px -2px 0 var(--hi);transform:translate(2px,2px)}
+.data-actions button[aria-pressed="false"]{transform:none}
+.data-box{margin-top:.5rem}
+.data-box .panel-block{display:flex;flex-direction:column}
+.data-box .panel-block button,.data-box .panel-block small{margin-top:auto}
+@media (max-width:640px){.data-actions{grid-template-columns:1fr 1fr}}
 .steps{display:grid;grid-template-columns:repeat(6,1fr);gap:.5rem}
 .steps button{padding:.6rem 0;text-align:center}
 .steps button.on{background:var(--fg);color:var(--bg);box-shadow:inset 2px 2px 0 var(--lo),inset -2px -2px 0 var(--hi)}
@@ -259,7 +263,7 @@ select::-ms-expand{display:none}
 .panel-block{display:grid;gap:.55rem;padding:.9rem;border:1.5px solid var(--fg);border-radius:var(--r);box-shadow:2px 2px 0 var(--lo),-2px -2px 0 var(--hi)}
 .panel-block small{display:block;min-height:1.2rem}
 
-#account-sheet .data-tools,#account-sheet #tz,#account-sheet #pw-form,#account-sheet .account-actions{margin-top:1rem}
+#account-sheet .data-actions,#account-sheet .data-box,#account-sheet #tz,#account-sheet #pw-form,#account-sheet .account-actions{margin-top:1rem}
 #account-sheet .panel h3.section{margin-top:1.25rem}
 #account-sheet .panel h3.section:first-of-type{margin-top:1rem}
 

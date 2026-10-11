@@ -101,6 +101,27 @@ export function initAccount({confirmDelete, errText}) {
     }
   };
 
+  const setDataButtons = () => {
+    const exportOpen = !$('#export-box').hidden;
+    const importOpen = !$('#import-box').hidden;
+    $('#show-export').classList.toggle('on', exportOpen);
+    $('#show-import').classList.toggle('on', importOpen);
+    $('#show-export').setAttribute('aria-pressed', exportOpen ? 'true' : 'false');
+    $('#show-import').setAttribute('aria-pressed', importOpen ? 'true' : 'false');
+  };
+
+  const toggleDataBox = kind => {
+    const exportOpen = !$('#export-box').hidden;
+    const importOpen = !$('#import-box').hidden;
+    $('#export-box').hidden = kind === 'export' ? exportOpen : true;
+    $('#import-box').hidden = kind === 'import' ? importOpen : true;
+    setDataButtons();
+  };
+
+  setDataButtons();
+  $('#show-export').onclick = () => toggleDataBox('export');
+  $('#show-import').onclick = () => toggleDataBox('import');
+
   $('#api-token').onclick = async () => {
     $('#api-token-msg').textContent = '';
     const response = await fetch('/api/account/token', {method: 'POST'});
@@ -179,9 +200,6 @@ export function initAccount({confirmDelete, errText}) {
     if (response.ok) {
       const data = await response.json();
       msg.textContent = `Imported ${data.cards} cards · ${data.decks} decks · ${data.folders} folders ✓`;
-      $('#export-deck').innerHTML = '<option value="0" disabled selected>Choose a deck</option>';
-      $('#export-folder').innerHTML = '<option value="0" disabled selected>Choose a folder</option>';
-      location.reload();
       form.reset();
       folderAdded = true;
     } else {
