@@ -8,6 +8,7 @@ export function initPractice() {
   let total = 0;
   let sx;
   let sy;
+  let exitTimer = null;
 
   const clearActiveRating = () => document.querySelectorAll('.rate button').forEach(button => {
     button.classList.remove('active-swipe');
@@ -19,13 +20,25 @@ export function initPractice() {
     button.disabled = !on;
     if (!on) button.classList.remove('active-swipe');
   });
+  const clearExitTimer = () => {
+    if (!exitTimer) return;
+    clearTimeout(exitTimer);
+    exitTimer = null;
+  };
+  const closePractice = () => {
+    clearExitTimer();
+    clearActiveRating();
+    $('#practice').hidden = true;
+    location.reload();
+  };
   const show = card => {
+    clearExitTimer();
     current = card;
     shown = false;
     setRating(false);
     if (card) {
       n += 1;
-      total = Math.max(total || card.left, n);
+      total = n + card.left - 1;
     }
     $('#n').textContent = n;
     $('#m').textContent = total;
@@ -43,6 +56,7 @@ export function initPractice() {
       badge.hidden = true;
       badge.textContent = '';
       badge.classList.remove('is-new', 'is-review');
+      exitTimer = setTimeout(closePractice, 1000);
     }
     $('#back').hidden = true;
     $('#note').hidden = true;
@@ -69,16 +83,13 @@ export function initPractice() {
       deckId = button.dataset.id;
       n = 0;
       total = 0;
+      clearExitTimer();
       $('#practice').hidden = false;
       next();
     };
   });
 
-  $('#close').onclick = () => {
-    clearActiveRating();
-    $('#practice').hidden = true;
-    location.reload();
-  };
+  $('#close').onclick = closePractice;
   document.querySelectorAll('.rate button').forEach(button => {
     button.onclick = () => rate(+button.dataset.r);
   });
