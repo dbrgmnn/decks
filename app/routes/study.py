@@ -41,6 +41,7 @@ def next_card(deck_id: int, user=Depends(auth.current_user)):
                 'front': due_row['front'],
                 'back': due_row['back'],
                 'note': due_row['note'],
+                'kind': 'review',
                 'left': due_left + actual_new_left,
             }
         if actual_new_left <= 0:
@@ -60,6 +61,7 @@ def next_card(deck_id: int, user=Depends(auth.current_user)):
         'front': new_row['front'],
         'back': new_row['back'],
         'note': new_row['note'],
+        'kind': 'new',
         'left': actual_new_left,
     }
 

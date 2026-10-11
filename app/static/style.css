@@ -121,6 +121,7 @@ button:active:not(:disabled){box-shadow:inset 2px 2px 0 var(--lo),inset -2px -2p
 .card{position:relative;z-index:2;isolation:isolate;width:100%;max-width:var(--form-max);min-height:40vh;border:1.5px solid var(--fg);background:var(--bg);box-shadow:inset 2px 2px 0 var(--hi),inset -2px -2px 0 var(--lo),4px 4px 0 var(--drop);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.9rem;padding:clamp(1rem,3vw,1.6rem);text-align:center;touch-action:none;user-select:none;min-height:40dvh;font-size:clamp(1.2rem,.95rem + 1.25vw,1.75rem)}
 .card > *{width:100%;max-width:100%}
 .card small{font-size:1rem}
+.card-kind{position:absolute;top:.95rem;left:1rem;width:auto;max-width:none;padding:0;border:0;background:transparent;box-shadow:none;font-size:.78rem;font-weight:700;line-height:1;letter-spacing:.08em;text-transform:uppercase;opacity:.7;pointer-events:none}
 .count{display:flex;align-items:baseline;gap:.6rem;font-size:1.3rem;letter-spacing:.05em}
 .count b{font-size:2.4rem;line-height:1}
 .count span:last-child{opacity:.7}

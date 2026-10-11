@@ -32,6 +32,18 @@ export function initPractice() {
     $('#front').textContent = card ? card.front : 'All done for today ✓';
     $('#back').textContent = card ? card.back : '';
     $('#note').textContent = card ? card.note : '';
+    const badge = $('#card-kind');
+    if (card) {
+      const isNew = card.kind === 'new';
+      badge.hidden = false;
+      badge.textContent = isNew ? 'NEW' : 'REVIEW';
+      badge.classList.toggle('is-new', isNew);
+      badge.classList.toggle('is-review', !isNew);
+    } else {
+      badge.hidden = true;
+      badge.textContent = '';
+      badge.classList.remove('is-new', 'is-review');
+    }
     $('#back').hidden = true;
     $('#note').hidden = true;
   };
