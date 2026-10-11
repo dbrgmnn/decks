@@ -3,14 +3,14 @@ from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from .. import auth, db
 from ..services.decks import check_deck_name
 from ..services.ownership import need_folder, own_deck
-from ..services.validators import clean
+from ..services.validators import clean, clean_quick_add_name
 
 router = APIRouter()
 
 
 @router.post('/api/decks')
 def create_deck(name: str = Form(...), folder_id: int = Form(...), user=Depends(auth.current_user)):
-    name = clean(name, 'Deck name', 60)
+    name = clean_quick_add_name(name, 'Deck name', 60)
     uid = user['id']
     with db.conn() as c:
         # A deck must belong to a folder owned by the same user.
@@ -33,7 +33,7 @@ def update_deck(
     paused: int = Form(0),
     user=Depends(auth.current_user),
 ):
-    name = clean(name, 'Deck name', 60)
+    name = clean_quick_add_name(name, 'Deck name', 60)
     try:
         new_per_day = int(new_per_day)
     except (TypeError, ValueError):

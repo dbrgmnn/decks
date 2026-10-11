@@ -1,27 +1,118 @@
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 
 from .. import auth, db
-from ..services.decks import check_folder_name
+from ..services.decks import check_deck_name, check_folder_name
 from ..services.ownership import own_folder
-from ..services.validators import clean
+from ..services.validators import clean, clean_quick_add_name
 
 router = APIRouter()
 
 
+def _next_pos(c, table: str, uid: int) -> int:
+    return c.execute(f'SELECT COALESCE(MAX(pos), 0) + 1 FROM {table} WHERE user_id=?', (uid,)).fetchone()[0]
+
+
+def _get_or_create_folder(c, uid: int, name: str):
+    key = name.lower()
+    row = c.execute('SELECT id, name FROM folders WHERE user_id=? AND lower(name)=?', (uid, key)).fetchone()
+    if row:
+        return {'id': row['id'], 'name': row['name'], 'status': 'existing'}
+    check_folder_name(c, uid, name)
+    folder_id = c.execute(
+        'INSERT INTO folders(user_id, name, pos) VALUES(?,?,?)',
+        (uid, name, _next_pos(c, 'folders', uid)),
+    ).lastrowid
+    return {'id': folder_id, 'name': name, 'status': 'created'}
+
+
+def _get_or_create_deck(c, uid: int, folder_id: int, name: str):
+    key = name.lower()
+    row = c.execute(
+        'SELECT id, name FROM decks WHERE user_id=? AND folder_id=? AND lower(name)=?',
+        (uid, folder_id, key),
+    ).fetchone()
+    if row:
+        return {'id': row['id'], 'name': row['name'], 'status': 'existing'}
+    check_deck_name(c, folder_id, name)
+    deck_id = c.execute(
+        'INSERT INTO decks(user_id, folder_id, name, pos) VALUES(?,?,?,?)',
+        (uid, folder_id, name, _next_pos(c, 'decks', uid)),
+    ).lastrowid
+    return {'id': deck_id, 'name': name, 'status': 'created'}
+
+
+def _parse_quick_add(raw_name: str):
+    has_comma = ',' in raw_name
+    has_slash = '/' in raw_name
+    if has_comma and has_slash:
+        raise HTTPException(400, 'Use only / or ,')
+
+    separator = ',' if has_comma else '/'
+    parts = [part.strip() for part in raw_name.split(separator)] if (has_comma or has_slash) else [raw_name.strip()]
+
+    if any(not part for part in parts):
+        raise HTTPException(400, 'Empty part')
+    if len(parts) == 3:
+        raise HTTPException(400, 'Need front and back')
+    if len(parts) > 5:
+        raise HTTPException(400, 'Too many parts')
+    if len(parts) not in (1, 2, 4, 5):
+        raise HTTPException(400, 'Wrong format')
+    return parts
+
+
+def _apply_quick_add(c, uid: int, raw_name: str):
+    parts = _parse_quick_add(raw_name)
+
+    folder_name = clean_quick_add_name(parts[0], 'Folder name', 60)
+    folder = _get_or_create_folder(c, uid, folder_name)
+    result = {'ok': True, 'kind': 'folder', 'folder': folder}
+
+    if len(parts) == 1:
+        return result
+
+    deck_name = clean_quick_add_name(parts[1], 'Deck name', 60)
+    deck = _get_or_create_deck(c, uid, folder['id'], deck_name)
+    result.update({'kind': 'deck', 'deck': deck})
+
+    if len(parts) == 2:
+        return result
+
+    front = clean(parts[2], 'Front', 200)
+    back = clean(parts[3], 'Back', 200)
+    note = clean(parts[4] if len(parts) == 5 else '', 'Note', 300, required=False)
+    exists = c.execute(
+        'SELECT id FROM cards WHERE deck_id=? AND lower(front)=lower(?) AND lower(back)=lower(?)',
+        (deck['id'], front, back),
+    ).fetchone()
+    if exists:
+        result.update({
+            'kind': 'card',
+            'card': {'id': exists['id'], 'status': 'duplicate'},
+        })
+        return result
+
+    card_id = c.execute(
+        'INSERT INTO cards(deck_id, front, back, note) VALUES(?,?,?,?)',
+        (deck['id'], front, back, note),
+    ).lastrowid
+    result.update({
+        'kind': 'card',
+        'card': {'id': card_id, 'status': 'created'},
+    })
+    return result
+
+
 @router.post('/api/folders')
 def create_folder(name: str = Form(...), user=Depends(auth.current_user)):
-    name = clean(name, 'Folder name', 60)
     uid = user['id']
     with db.conn() as c:
-        check_folder_name(c, uid, name)
-        pos = c.execute('SELECT COALESCE(MAX(pos), 0) + 1 FROM folders WHERE user_id=?', (uid,)).fetchone()[0]
-        folder_id = c.execute('INSERT INTO folders(user_id, name, pos) VALUES(?,?,?)', (uid, name, pos)).lastrowid
-    return {'ok': True, 'id': folder_id}
+        return _apply_quick_add(c, uid, name)
 
 
 @router.put('/api/folders/{folder_id}')
 def update_folder(folder_id: int, name: str = Form(...), user=Depends(auth.current_user)):
-    name = clean(name, 'Folder name', 60)
+    name = clean_quick_add_name(name, 'Folder name', 60)
     uid = user['id']
     with db.conn() as c:
         own_folder(c, uid, folder_id)
