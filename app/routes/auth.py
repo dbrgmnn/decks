@@ -74,6 +74,14 @@ def save_settings(tz: str = Form(...), user=Depends(auth.current_user)):
         c.execute('UPDATE users SET tz=? WHERE id=?', (tz, user['id']))
     return {'ok': True}
 
+@router.post('/api/account/token')
+def regenerate_api_token(user=Depends(auth.current_user)):
+    token = auth.generate_api_token()
+    token_hash = auth.hash_api_token(token)
+    with db.conn() as c:
+        c.execute('UPDATE users SET api_token_hash=? WHERE id=?', (token_hash, user['id']))
+    return {'ok': True, 'token': token}
+
 @router.post('/api/account/delete')
 def delete_account(request: Request, password: str = Form(...), user=Depends(auth.current_user)):
     key = f"pw:{user['id']}"

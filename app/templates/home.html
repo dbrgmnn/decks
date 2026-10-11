@@ -172,6 +172,9 @@
     <h3 class="section">Time zone</h3>
     <select id="tz" autocomplete="off">{% for z, label in timezones %}<option value="{{ z }}"{% if z == user.tz %} selected{% endif %}>{{ label }}</option>{% endfor %}</select>
     <small id="tz-msg"></small>
+    <h3 class="section">API token</h3>
+    <button type="button" id="api-token">Generate token</button>
+    <small id="api-token-msg"></small>
     <h3 class="section">Change password</h3>
     <form id="pw-form">
       <div class="password-field">
@@ -220,6 +223,19 @@
     <div class="confirm-actions">
       <button type="button" id="confirm-cancel">Cancel</button>
       <button type="button" id="confirm-delete" class="danger">Delete</button>
+    </div>
+  </div>
+</div>
+
+<div id="token-sheet" class="sheet" hidden>
+  <div class="panel confirm-panel">
+    <h2>Your API token</h2>
+    <p>Copy this token now. You won’t be able to view it again.</p>
+    <textarea id="api-token-value" rows="3" readonly></textarea>
+    <small id="api-token-copy-msg"></small>
+    <div class="confirm-actions">
+      <button type="button" id="api-token-copy">Copy</button>
+      <button type="button" id="api-token-ok">OK</button>
     </div>
   </div>
 </div>

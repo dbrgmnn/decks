@@ -67,6 +67,23 @@ def hash_pw(pw):
     return _ph.hash(pw)
 
 
+def generate_api_token():
+    return f"dlk_{secrets.token_urlsafe(32)}"
+
+
+def hash_api_token(token):
+    return _ph.hash(token)
+
+
+def verify_api_token(hashed, token):
+    if not hashed or len(token) > 256:
+        return False
+    try:
+        return _ph.verify(hashed, token)
+    except (VerificationError, InvalidHashError):
+        return False
+
+
 def verify(hashed, pw):
     if len(pw) > 128:
         return False

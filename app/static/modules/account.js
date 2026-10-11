@@ -29,12 +29,20 @@ function quickAddMessage(data) {
 export function initAccount({confirmDelete, errText}) {
   let folderAdded = false;
 
+  const closeTokenSheet = () => {
+    $('#token-sheet').hidden = true;
+    $('#api-token-value').value = '';
+    $('#api-token-copy-msg').textContent = '';
+  };
+
   $('#account').onclick = () => {
     $('#folder-add-form').reset();
     $('#fa-msg').textContent = '';
     $('#pw-form').reset();
     $('#pw-msg').textContent = '';
     $('#tz-msg').textContent = '';
+    $('#api-token-msg').textContent = '';
+    $('#api-token-copy-msg').textContent = '';
     $('#export-csv-msg').textContent = '';
     $('#import-csv-msg').textContent = '';
     $('#account-sheet').hidden = false;
@@ -92,6 +100,47 @@ export function initAccount({confirmDelete, errText}) {
       $('#tz-msg').textContent = await errText(response);
     }
   };
+
+  $('#api-token').onclick = async () => {
+    $('#api-token-msg').textContent = '';
+    const response = await fetch('/api/account/token', {method: 'POST'});
+    if (!response.ok) {
+      $('#api-token-msg').textContent = await errText(response);
+      return;
+    }
+    const data = await response.json();
+    $('#api-token-value').value = data.token || '';
+    $('#api-token-copy-msg').textContent = '';
+    $('#token-sheet').hidden = false;
+  };
+
+  $('#api-token-copy').onclick = async () => {
+    const field = $('#api-token-value');
+    const value = field.value;
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(value);
+      } else {
+        field.focus();
+        field.select();
+        field.setSelectionRange(0, value.length);
+        if (!document.execCommand('copy')) throw new Error('copy failed');
+      }
+      $('#api-token-copy-msg').textContent = 'Copied ✓';
+    } catch {
+      try {
+        field.focus();
+        field.select();
+        field.setSelectionRange(0, value.length);
+        if (!document.execCommand('copy')) throw new Error('copy failed');
+        $('#api-token-copy-msg').textContent = 'Copied ✓';
+      } catch {
+        $('#api-token-copy-msg').textContent = 'Select and copy manually';
+      }
+    }
+  };
+
+  $('#api-token-ok').onclick = closeTokenSheet;
 
   const syncExportScope = () => {
     const scope = $('#export-scope').value;
