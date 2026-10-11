@@ -27,7 +27,7 @@ def next_card(deck_id: int, user=Depends(auth.current_user)):
             """SELECT id, front, back, note
             FROM cards
             WHERE deck_id=? AND state IS NOT NULL AND due<=?
-            ORDER BY due, id
+            ORDER BY RANDOM()
             LIMIT 1""",
             (deck_id, now),
         ).fetchone()
@@ -49,7 +49,7 @@ def next_card(deck_id: int, user=Depends(auth.current_user)):
             """SELECT id, front, back, note
             FROM cards
             WHERE deck_id=? AND state IS NULL
-            ORDER BY id
+            ORDER BY RANDOM()
             LIMIT 1""",
             (deck_id,),
         ).fetchone()
