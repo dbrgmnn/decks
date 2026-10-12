@@ -4,6 +4,8 @@ export function initTheme() {
   const button = $('#theme');
   if (!button) return;
 
+  let flashTimer = null;
+
   const syncThemeButton = () => {
     const dark = root.dataset.theme === 'dark';
     button.setAttribute('aria-pressed', String(dark));
@@ -11,17 +13,31 @@ export function initTheme() {
     button.textContent = dark ? '◑' : '◐';
   };
 
-  syncThemeButton();
+  const saveTheme = theme => {
+    try {
+      localStorage.theme = theme;
+    } catch {
+      // Ignore storage errors and keep the theme in memory.
+    }
+  };
 
-  button.onclick = () => {
-    root.dataset.theme = root.dataset.theme === 'dark' ? 'light' : 'dark';
-    localStorage.theme = root.dataset.theme;
-    syncThemeButton();
-    button.blur();
-
+  const showFlash = () => {
+    document.querySelector('.flash')?.remove();
     const flash = document.createElement('div');
     flash.className = 'flash';
     document.body.append(flash);
-    setTimeout(() => flash.remove(), 450);
+    clearTimeout(flashTimer);
+    flashTimer = setTimeout(() => flash.remove(), 450);
+  };
+
+  syncThemeButton();
+
+  button.onclick = () => {
+    const nextTheme = root.dataset.theme === 'dark' ? 'light' : 'dark';
+    root.dataset.theme = nextTheme;
+    saveTheme(nextTheme);
+    syncThemeButton();
+    button.blur();
+    showFlash();
   };
 }

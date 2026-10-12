@@ -9,45 +9,87 @@ const arrowSvg = axis => {
   };
   return `<svg viewBox="0 0 24 24" aria-hidden="true">${paths[axis] || paths.right}</svg>`;
 };
+
 export function initFolders({confirmDelete, errText}) {
-  document.querySelectorAll('.fold[data-folder]').forEach(folder => {
+  const folderButtons = [...document.querySelectorAll('.fold[data-folder]')];
+  const folderTitle = $('#folder-title');
+  const folderForm = $('#folder-form');
+  const folderNameField = $('#folder-form [name=name]');
+  const folderMsg = $('#fe-msg');
+  const deleteFolderButton = $('#delete-folder');
+  const folderSheet = $('#folder-sheet');
+  const folderSheetClose = $('#folder-sheet .close');
+  const folderEditButton = $('#folder-edit');
+  const folderBackButton = $('#folder-back');
+  const folderRow = $('.folders') || document.createElement('div');
+
+  let curFolder = null;
+
+  const folderEls = () => [...folderRow.querySelectorAll('.fold[data-folder]')];
+  const getFolderNode = folderId => folderRow.querySelector(`.fold[data-folder="${folderId}"]`);
+
+  const openFolderSheet = folder => {
+    curFolder = folder;
+    folderTitle.textContent = folder ? 'Edit folder' : 'New folder';
+    folderNameField.value = folder ? folder.name : '';
+    folderMsg.textContent = '';
+    deleteFolderButton.hidden = !folder;
+    folderSheet.hidden = false;
+    folderNameField.focus();
+  };
+
+  const closeFolderSheet = () => {
+    folderSheet.hidden = true;
+  };
+
+  const updateFolderNode = (folderId, payload) => {
+    const folder = getFolderNode(folderId);
+    if (!folder) return;
+    folder.dataset.name = payload.name;
+    const label = folder.querySelector('.title, .folder-name, [data-role="folder-name"]');
+    if (label) label.textContent = payload.name;
+  };
+
+  folderButtons.forEach(folder => {
     folder.onclick = () => {
       location.href = folder.classList.contains('on') ? '/' : '/?folder=' + folder.dataset.folder;
     };
   });
 
-  let curFolder = null;
-  const openFolderSheet = folder => {
-    curFolder = folder;
-    $('#folder-title').textContent = folder ? 'Edit folder' : 'New folder';
-    $('#folder-form [name=name]').value = folder ? folder.name : '';
-    $('#fe-msg').textContent = '';
-    $('#delete-folder').hidden = !folder;
-    $('#folder-sheet').hidden = false;
-    $('#folder-form [name=name]').focus();
-  };
-
-  if ($('#folder-edit')) {
-    $('#folder-back').onclick = () => { location.href = '/'; };
-    $('#folder-edit').onclick = () => openFolderSheet({...$('#folder-edit').dataset});
+  if (folderEditButton) {
+    folderBackButton.onclick = () => {
+      location.href = '/';
+    };
+    folderEditButton.onclick = () => openFolderSheet({...folderEditButton.dataset});
   }
 
-  $('#folder-sheet .close').onclick = () => {
-    $('#folder-sheet').hidden = true;
-  };
-  $('#folder-form').onsubmit = async event => {
+  folderSheetClose.onclick = closeFolderSheet;
+
+  folderForm.onsubmit = async event => {
     event.preventDefault();
+    const payload = Object.fromEntries(new FormData(folderForm));
     const response = await fetch(curFolder ? '/api/folders/' + curFolder.id : '/api/folders', {
       method: curFolder ? 'PUT' : 'POST',
-      body: new URLSearchParams(new FormData(event.target)),
+      body: new URLSearchParams(new FormData(folderForm)),
     });
-    if (response.ok) location.reload();
-    else $('#fe-msg').textContent = await errText(response);
-  };
-  $('#delete-folder').onclick = () => confirmDelete('folder', curFolder);
 
-  const folderRow = $('.folders') || document.createElement('div');
-  const folderEls = () => [...folderRow.querySelectorAll('.fold[data-folder]')];
+    if (!response.ok) {
+      folderMsg.textContent = await errText(response);
+      return;
+    }
+
+    // Edit can be patched locally; create still needs a page refresh for new layout.
+    if (curFolder) {
+      updateFolderNode(curFolder.id, payload);
+      closeFolderSheet();
+      return;
+    }
+
+    location.reload();
+  };
+
+  deleteFolderButton.onclick = () => confirmDelete('folder', curFolder);
+
   const HOLD_MS = 2000;
   let folderTimer = null;
   let folderStart = null;
@@ -72,10 +114,10 @@ export function initFolders({confirmDelete, errText}) {
     const all = folderEls();
     const index = all.indexOf(movingFolder);
     const [prev, next] = movingFolder.querySelectorAll('.folder-arrow');
-    prev.innerHTML = arrowSvg('left');
-    next.innerHTML = arrowSvg('right');
-    prev.setAttribute('aria-label', 'Move left');
-    next.setAttribute('aria-label', 'Move right');
+    prev.innerHTML = arrowSvg(vertical ? 'up' : 'left');
+    next.innerHTML = arrowSvg(vertical ? 'down' : 'right');
+    prev.setAttribute('aria-label', vertical ? 'Move up' : 'Move left');
+    next.setAttribute('aria-label', vertical ? 'Move down' : 'Move right');
     prev.disabled = index === 0;
     next.disabled = index === all.length - 1;
   };
@@ -163,6 +205,7 @@ export function initFolders({confirmDelete, errText}) {
     }
     if (movingFolder) exitFolderMove();
   }, true);
+
   addEventListener('keydown', event => {
     if (event.key === 'Escape') exitFolderMove();
   });

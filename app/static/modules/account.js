@@ -1,164 +1,187 @@
 import {$} from './dom.js';
 
 export function initAccount({confirmDelete, errText}) {
+  const accountButton = $('#account');
+  const accountSheet = $('#account-sheet');
+  const accountClose = $('#account-sheet .close');
+  const pwForm = $('#pw-form');
+  const pwMsg = $('#pw-msg');
+  const logoutButton = $('#logout');
+  const tzSelect = $('#tz');
+  const tzMsg = $('#tz-msg');
+  const showExportButton = $('#show-export');
+  const showImportButton = $('#show-import');
+  const exportBox = $('#export-box');
+  const importBox = $('#import-box');
+  const apiTokenButton = $('#api-token');
+  const apiTokenMsg = $('#api-token-msg');
+  const tokenSheet = $('#token-sheet');
+  const apiTokenValue = $('#api-token-value');
+  const apiTokenCopyButton = $('#api-token-copy');
+  const apiTokenCopyMsg = $('#api-token-copy-msg');
+  const apiTokenOk = $('#api-token-ok');
+  const exportScope = $('#export-scope');
+  const exportFolder = $('#export-folder');
+  const exportDeck = $('#export-deck');
+  const exportCsvForm = $('#export-csv-form');
+  const exportCsvMsg = $('#export-csv-msg');
+  const importCsvForm = $('#import-csv-form');
+  const importCsvMsg = $('#import-csv-msg');
+  const deleteAccountButton = $('#delete-account');
+
+  const clearText = (...nodes) => {
+    nodes.forEach(node => {
+      if (node) node.textContent = '';
+    });
+  };
+
   const closeTokenSheet = () => {
-    $('#token-sheet').hidden = true;
-    $('#api-token-value').value = '';
-    $('#api-token-copy-msg').textContent = '';
+    tokenSheet.hidden = true;
+    apiTokenValue.value = '';
+    apiTokenCopyMsg.textContent = '';
   };
 
-  $('#account').onclick = () => {
-    $('#pw-form').reset();
-    $('#pw-msg').textContent = '';
-    $('#tz-msg').textContent = '';
-    $('#api-token-msg').textContent = '';
-    $('#api-token-copy-msg').textContent = '';
-    $('#export-csv-msg').textContent = '';
-    $('#import-csv-msg').textContent = '';
-    $('#account-sheet').hidden = false;
+  const openAccountSheet = () => {
+    pwForm.reset();
+    clearText(pwMsg, tzMsg, apiTokenMsg, apiTokenCopyMsg, exportCsvMsg, importCsvMsg);
+    accountSheet.hidden = false;
   };
 
-  $('#account-sheet .close').onclick = () => {
-    $('#account-sheet').hidden = true;
+  const copyTokenValue = async value => {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(value);
+      return true;
+    }
+    apiTokenValue.focus();
+    apiTokenValue.select();
+    apiTokenValue.setSelectionRange(0, value.length);
+    return document.execCommand('copy');
   };
 
-  $('#pw-form').onsubmit = async event => {
+  const setDataButtons = () => {
+    const exportOpen = !exportBox.hidden;
+    const importOpen = !importBox.hidden;
+    showExportButton.classList.toggle('on', exportOpen);
+    showImportButton.classList.toggle('on', importOpen);
+    showExportButton.setAttribute('aria-pressed', exportOpen ? 'true' : 'false');
+    showImportButton.setAttribute('aria-pressed', importOpen ? 'true' : 'false');
+  };
+
+  const toggleDataBox = kind => {
+    const exportOpen = !exportBox.hidden;
+    const importOpen = !importBox.hidden;
+    exportBox.hidden = kind === 'export' ? exportOpen : true;
+    importBox.hidden = kind === 'import' ? importOpen : true;
+    setDataButtons();
+  };
+
+  const syncExportScope = () => {
+    const scope = exportScope.value;
+    exportFolder.hidden = scope !== 'folder';
+    exportDeck.hidden = scope !== 'deck';
+  };
+
+  accountButton.onclick = openAccountSheet;
+  accountClose.onclick = () => {
+    accountSheet.hidden = true;
+  };
+
+  pwForm.onsubmit = async event => {
     event.preventDefault();
     if (event.target.password.value !== event.target.password2.value) {
-      $('#pw-msg').textContent = 'Passwords do not match';
+      pwMsg.textContent = 'Passwords do not match';
       return;
     }
     const response = await fetch('/api/password', {method: 'POST', body: new URLSearchParams(new FormData(event.target))});
     if (response.ok) {
       event.target.reset();
-      $('#pw-msg').textContent = 'Password changed ✓';
+      pwMsg.textContent = 'Password changed ✓';
     } else {
-      $('#pw-msg').textContent = await errText(response);
+      pwMsg.textContent = await errText(response);
     }
   };
 
-  $('#logout').onclick = async () => {
+  logoutButton.onclick = async () => {
     await fetch('/api/logout', {method: 'POST'});
     location.href = '/login';
   };
 
-  $('#tz').dataset.prev = $('#tz').value;
-  $('#tz').onchange = async event => {
+  tzSelect.dataset.prev = tzSelect.value;
+  tzSelect.onchange = async event => {
     const select = event.target;
     const response = await fetch('/api/settings', {method: 'POST', body: new URLSearchParams({tz: select.value})});
     if (response.ok) {
       select.dataset.prev = select.value;
-      $('#tz-msg').textContent = 'Saved ✓';
+      tzMsg.textContent = 'Saved ✓';
     } else {
       select.value = select.dataset.prev;
-      $('#tz-msg').textContent = await errText(response);
+      tzMsg.textContent = await errText(response);
     }
-  };
-
-  const setDataButtons = () => {
-    const exportOpen = !$('#export-box').hidden;
-    const importOpen = !$('#import-box').hidden;
-    $('#show-export').classList.toggle('on', exportOpen);
-    $('#show-import').classList.toggle('on', importOpen);
-    $('#show-export').setAttribute('aria-pressed', exportOpen ? 'true' : 'false');
-    $('#show-import').setAttribute('aria-pressed', importOpen ? 'true' : 'false');
-  };
-
-  const toggleDataBox = kind => {
-    const exportOpen = !$('#export-box').hidden;
-    const importOpen = !$('#import-box').hidden;
-    $('#export-box').hidden = kind === 'export' ? exportOpen : true;
-    $('#import-box').hidden = kind === 'import' ? importOpen : true;
-    setDataButtons();
   };
 
   setDataButtons();
-  $('#show-export').onclick = () => toggleDataBox('export');
-  $('#show-import').onclick = () => toggleDataBox('import');
+  showExportButton.onclick = () => toggleDataBox('export');
+  showImportButton.onclick = () => toggleDataBox('import');
 
-  $('#api-token').onclick = async () => {
-    $('#api-token-msg').textContent = '';
+  apiTokenButton.onclick = async () => {
+    apiTokenMsg.textContent = '';
     const response = await fetch('/api/account/token', {method: 'POST'});
     if (!response.ok) {
-      $('#api-token-msg').textContent = await errText(response);
+      apiTokenMsg.textContent = await errText(response);
       return;
     }
     const data = await response.json();
-    $('#api-token-value').value = data.token || '';
-    $('#api-token-copy-msg').textContent = '';
-    $('#token-sheet').hidden = false;
+    apiTokenValue.value = data.token || '';
+    apiTokenCopyMsg.textContent = '';
+    tokenSheet.hidden = false;
   };
 
-  $('#api-token-copy').onclick = async () => {
-    const field = $('#api-token-value');
-    const value = field.value;
+  apiTokenCopyButton.onclick = async () => {
+    const value = apiTokenValue.value;
     try {
-      if (navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(value);
-      } else {
-        field.focus();
-        field.select();
-        field.setSelectionRange(0, value.length);
-        if (!document.execCommand('copy')) throw new Error('copy failed');
-      }
-      $('#api-token-copy-msg').textContent = 'Copied ✓';
+      const copied = await copyTokenValue(value);
+      apiTokenCopyMsg.textContent = copied ? 'Copied ✓' : 'Select and copy manually';
     } catch {
-      try {
-        field.focus();
-        field.select();
-        field.setSelectionRange(0, value.length);
-        if (!document.execCommand('copy')) throw new Error('copy failed');
-        $('#api-token-copy-msg').textContent = 'Copied ✓';
-      } catch {
-        $('#api-token-copy-msg').textContent = 'Select and copy manually';
-      }
+      apiTokenCopyMsg.textContent = 'Select and copy manually';
     }
   };
 
-  $('#api-token-ok').onclick = closeTokenSheet;
-
-  const syncExportScope = () => {
-    const scope = $('#export-scope').value;
-    $('#export-folder').hidden = scope !== 'folder';
-    $('#export-deck').hidden = scope !== 'deck';
-  };
-  $('#export-scope').onchange = syncExportScope;
+  apiTokenOk.onclick = closeTokenSheet;
+  exportScope.onchange = syncExportScope;
   syncExportScope();
 
-  $('#export-csv-form').onsubmit = async event => {
+  exportCsvForm.onsubmit = async event => {
     event.preventDefault();
     const form = event.target;
-    const msg = $('#export-csv-msg');
     const scope = form.scope.value;
-    if (scope === 'folder' && !form.folder_id.value) return msg.textContent = 'Choose a folder to export';
-    if (scope === 'deck' && !form.deck_id.value) return msg.textContent = 'Choose a deck to export';
-    msg.textContent = '';
+    if (scope === 'folder' && !form.folder_id.value) return exportCsvMsg.textContent = 'Choose a folder to export';
+    if (scope === 'deck' && !form.deck_id.value) return exportCsvMsg.textContent = 'Choose a deck to export';
+    exportCsvMsg.textContent = '';
     const response = await fetch('/api/export/cards.csv', {method: 'POST', body: new URLSearchParams(new FormData(form))});
-    if (!response.ok) return msg.textContent = await errText(response);
+    if (!response.ok) return exportCsvMsg.textContent = await errText(response);
     const blob = await response.blob();
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'decks-cards.csv';
-    a.click();
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'decks-cards.csv';
+    link.click();
     URL.revokeObjectURL(url);
-    msg.textContent = 'CSV downloaded ✓';
+    exportCsvMsg.textContent = 'CSV downloaded ✓';
   };
 
-  $('#import-csv-form').onsubmit = async event => {
+  importCsvForm.onsubmit = async event => {
     event.preventDefault();
     const form = event.target;
-    const msg = $('#import-csv-msg');
     const body = new FormData(form);
     const response = await fetch('/api/import/cards.csv', {method: 'POST', body});
     if (response.ok) {
       const data = await response.json();
-      msg.textContent = `Imported ${data.cards} cards · ${data.decks} decks · ${data.folders} folders ✓`;
+      importCsvMsg.textContent = `Imported ${data.cards} cards · ${data.decks} decks · ${data.folders} folders ✓`;
       form.reset();
     } else {
-      msg.textContent = await errText(response);
+      importCsvMsg.textContent = await errText(response);
     }
   };
 
-  $('#delete-account').onclick = () => confirmDelete('account', null);
+  deleteAccountButton.onclick = () => confirmDelete('account', null);
 }

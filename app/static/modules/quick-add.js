@@ -27,26 +27,44 @@ function wasCreated(data) {
   return false;
 }
 
-export function initQuickAdd({errText}) {
+export function initQuickAdd({errText, onCreated}) {
   const form = $('#quick-add-form');
   if (!form) return;
 
+  const nameField = form.name;
+  const msg = $('#quick-add-msg');
+
   form.onsubmit = async event => {
     event.preventDefault();
-    const text = event.target.name.value.trim();
-    const msg = $('#quick-add-msg');
-    const response = await fetch('/api/quick-add', {method: 'POST', body: new URLSearchParams({text})});
-    if (response.ok) {
-      const data = await response.json();
-      if (wasCreated(data)) {
-        form.reset();
-        msg.textContent = '';
-        location.reload();
-        return;
-      }
-      msg.textContent = quickAddDuplicateMessage(data);
-    } else {
+    const text = nameField.value.trim();
+    if (!text) {
+      msg.textContent = 'Enter a value';
+      return;
+    }
+
+    const response = await fetch('/api/quick-add', {
+      method: 'POST',
+      body: new URLSearchParams({text}),
+    });
+
+    if (!response.ok) {
       msg.textContent = await errText(response);
+      return;
+    }
+
+    const data = await response.json();
+    if (!wasCreated(data)) {
+      msg.textContent = quickAddDuplicateMessage(data);
+      return;
+    }
+
+    form.reset();
+    msg.textContent = '';
+
+    // Allow incremental UI refresh without forcing a page reload.
+    if (onCreated) {
+      await onCreated(data);
+      return;
     }
   };
 }

@@ -1,14 +1,15 @@
-export const $ = s => document.querySelector(s);
+export const $ = selector => document.querySelector(selector);
 export const root = document.documentElement;
+
 export const el = (tag, text = '', cls = '') => {
   const node = document.createElement(tag);
-  node.textContent = text;
+  if (text) node.textContent = text;
   if (cls) node.className = cls;
   return node;
 };
 
-export const errText = async r => {
-  const data = await r.json().catch(() => ({}));
+export const errText = async response => {
+  const data = await response.json().catch(() => ({}));
   return typeof data.detail === 'string' ? data.detail : 'Invalid input';
 };
 

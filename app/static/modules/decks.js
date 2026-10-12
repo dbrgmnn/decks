@@ -9,7 +9,23 @@ const arrowSvg = axis => {
   };
   return `<svg viewBox="0 0 24 24" aria-hidden="true">${paths[axis] || paths.right}</svg>`;
 };
+
 export function initDecks({confirmDelete, errText, getCurrentDeck, openDeckCards}) {
+  const deckEditSheet = $('#deck-edit');
+  const deckForm = $('#deck-form');
+  const deckNameField = $('#deck-form [name=name]');
+  const deckFolderField = $('#deck-folder');
+  const deckMsg = $('#deck-msg');
+  const pauseToggle = $('#pause-toggle');
+  const stepsButtons = [...document.querySelectorAll('#steps button')];
+  const deleteDeckButton = $('#delete-deck');
+  const deckEditClose = $('#deck-edit .close');
+  const newDeckForm = $('#new-deck');
+  const newDeckMsg = $('#new-msg');
+  const deckGrid = $('.decks');
+  const deckNodes = [...document.querySelectorAll('.deck[data-id]')];
+  const starButtons = [...document.querySelectorAll('.star')];
+
   const deckData = deck => ({
     id: deck.dataset.id,
     name: deck.dataset.name,
@@ -18,60 +34,89 @@ export function initDecks({confirmDelete, errText, getCurrentDeck, openDeckCards
     folder: deck.dataset.folder,
   });
 
-  const setDeckOpts = (n, paused) => {
-    const form = $('#deck-form');
-    const toggle = $('#pause-toggle');
-    form.new_per_day.value = n;
-    form.paused.value = paused ? '1' : '0';
-    document.querySelectorAll('#steps button').forEach(button => {
-      button.classList.toggle('on', button.dataset.v === String(n));
+  const getDeckNode = deckId => document.querySelector(`.deck[data-id="${deckId}"]`);
+
+  const updateDeckNode = (deckId, payload) => {
+    const deck = getDeckNode(deckId);
+    if (!deck) return;
+    deck.dataset.name = payload.name;
+    deck.dataset.newPerDay = String(payload.new_per_day);
+    deck.dataset.paused = payload.paused;
+    deck.dataset.folder = payload.folder_id || '';
+    const title = deck.querySelector('.title, .deck-name, [data-role="deck-name"]');
+    if (title) title.textContent = payload.name;
+  };
+
+  const setDeckOpts = (newPerDay, paused) => {
+    deckForm.new_per_day.value = newPerDay;
+    deckForm.paused.value = paused ? '1' : '0';
+    stepsButtons.forEach(button => {
+      button.classList.toggle('on', button.dataset.v === String(newPerDay));
     });
-    toggle.setAttribute('aria-pressed', paused);
-    toggle.textContent = paused ? 'Paused' : 'Pause';
+    pauseToggle.setAttribute('aria-pressed', paused ? 'true' : 'false');
+    pauseToggle.textContent = paused ? 'Paused' : 'Pause';
   };
 
   const openDeckEdit = deck => {
     const currentDeck = deckData(deck);
-    $('#deck-form [name=name]').value = currentDeck.name;
-    $('#deck-msg').textContent = '';
+    deckNameField.value = currentDeck.name;
+    deckMsg.textContent = '';
     setDeckOpts(currentDeck.newPerDay, currentDeck.paused);
-    if ($('#deck-folder')) $('#deck-folder').value = currentDeck.folder && currentDeck.folder !== '0' ? currentDeck.folder : '';
-    $('#deck-edit').dataset.deckId = currentDeck.id;
-    $('#deck-edit').dataset.deckName = currentDeck.name;
-    $('#deck-edit').hidden = false;
-    $('#deck-form [name=name]').focus();
+    if (deckFolderField) {
+      deckFolderField.value = currentDeck.folder && currentDeck.folder !== '0' ? currentDeck.folder : '';
+    }
+    deckEditSheet.dataset.deckId = currentDeck.id;
+    deckEditSheet.dataset.deckName = currentDeck.name;
+    deckEditSheet.hidden = false;
+    deckNameField.focus();
   };
 
-  $('#deck-form').onsubmit = async event => {
+  deckForm.onsubmit = async event => {
     event.preventDefault();
-    const deckId = $('#deck-edit').dataset.deckId;
-    const response = await fetch('/api/decks/' + deckId, {method: 'PUT', body: new URLSearchParams(new FormData(event.target))});
-    if (response.ok) location.reload();
-    else $('#deck-msg').textContent = await errText(response);
+    const deckId = deckEditSheet.dataset.deckId;
+    const payload = Object.fromEntries(new FormData(deckForm));
+    const response = await fetch('/api/decks/' + deckId, {
+      method: 'PUT',
+      body: new URLSearchParams(new FormData(deckForm)),
+    });
+
+    if (!response.ok) {
+      deckMsg.textContent = await errText(response);
+      return;
+    }
+
+    updateDeckNode(deckId, payload);
+    location.reload();
   };
 
-  $('#delete-deck').onclick = () => {
+  deleteDeckButton.onclick = () => {
     const currentDeck = getCurrentDeck() || {
-      id: $('#deck-edit').dataset.deckId,
-      name: $('#deck-edit').dataset.deckName,
+      id: deckEditSheet.dataset.deckId,
+      name: deckEditSheet.dataset.deckName,
     };
     confirmDelete('deck', currentDeck);
   };
 
-  $('#deck-edit .close').onclick = () => {
-    $('#deck-edit').hidden = true;
+  deckEditClose.onclick = () => {
+    deckEditSheet.hidden = true;
   };
 
-  if ($('#new-deck')) {
-    $('#new-deck').onsubmit = async event => {
+  if (newDeckForm) {
+    newDeckForm.onsubmit = async event => {
       event.preventDefault();
-      const response = await fetch('/api/decks', {method: 'POST', body: new URLSearchParams(new FormData(event.target))});
-      if (response.ok) location.reload();
-      else $('#new-msg').textContent = await errText(response);
+      const response = await fetch('/api/decks', {
+        method: 'POST',
+        body: new URLSearchParams(new FormData(event.target)),
+      });
+      if (response.ok) {
+        location.reload();
+      } else {
+        newDeckMsg.textContent = await errText(response);
+      }
     };
   }
 
-  document.querySelectorAll('.deck[data-id]').forEach(deck => {
+  deckNodes.forEach(deck => {
     deck.addEventListener('click', async event => {
       if (event.target.closest('.edit')) {
         event.stopPropagation();
@@ -83,21 +128,27 @@ export function initDecks({confirmDelete, errText, getCurrentDeck, openDeckCards
     });
   });
 
-  document.querySelectorAll('.star').forEach(button => {
+  starButtons.forEach(button => {
     button.onclick = async event => {
       event.stopPropagation();
+      const deck = button.closest('.deck');
       const on = button.getAttribute('aria-pressed') !== 'true';
-      const response = await fetch('/api/decks/' + button.closest('.deck').dataset.id + '/pin', {method: 'POST', body: new URLSearchParams({pinned: on ? 1 : 0})});
-      if (response.ok) location.reload();
+      const response = await fetch('/api/decks/' + deck.dataset.id + '/pin', {
+        method: 'POST',
+        body: new URLSearchParams({pinned: on ? 1 : 0}),
+      });
+      if (!response.ok) return;
+
+      location.reload();
     };
   });
 
-  document.querySelectorAll('#steps button').forEach(button => {
-    button.onclick = () => setDeckOpts(button.dataset.v, $('#deck-form').paused.value === '1');
+  stepsButtons.forEach(button => {
+    button.onclick = () => setDeckOpts(button.dataset.v, deckForm.paused.value === '1');
   });
-  $('#pause-toggle').onclick = () => setDeckOpts($('#deck-form').new_per_day.value, $('#deck-form').paused.value !== '1');
 
-  const deckGrid = $('.decks');
+  pauseToggle.onclick = () => setDeckOpts(deckForm.new_per_day.value, deckForm.paused.value !== '1');
+
   if (!deckGrid) return;
 
   const HOLD_MS = 2000;
@@ -105,6 +156,7 @@ export function initDecks({confirmDelete, errText, getCurrentDeck, openDeckCards
   let holdPos = null;
   let moving = null;
   let swallow = false;
+
   const deckEls = () => [...deckGrid.querySelectorAll('.deck[data-id]')];
   const isVertical = () => getComputedStyle(deckGrid).gridTemplateColumns.split(' ').length === 1;
 
@@ -114,7 +166,7 @@ export function initDecks({confirmDelete, errText, getCurrentDeck, openDeckCards
     const response = await fetch('/api/decks/order', {method: 'POST', body});
     if (!response.ok) {
       alert('Could not save deck order.');
-      location.reload();
+      deckMsg.textContent = 'Saved ✓';
     }
   };
 
@@ -148,6 +200,7 @@ export function initDecks({confirmDelete, errText, getCurrentDeck, openDeckCards
     deck.classList.remove('holding');
     deck.classList.add('moving');
     deckGrid.classList.add('reordering');
+
     for (const cls of ['prev', 'next']) {
       const button = document.createElement('button');
       button.className = 'arrow ' + cls;
@@ -157,6 +210,7 @@ export function initDecks({confirmDelete, errText, getCurrentDeck, openDeckCards
       };
       deck.append(button);
     }
+
     syncArrows();
     navigator.vibrate?.(25);
   };
@@ -206,8 +260,10 @@ export function initDecks({confirmDelete, errText, getCurrentDeck, openDeckCards
     event.stopPropagation();
     exitMove();
   }, true);
+
   addEventListener('keydown', event => {
     if (event.key === 'Escape') exitMove();
   });
+
   addEventListener('resize', syncArrows);
 }

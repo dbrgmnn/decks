@@ -1,109 +1,167 @@
 import {$, TRASH_SVG, el} from './dom.js';
 
 export function initCards({confirmDelete, errText}) {
+  const searchInput = $('#search');
+  const listSheet = $('#list');
+  const listClose = $('#list .close');
+  const listTitle = $('#list-title');
+  const wordsList = $('#words');
+  const addSheet = $('#add');
+  const addClose = $('#add .close');
+  const addForm = $('#add-form');
+  const addTitle = $('#add-title');
+  const addButton = $('#add-btn');
+  const addMsg = $('#add-msg');
+  const plusButtons = [...document.querySelectorAll('.plus')];
+
   let curDeck = null;
   let editing = null;
-  let allCards = [];
+  const cardsByDeck = new Map();
+
+  const getDeckCards = deckId => cardsByDeck.get(String(deckId)) || [];
 
   const setCurrentDeck = deck => {
     curDeck = deck;
   };
 
-  const openDeckCards = async deck => {
-    curDeck = deck;
-    $('#search').value = '';
-    $('#list').hidden = false;
-    await loadWords();
-  };
-
-  const openEdit = card => {
-    editing = card.id;
-    const form = $('#add-form');
-    form.front.value = card.front;
-    form.back.value = card.back;
-    form.note.value = card.note || '';
-    $('#add-title').textContent = 'Edit card';
-    $('#add-btn').textContent = 'Save changes';
-    $('#add-msg').textContent = '';
-    $('#add').hidden = false;
-    form.front.focus();
-  };
-
   const renderWords = () => {
-    const q = $('#search').value.trim().toLowerCase();
-    const list = q.length >= 2
-      ? allCards.filter(card => [card.front, card.back].some(text => (text || '').toLowerCase().includes(q)))
+    if (!curDeck) return;
+
+    const allCards = getDeckCards(curDeck.id);
+    const query = searchInput.value.trim().toLowerCase();
+    const filteredCards = query.length >= 2
+      ? allCards.filter(card => [card.front, card.back].some(text => (text || '').toLowerCase().includes(query)))
       : allCards;
-    const ul = $('#words');
-    ul.replaceChildren();
-    if (!list.length) {
+
+    wordsList.replaceChildren();
+
+    if (!filteredCards.length) {
       const title = allCards.length ? `${curDeck.name} (0 of ${allCards.length})` : `${curDeck.name} (0)`;
-      $('#list-title').textContent = title;
-      if (allCards.length && q.length >= 2) ul.append(el('li', 'No matches.', 'empty'));
+      listTitle.textContent = title;
+      if (allCards.length && query.length >= 2) wordsList.append(el('li', 'No matches.', 'empty'));
       return;
     }
-    for (const card of list) {
+
+    const fragment = document.createDocumentFragment();
+    for (const card of filteredCards) {
       const li = el('li');
       li.append(el('b', card.front), el('span', card.back));
+
       const del = el('button', '', 'delete-card');
+      del.type = 'button';
       del.innerHTML = TRASH_SVG;
       del.setAttribute('aria-label', 'Delete card');
       del.onclick = event => {
         event.stopPropagation();
         confirmDelete('card', card);
       };
+
       li.append(del);
       li.onclick = () => openEdit(card);
-      ul.append(li);
+      fragment.append(li);
     }
-    const count = list.length === allCards.length ? list.length : `${list.length} of ${allCards.length}`;
-    $('#list-title').textContent = `${curDeck.name} (${count})`;
+
+    wordsList.append(fragment);
+    const count = filteredCards.length === allCards.length ? filteredCards.length : `${filteredCards.length} of ${allCards.length}`;
+    listTitle.textContent = `${curDeck.name} (${count})`;
   };
 
-  const loadWords = async () => {
-    allCards = await (await fetch(`/api/decks/${curDeck.id}/cards`)).json();
+  const loadWords = async ({force = false} = {}) => {
+    if (!curDeck) return;
+    if (!force && cardsByDeck.has(String(curDeck.id))) {
+      renderWords();
+      return;
+    }
+
+    const response = await fetch(`/api/decks/${curDeck.id}/cards`);
+    const cards = await response.json();
+    cardsByDeck.set(String(curDeck.id), cards);
     renderWords();
   };
 
-  $('#search').oninput = renderWords;
+  const closeAddSheet = async ({refresh = false} = {}) => {
+    addSheet.hidden = true;
+    addForm.reset();
+    addMsg.textContent = '';
+    editing = null;
 
-  document.querySelectorAll('.plus').forEach(button => {
+    if (refresh && curDeck && !listSheet.hidden) {
+      cardsByDeck.delete(String(curDeck.id));
+      await loadWords({force: true});
+    }
+  };
+
+  const openDeckCards = async deck => {
+    setCurrentDeck(deck);
+    searchInput.value = '';
+    listSheet.hidden = false;
+    await loadWords();
+  };
+
+  const openEdit = card => {
+    editing = card.id;
+    addForm.front.value = card.front;
+    addForm.back.value = card.back;
+    addForm.note.value = card.note || '';
+    addTitle.textContent = 'Edit card';
+    addButton.textContent = 'Save changes';
+    addMsg.textContent = '';
+    addSheet.hidden = false;
+    addForm.front.focus();
+  };
+
+  searchInput.oninput = renderWords;
+
+  plusButtons.forEach(button => {
     button.onclick = event => {
       event.stopPropagation();
       const deck = button.closest('.deck');
       setCurrentDeck({id: deck.dataset.id, name: deck.dataset.name});
       editing = null;
-      $('#add-form').reset();
-      $('#add-btn').textContent = 'Save';
-      $('#add-title').textContent = 'Add card to ' + curDeck.name;
-      $('#add-msg').textContent = '';
-      $('#add').hidden = false;
-      $('#add-form [name=front]').focus();
+      addForm.reset();
+      addButton.textContent = 'Save';
+      addTitle.textContent = 'Add card to ' + curDeck.name;
+      addMsg.textContent = '';
+      addSheet.hidden = false;
+      addForm.front.focus();
     };
   });
 
-  $('#add-form').onsubmit = async event => {
+  addForm.onsubmit = async event => {
     event.preventDefault();
-    const form = event.target;
-    const body = new URLSearchParams(new FormData(form));
+    const body = new URLSearchParams(new FormData(addForm));
     if (!editing) body.set('deck_id', curDeck.id);
-    const response = await fetch(editing ? '/api/cards/' + editing : '/api/cards', {method: editing ? 'PUT' : 'POST', body});
-    if (!response.ok) return $('#add-msg').textContent = await errText(response);
-    if (editing) return $('#add .close').click();
-    $('#add-msg').textContent = 'Saved ✓';
-    form.reset();
-    form.front.focus();
+
+    const response = await fetch(editing ? '/api/cards/' + editing : '/api/cards', {
+      method: editing ? 'PUT' : 'POST',
+      body,
+    });
+
+    if (!response.ok) {
+      addMsg.textContent = await errText(response);
+      return;
+    }
+
+    if (editing) {
+      await closeAddSheet({refresh: true});
+      return;
+    }
+
+    addMsg.textContent = 'Saved ✓';
+    addForm.reset();
+    cardsByDeck.delete(String(curDeck.id));
+    addForm.front.focus();
+
+    // Keep the list fresh if the current deck is already open.
+    if (!listSheet.hidden) await loadWords({force: true});
   };
 
-  $('#list .close').onclick = () => {
-    $('#list').hidden = true;
-    location.reload();
+  listClose.onclick = () => {
+    listSheet.hidden = true;
   };
-  $('#add .close').onclick = () => {
-    $('#add').hidden = true;
-    editing = null;
-    if ($('#list').hidden) location.reload();
-    else loadWords();
+
+  addClose.onclick = () => {
+    closeAddSheet({refresh: !listSheet.hidden});
   };
 
   return {

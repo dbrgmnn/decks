@@ -12,11 +12,24 @@ import {initQuickAdd} from './modules/quick-add.js';
 initSessionGuard();
 initTheme();
 
+const accountSheet = $('#account-sheet');
+const confirmSheet = $('#confirm');
+const confirmCancel = $('#confirm-cancel');
+const deckEditSheet = $('#deck-edit');
+const deckEditClose = $('#deck-edit .close');
+const folderSheet = $('#folder-sheet');
+const folderSheetClose = $('#folder-sheet .close');
+const addSheet = $('#add');
+const addSheetClose = $('#add .close');
+const listSheet = $('#list');
+const listSheetClose = $('#list .close');
+const practiceSheet = $('#practice');
+
 const practice = initPractice();
 const cards = {};
 const dialogs = createDialogs({
   errText,
-  loadWords: () => cards.loadWords?.(),
+  loadWords: options => cards.loadWords?.(options),
 });
 
 Object.assign(cards, initCards({
@@ -30,14 +43,21 @@ initDecks({
   getCurrentDeck: cards.getCurrentDeck,
   openDeckCards: cards.openDeckCards,
 });
+
 initFolders({confirmDelete: dialogs.confirmDelete, errText});
 initAccount({confirmDelete: dialogs.confirmDelete, errText});
-initQuickAdd({errText});
+initQuickAdd({
+  errText,
+  onCreated: async () => {
+    location.reload();
+  },
+});
 
 const togglePasswordField = button => {
   const field = button.closest('.password-field');
   const input = field?.querySelector('input');
   if (!input) return;
+
   const visible = input.type === 'text';
   input.type = visible ? 'password' : 'text';
   button.setAttribute('aria-pressed', String(!visible));
@@ -46,17 +66,33 @@ const togglePasswordField = button => {
   field.querySelector('.eye-closed')?.toggleAttribute('hidden', visible);
 };
 
-document.querySelectorAll('.password-toggle').forEach(button => {
-  button.addEventListener('click', () => togglePasswordField(button));
+// One delegated listener is cheaper than per-button bindings.
+document.addEventListener('click', event => {
+  const button = event.target.closest('.password-toggle');
+  if (!button) return;
+  togglePasswordField(button);
 });
 
+const escapeActions = [
+  [accountSheet, () => $('#account-sheet .close')?.click()],
+  [confirmSheet, () => confirmCancel?.click()],
+  [deckEditSheet, () => deckEditClose?.click()],
+  [folderSheet, () => folderSheetClose?.click()],
+  [addSheet, () => addSheetClose?.click()],
+  [listSheet, () => listSheetClose?.click()],
+];
+
 addEventListener('keydown', event => {
-  if (!$('#account-sheet').hidden) return event.key === 'Escape' && $('#account-sheet .close').click();
-  if (!$('#confirm').hidden) return event.key === 'Escape' && $('#confirm-cancel').click();
-  if (!$('#deck-edit').hidden) return event.key === 'Escape' && $('#deck-edit .close').click();
-  if (!$('#folder-sheet').hidden) return event.key === 'Escape' && $('#folder-sheet .close').click();
-  if (!$('#add').hidden) return event.key === 'Escape' && $('#add .close').click();
-  if (!$('#list').hidden) return event.key === 'Escape' && $('#list .close').click();
-  if ($('#practice').hidden) return;
-  if (event.key === ' ') practice.flip();
+  if (event.key === 'Escape') {
+    for (const [sheet, close] of escapeActions) {
+      if (sheet && !sheet.hidden) {
+        close();
+        return;
+      }
+    }
+  }
+
+  if (!practiceSheet?.hidden && event.key === ' ') {
+    practice.flip();
+  }
 });

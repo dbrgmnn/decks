@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>decks</title>
-<script>document.documentElement.dataset.theme=localStorage.theme||"light"</script>
+<script>try{document.documentElement.dataset.theme=localStorage.theme||"light"}catch{document.documentElement.dataset.theme="light"}</script>
 <link rel="manifest" href="{{ asset('icons/site.webmanifest') }}">
 <link rel="icon" href="{{ asset('icons/favicon.ico') }}" sizes="any">
 <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('icons/favicon-32x32.png') }}">
@@ -17,8 +17,8 @@
 </head>
 <body>
 <header class="wrap bar">
-  <button id="account" class="acc">{{ user.name }}</button>
-  <button id="theme" aria-label="Toggle theme">◐</button>
+  <button type="button" id="account" class="acc">{{ user.name }}</button>
+  <button type="button" id="theme" aria-label="Toggle theme">◐</button>
 </header>
 <main class="wrap">
   <section class="stats">
@@ -31,7 +31,7 @@
     <label class="opt-label" for="quick-add-name">Quick add</label>
     <div class="row">
       <input id="quick-add-name" name="name" placeholder="folder/deck/front/back/note" maxlength="300" required autocomplete="off">
-      <button>Add</button>
+      <button type="submit">Add</button>
     </div>
     <small id="quick-add-msg"></small>
   </form>
@@ -60,8 +60,8 @@
   <section class="decks">
     {% for d in decks %}
     <article class="deck{% if d.paused %} paused{% endif %}" data-id="{{ d.id }}" data-name="{{ d.name }}" data-new-per-day="{{ d.new_per_day }}" data-paused="{{ 1 if d.paused else 0 }}" data-folder="{{ d.folder_id or 0 }}">
-      <button class="edit" aria-label="Edit deck">✎</button>
-      <button class="plus" aria-label="Add card">+</button>
+      <button type="button" class="edit" aria-label="Edit deck">✎</button>
+      <button type="button" class="plus" aria-label="Add card">+</button>
       <h3>{{ d.path }}</h3>
       <p class="meta">{{ d.total }} card{{ "" if d.total == 1 else "s" }}<small>{% if d.paused %}Paused{% else %}{{ d.due }} due · {{ d.new }} new{% endif %}</small></p>
       <div class="actions">
@@ -74,7 +74,7 @@
     <form class="deck" id="new-deck" method="post" action="/api/decks">
       <input type="hidden" name="folder_id" value="{{ folder.id }}">
       <input name="name" placeholder="New deck" maxlength="60" required>
-      <button>Create</button>
+      <button type="submit">Create</button>
       <small id="new-msg"></small>
     </form>
     {% endif %}
@@ -97,7 +97,7 @@
     <input name="front" placeholder="Front" maxlength="200" required autocomplete="off">
     <input name="back" placeholder="Back" maxlength="200" required autocomplete="off">
     <textarea name="note" placeholder="Note (optional)" maxlength="300" rows="2"></textarea>
-    <button id="add-btn">Save</button>
+    <button type="submit" id="add-btn">Save</button>
     <small id="add-msg"></small>
   </form>
 </div>
@@ -119,7 +119,7 @@
     <input type="hidden" name="paused" value="0">
     <button type="button" id="pause-toggle" class="toggle" aria-pressed="false">Pause</button>
     <div class="form-actions">
-      <button>Save changes</button>
+      <button type="submit">Save changes</button>
       <button type="button" id="delete-deck" class="danger">Delete deck</button>
     </div>
     <small id="deck-msg"></small>
@@ -132,7 +132,7 @@
     <h2 id="folder-title">Edit folder</h2>
     <input name="name" placeholder="Folder name" maxlength="60" required autocomplete="off">
     <div class="form-actions">
-      <button>Save changes</button>
+      <button type="submit">Save changes</button>
       <button type="button" id="delete-folder" class="danger">Delete folder</button>
     </div>
     <small id="fe-msg"></small>
@@ -162,14 +162,14 @@
         <select id="export-deck" name="deck_id" hidden>
           <option value="0" disabled selected>Choose deck</option>{% for d in all_decks %}<option value="{{ d.id }}">{{ d.path }}</option>{% endfor %}
         </select>
-        <button>Download CSV</button>
+        <button type="submit">Download CSV</button>
         <small id="export-csv-msg"></small>
       </form>
     </div>
     <div id="import-box" class="data-box" hidden>
       <form id="import-csv-form" class="panel-block">
         <input id="import-csv-file" name="file" type="file" accept=".csv,text/csv" required>
-        <button>Import CSV</button>
+        <button type="submit">Import CSV</button>
         <small id="import-csv-msg"></small>
       </form>
     </div>
@@ -202,7 +202,7 @@
           <svg class="eye-closed" viewBox="0 0 24 24" aria-hidden="true" hidden><path d="m3 3 18 18M10.6 6.2A10.9 10.9 0 0 1 12 6c6.5 0 10 6 10 6a18.4 18.4 0 0 1-3.1 3.6M6.3 6.4C3.5 8.1 2 12 2 12s3.5 6 10 6a10.8 10.8 0 0 0 4.2-.9"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>
         </button>
       </div>
-      <button>Change password</button>
+      <button type="submit">Change password</button>
       <small id="pw-msg"></small>
     </form>
     <div class="form-actions account-actions">
@@ -245,14 +245,14 @@
 </div>
 
 <div id="practice" hidden>
-  <button id="close" aria-label="Close">✕</button>
+  <button type="button" id="close" aria-label="Close">✕</button>
   <div class="count"><b id="n">0</b><span>/</span><span id="m">0</span></div>
   <div id="card" class="card"><span id="card-kind" class="card-kind" hidden></span><div id="front"></div><div id="back" hidden></div><small id="note" hidden></small></div>
   <nav class="rate">
-    <button data-r="1">1 Again<br><small>←</small></button>
-    <button data-r="2">2 Hard<br><small>↓</small></button>
-    <button data-r="3">3 Good<br><small>→</small></button>
-    <button data-r="4">4 Easy<br><small>↑</small></button>
+    <button type="button" data-r="1">1 Again<br><small>←</small></button>
+    <button type="button" data-r="2">2 Hard<br><small>↓</small></button>
+    <button type="button" data-r="3">3 Good<br><small>→</small></button>
+    <button type="button" data-r="4">4 Easy<br><small>↑</small></button>
   </nav>
 </div>
 <script type="module" src="{{ asset('app.js') }}"></script>
