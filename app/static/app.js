@@ -7,6 +7,7 @@ import {initCards} from './modules/cards.js';
 import {initDecks} from './modules/decks.js';
 import {initFolders} from './modules/folders.js';
 import {initAccount} from './modules/account.js';
+import {initQuickAdd} from './modules/quick-add.js';
 
 initSessionGuard();
 initTheme();
@@ -31,6 +32,7 @@ initDecks({
 });
 initFolders({confirmDelete: dialogs.confirmDelete, errText});
 initAccount({confirmDelete: dialogs.confirmDelete, errText});
+initQuickAdd({errText});
 
 const togglePasswordField = button => {
   const field = button.closest('.password-field');

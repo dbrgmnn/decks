@@ -27,6 +27,14 @@
     <div><b>{{ stats.done }}</b><small>today</small></div>
     <div><b>{{ stats.total }}</b><small>total</small></div>
   </section>
+  <form id="folder-add-form" class="folder-add quick-add-main">
+    <label class="opt-label" for="folder-add-name">Quick add</label>
+    <div class="row">
+      <input id="folder-add-name" name="name" placeholder="folder/deck/front/back/note" maxlength="300" required autocomplete="off">
+      <button>Add</button>
+    </div>
+    <small id="fa-msg"></small>
+  </form>
   {% if folders %}
   <nav class="folders" aria-label="Folders">
     {% for f in folders %}
@@ -136,14 +144,6 @@
   <div class="panel">
     <h2>Account</h2>
     <p class="muted">{{ user.email }}</p>
-    <form id="folder-add-form" class="folder-add">
-      <label class="opt-label" for="folder-add-name">Quick add</label>
-      <div class="row">
-        <input id="folder-add-name" name="name" placeholder="folder/deck/front/back/note" maxlength="300" required autocomplete="off">
-        <button>Add</button>
-      </div>
-      <small id="fa-msg"></small>
-    </form>
     <h3 class="section">Data</h3>
     <div class="data-actions">
       <button type="button" id="show-export">Export</button>

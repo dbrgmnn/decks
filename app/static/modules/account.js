@@ -1,34 +1,6 @@
 import {$} from './dom.js';
 
-function quickAddMessage(data) {
-  const folderName = data.folder?.name || 'Folder';
-  const deckName = data.deck?.name || 'Deck';
-  const cardPath = `“${folderName} / ${deckName}”`;
-
-  if (data.kind === 'folder') {
-    return data.folder.status === 'created'
-      ? `Folder “${folderName}” created ✓`
-      : `Folder “${folderName}” already exists`;
-  }
-
-  if (data.kind === 'deck') {
-    return data.deck.status === 'created'
-      ? `Deck “${deckName}” added to folder “${folderName}” ✓`
-      : `Deck “${deckName}” already exists in folder “${folderName}”`;
-  }
-
-  if (data.kind === 'card') {
-    return data.card.status === 'created'
-      ? `Card added to ${cardPath} ✓`
-      : `This card already exists in ${cardPath}`;
-  }
-
-  return 'Saved ✓';
-}
-
 export function initAccount({confirmDelete, errText}) {
-  let folderAdded = false;
-
   const closeTokenSheet = () => {
     $('#token-sheet').hidden = true;
     $('#api-token-value').value = '';
@@ -36,8 +8,6 @@ export function initAccount({confirmDelete, errText}) {
   };
 
   $('#account').onclick = () => {
-    $('#folder-add-form').reset();
-    $('#fa-msg').textContent = '';
     $('#pw-form').reset();
     $('#pw-msg').textContent = '';
     $('#tz-msg').textContent = '';
@@ -50,22 +20,6 @@ export function initAccount({confirmDelete, errText}) {
 
   $('#account-sheet .close').onclick = () => {
     $('#account-sheet').hidden = true;
-    if (folderAdded) location.reload();
-  };
-
-  $('#folder-add-form').onsubmit = async event => {
-    event.preventDefault();
-    const name = event.target.name.value.trim();
-    const msg = $('#fa-msg');
-    const response = await fetch('/api/folders', {method: 'POST', body: new URLSearchParams({name})});
-    if (response.ok) {
-      const data = await response.json();
-      folderAdded = true;
-      msg.textContent = quickAddMessage(data);
-      event.target.reset();
-    } else {
-      msg.textContent = await errText(response);
-    }
   };
 
   $('#pw-form').onsubmit = async event => {
@@ -201,7 +155,6 @@ export function initAccount({confirmDelete, errText}) {
       const data = await response.json();
       msg.textContent = `Imported ${data.cards} cards · ${data.decks} decks · ${data.folders} folders ✓`;
       form.reset();
-      folderAdded = true;
     } else {
       msg.textContent = await errText(response);
     }

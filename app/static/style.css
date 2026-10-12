@@ -215,6 +215,8 @@ button:active:not(:disabled){box-shadow:inset 2px 2px 0 var(--lo),inset -2px -2p
 .folder-add input{flex:1;min-width:0;width:auto;margin-bottom:0}
 .folder-add button{flex:0 0 auto}
 .folder-add #fa-msg:empty,#account-sheet small:empty{margin:0}
+.quick-add-main{margin:0 0 1rem}
+.quick-add-main .opt-label{margin:.25rem 0 .5rem}
 #account-sheet .panel .muted{margin:.25rem 0 1.3rem}
 #account-sheet #pw-form button{margin-top:.25rem}
 
