@@ -12,7 +12,7 @@ small{opacity:.7}
 .wrap{max-width:var(--content-max);margin:0 auto;padding:0 1rem;padding-inline:max(1rem,env(safe-area-inset-left),env(safe-area-inset-right))}
 
 /* Typography and overflow safety */
-#new-msg,#nf-msg,#fe-msg,#fa-msg,#add-msg,#deck-msg,#pw-msg,#tz-msg,#confirm-msg,#msg{display:block;margin-top:.5rem;overflow-wrap:anywhere}
+#new-msg,#nf-msg,#fe-msg,#quick-add-msg,#add-msg,#deck-msg,#pw-msg,#tz-msg,#confirm-msg,#msg{display:block;margin-top:.5rem;overflow-wrap:anywhere}
 #msg{text-align:center}
 .panel h2,#words li,#words b,.card div,.card small{overflow-wrap:anywhere;min-width:0;max-width:100%}
 .bar span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-right:1rem}
@@ -210,11 +210,11 @@ button:active:not(:disabled){box-shadow:inset 2px 2px 0 var(--lo),inset -2px -2p
 /* Account sheet */
 .account-actions{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
 .account-actions button{width:100%}
-.folder-add .opt-label,#account-sheet .panel h3.section,#account-sheet .panel .opt-label{margin-top:0}
-.folder-add .row{display:flex;gap:.5rem;align-items:stretch}
-.folder-add input{flex:1;min-width:0;width:auto;margin-bottom:0}
-.folder-add button{flex:0 0 auto}
-.folder-add #fa-msg:empty,#account-sheet small:empty{margin:0}
+.quick-add .opt-label,#account-sheet .panel h3.section,#account-sheet .panel .opt-label{margin-top:0}
+.quick-add .row{display:flex;gap:.5rem;align-items:stretch}
+.quick-add input{flex:1;min-width:0;width:auto;margin-bottom:0}
+.quick-add button{flex:0 0 auto}
+.quick-add #quick-add-msg:empty,#account-sheet small:empty{margin:0}
 .quick-add-main{margin:0 0 1rem}
 .quick-add-main .opt-label{margin:.25rem 0 .5rem}
 #account-sheet .panel .muted{margin:.25rem 0 1.3rem}

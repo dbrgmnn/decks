@@ -136,3 +136,30 @@ def current_user(request: Request):
     if request.url.path.startswith("/api/"):
         raise HTTPException(401, "Please sign in")
     raise HTTPException(303, headers={"Location": "/login"})
+
+
+def current_user_or_token(request: Request):
+    uid = request.session.get("uid")
+    if uid:
+        row = db.conn().execute("SELECT id, email, name, tz FROM users WHERE id=?", (uid,)).fetchone()
+        if row:
+            return row
+        request.session.clear()
+
+    auth_header = request.headers.get('Authorization', '')
+    token = ''
+    if auth_header.lower().startswith('bearer '):
+        token = auth_header[7:].strip()
+    if not token:
+        token = request.headers.get('X-API-Token', '').strip()
+
+    if token:
+        with db.conn() as c:
+            rows = c.execute('SELECT id, email, name, tz, api_token_hash FROM users WHERE api_token_hash != ""').fetchall()
+        for row in rows:
+            if verify_api_token(row['api_token_hash'], token):
+                return row
+
+    if request.url.path.startswith('/api/'):
+        raise HTTPException(401, 'Please sign in')
+    raise HTTPException(303, headers={'Location': '/login'})

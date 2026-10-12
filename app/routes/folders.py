@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from .. import auth, db
 from ..services.decks import check_deck_name, check_folder_name
 from ..services.ownership import own_folder
-from ..services.validators import clean, clean_quick_add_name
+from ..services.validators import clean, clean_quick_add_name, normalize_name_key
 
 router = APIRouter()
 
@@ -13,10 +13,11 @@ def _next_pos(c, table: str, uid: int) -> int:
 
 
 def _get_or_create_folder(c, uid: int, name: str):
-    key = name.lower()
-    row = c.execute('SELECT id, name FROM folders WHERE user_id=? AND lower(name)=?', (uid, key)).fetchone()
-    if row:
-        return {'id': row['id'], 'name': row['name'], 'status': 'existing'}
+    key = normalize_name_key(name)
+    rows = c.execute('SELECT id, name FROM folders WHERE user_id=?', (uid,)).fetchall()
+    for row in rows:
+        if normalize_name_key(row['name']) == key:
+            return {'id': row['id'], 'name': row['name'], 'status': 'existing'}
     check_folder_name(c, uid, name)
     folder_id = c.execute(
         'INSERT INTO folders(user_id, name, pos) VALUES(?,?,?)',
@@ -26,13 +27,14 @@ def _get_or_create_folder(c, uid: int, name: str):
 
 
 def _get_or_create_deck(c, uid: int, folder_id: int, name: str):
-    key = name.lower()
-    row = c.execute(
-        'SELECT id, name FROM decks WHERE user_id=? AND folder_id=? AND lower(name)=?',
-        (uid, folder_id, key),
-    ).fetchone()
-    if row:
-        return {'id': row['id'], 'name': row['name'], 'status': 'existing'}
+    key = normalize_name_key(name)
+    rows = c.execute(
+        'SELECT id, name FROM decks WHERE user_id=? AND folder_id=?',
+        (uid, folder_id),
+    ).fetchall()
+    for row in rows:
+        if normalize_name_key(row['name']) == key:
+            return {'id': row['id'], 'name': row['name'], 'status': 'existing'}
     check_deck_name(c, folder_id, name)
     deck_id = c.execute(
         'INSERT INTO decks(user_id, folder_id, name, pos) VALUES(?,?,?,?)',
@@ -41,14 +43,14 @@ def _get_or_create_deck(c, uid: int, folder_id: int, name: str):
     return {'id': deck_id, 'name': name, 'status': 'created'}
 
 
-def _parse_quick_add(raw_name: str):
-    has_comma = ',' in raw_name
-    has_slash = '/' in raw_name
+def _parse_quick_add(raw_text: str):
+    has_comma = ',' in raw_text
+    has_slash = '/' in raw_text
     if has_comma and has_slash:
         raise HTTPException(400, 'Use only / or ,')
 
     separator = ',' if has_comma else '/'
-    parts = [part.strip() for part in raw_name.split(separator)] if (has_comma or has_slash) else [raw_name.strip()]
+    parts = [part.strip() for part in raw_text.split(separator)] if (has_comma or has_slash) else [raw_text.strip()]
 
     if any(not part for part in parts):
         raise HTTPException(400, 'Empty part')
@@ -61,8 +63,8 @@ def _parse_quick_add(raw_name: str):
     return parts
 
 
-def _apply_quick_add(c, uid: int, raw_name: str):
-    parts = _parse_quick_add(raw_name)
+def _apply_quick_add(c, uid: int, raw_text: str):
+    parts = _parse_quick_add(raw_text)
 
     folder_name = clean_quick_add_name(parts[0], 'Folder name', 60)
     folder = _get_or_create_folder(c, uid, folder_name)
@@ -88,7 +90,7 @@ def _apply_quick_add(c, uid: int, raw_name: str):
     if exists:
         result.update({
             'kind': 'card',
-            'card': {'id': exists['id'], 'status': 'duplicate'},
+            'card': {'id': exists['id'], 'status': 'existing'},
         })
         return result
 
@@ -103,11 +105,16 @@ def _apply_quick_add(c, uid: int, raw_name: str):
     return result
 
 
-@router.post('/api/folders')
-def create_folder(name: str = Form(...), user=Depends(auth.current_user)):
+@router.post('/api/quick-add')
+def quick_add(
+    text: str = Form(''),
+    name: str = Form(''),
+    user=Depends(auth.current_user_or_token),
+):
     uid = user['id']
+    raw_text = text or name
     with db.conn() as c:
-        return _apply_quick_add(c, uid, name)
+        return _apply_quick_add(c, uid, raw_text)
 
 
 @router.put('/api/folders/{folder_id}')

@@ -28,14 +28,14 @@ function wasCreated(data) {
 }
 
 export function initQuickAdd({errText}) {
-  const form = $('#folder-add-form');
+  const form = $('#quick-add-form');
   if (!form) return;
 
   form.onsubmit = async event => {
     event.preventDefault();
-    const name = event.target.name.value.trim();
-    const msg = $('#fa-msg');
-    const response = await fetch('/api/folders', {method: 'POST', body: new URLSearchParams({name})});
+    const text = event.target.name.value.trim();
+    const msg = $('#quick-add-msg');
+    const response = await fetch('/api/quick-add', {method: 'POST', body: new URLSearchParams({text})});
     if (response.ok) {
       const data = await response.json();
       if (wasCreated(data)) {

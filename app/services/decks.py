@@ -1,21 +1,27 @@
 from fastapi import HTTPException
 
+from .validators import normalize_name_key
+
 NEW_STEPS = (1, 5, 10, 15, 20, 30)
 
 
 def check_deck_name(c, folder_id, name, skip_id=0):
-    if c.execute(
-        "SELECT 1 FROM decks WHERE folder_id=? AND lower(name)=lower(?) AND id!=?",
-        (folder_id, name, skip_id),
-    ).fetchone():
+    key = normalize_name_key(name)
+    rows = c.execute(
+        "SELECT id, name FROM decks WHERE folder_id=? AND id!=?",
+        (folder_id, skip_id),
+    ).fetchall()
+    if any(normalize_name_key(row['name']) == key for row in rows):
         raise HTTPException(400, "A deck with this name already exists in this folder")
 
 
 def check_folder_name(c, uid, name, skip_id=0):
-    if c.execute(
-        "SELECT 1 FROM folders WHERE user_id=? AND lower(name)=lower(?) AND id!=?",
-        (uid, name, skip_id),
-    ).fetchone():
+    key = normalize_name_key(name)
+    rows = c.execute(
+        "SELECT id, name FROM folders WHERE user_id=? AND id!=?",
+        (uid, skip_id),
+    ).fetchall()
+    if any(normalize_name_key(row['name']) == key for row in rows):
         raise HTTPException(400, "A folder with this name already exists")
 
 

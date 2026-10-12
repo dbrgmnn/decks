@@ -20,3 +20,7 @@ def clean_quick_add_name(value, label, limit):
     if bad:
         raise HTTPException(400, f"{label} cannot contain / or ,")
     return value
+
+
+def normalize_name_key(value):
+    return clean(value, 'Name', 300).casefold()

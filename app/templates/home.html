@@ -27,13 +27,13 @@
     <div><b>{{ stats.done }}</b><small>today</small></div>
     <div><b>{{ stats.total }}</b><small>total</small></div>
   </section>
-  <form id="folder-add-form" class="folder-add quick-add-main">
-    <label class="opt-label" for="folder-add-name">Quick add</label>
+  <form id="quick-add-form" class="quick-add quick-add-main">
+    <label class="opt-label" for="quick-add-name">Quick add</label>
     <div class="row">
-      <input id="folder-add-name" name="name" placeholder="folder/deck/front/back/note" maxlength="300" required autocomplete="off">
+      <input id="quick-add-name" name="name" placeholder="folder/deck/front/back/note" maxlength="300" required autocomplete="off">
       <button>Add</button>
     </div>
-    <small id="fa-msg"></small>
+    <small id="quick-add-msg"></small>
   </form>
   {% if folders %}
   <nav class="folders" aria-label="Folders">
