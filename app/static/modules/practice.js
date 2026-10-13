@@ -12,6 +12,8 @@ export function initPractice() {
   const counterTotal = $('#m');
   const ratingButtons = [...document.querySelectorAll('.rate button')];
   const learnButtons = [...document.querySelectorAll('.learn')];
+  const studyEnabledButton = $('#study-enabled');
+  const main = document.querySelector('main.wrap');
 
   let current = null;
   let deckId = null;
@@ -52,7 +54,6 @@ export function initPractice() {
     clearActiveRating();
   };
 
-  // Keep practice close lightweight: no full page reload.
   const closePractice = () => {
     clearExitTimer();
     current = null;
@@ -60,6 +61,7 @@ export function initPractice() {
     setRatingEnabled(false);
     resetCardTransform();
     practiceSheet.hidden = true;
+    document.dispatchEvent(new CustomEvent('dex:practice-closed'));
   };
 
   const getSwipeRating = (dx, dy) => (
@@ -68,19 +70,21 @@ export function initPractice() {
       : (dy > 0 ? 2 : 4)
   );
 
+  const updateCounter = left => {
+    total = Math.max(n, n + left);
+    counterCurrent.textContent = n;
+    counterTotal.textContent = total;
+  };
+
   const show = cardData => {
     clearExitTimer();
     current = cardData;
     shown = false;
     setRatingEnabled(false);
 
-    if (cardData) {
-      n += 1;
-      total = n + cardData.left - 1;
-    }
+    if (cardData) n += 1;
 
-    counterCurrent.textContent = n;
-    counterTotal.textContent = total;
+    updateCounter(cardData ? Math.max(0, Number(cardData.left || 0) - 1) : 0);
     front.textContent = cardData ? cardData.front : 'All done for today ✓';
     back.textContent = cardData ? cardData.back : '';
     note.textContent = cardData ? cardData.note : '';
@@ -103,7 +107,8 @@ export function initPractice() {
   };
 
   const next = async () => {
-    const response = await fetch('/api/next/' + deckId);
+    const path = deckId === 'active' ? '/api/next/active' : '/api/next/' + deckId;
+    const response = await fetch(path);
     show(await response.json());
   };
 
@@ -122,17 +127,32 @@ export function initPractice() {
     await next();
   };
 
+  const startSession = id => {
+    deckId = id;
+    n = 0;
+    total = 0;
+    clearExitTimer();
+    practiceSheet.hidden = false;
+    counterCurrent.textContent = '0';
+    counterTotal.textContent = id === 'active' && main
+      ? String(Number(main.dataset.studyDue || 0) + Number(main.dataset.studyNew || 0))
+      : '0';
+    next();
+  };
+
   learnButtons.forEach(button => {
     button.onclick = event => {
       event.stopPropagation();
-      deckId = button.dataset.id;
-      n = 0;
-      total = 0;
-      clearExitTimer();
-      practiceSheet.hidden = false;
-      next();
+      startSession(button.dataset.id);
     };
   });
+
+  if (studyEnabledButton) {
+    studyEnabledButton.onclick = () => {
+      if (studyEnabledButton.disabled) return;
+      startSession('active');
+    };
+  }
 
   closeButton.onclick = closePractice;
   ratingButtons.forEach(button => {

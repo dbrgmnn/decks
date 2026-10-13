@@ -49,7 +49,7 @@ initAccount({confirmDelete: dialogs.confirmDelete, errText});
 initQuickAdd({
   errText,
   onCreated: async () => {
-    location.reload();
+    document.dispatchEvent(new CustomEvent('dex:home-refresh'));
   },
 });
 
@@ -96,3 +96,95 @@ addEventListener('keydown', event => {
     practice.flip();
   }
 });
+
+
+(function(){
+  const study = document.getElementById('study-enabled');
+  if (!study) return;
+
+  const main = document.querySelector('main.wrap');
+  const meta = study.querySelector('.study-bar-meta');
+
+  const computeFromDecks = () => [...document.querySelectorAll('.deck[data-id]')].reduce((acc, deck) => {
+    if (deck.dataset.paused === '1') return acc;
+    acc.due += Number(deck.dataset.due || 0);
+    acc.fresh += Number(deck.dataset.new || 0);
+    return acc;
+  }, {due: 0, fresh: 0});
+
+  const updateStudyBar = () => {
+    let due = Number(main?.dataset.studyDue || 0);
+    let fresh = Number(main?.dataset.studyNew || 0);
+
+    if (!due && !fresh) {
+      const totals = computeFromDecks();
+      due = totals.due;
+      fresh = totals.fresh;
+    }
+
+    if (main) {
+      main.dataset.studyDue = String(due);
+      main.dataset.studyNew = String(fresh);
+    }
+
+    meta.textContent = due || fresh ? `${due} due · ${fresh} new` : 'No cards to study';
+    study.disabled = !(due || fresh);
+  };
+
+  updateStudyBar();
+  document.addEventListener('dex:decks-changed', updateStudyBar);
+
+  const refreshHomeStats = async ({allowStructuralReload = false} = {}) => {
+    try {
+      const response = await fetch(window.location.href, {headers: {'X-Requested-With': 'fetch'}});
+      if (!response.ok) return;
+      const html = await response.text();
+      const doc = new DOMParser().parseFromString(html, 'text/html');
+      const nextMain = doc.querySelector('main.wrap');
+      if (!nextMain || !main) return;
+
+      const currentDeckCount = document.querySelectorAll('.deck[data-id]').length;
+      const nextDeckCount = nextMain.querySelectorAll('.deck[data-id]').length;
+      const currentFolderCount = document.querySelectorAll('.fold[data-folder]').length;
+      const nextFolderCount = nextMain.querySelectorAll('.fold[data-folder]').length;
+      if (allowStructuralReload && (currentDeckCount !== nextDeckCount || currentFolderCount !== nextFolderCount)) {
+        location.reload();
+        return;
+      }
+
+      main.dataset.studyDue = nextMain.dataset.studyDue || '0';
+      main.dataset.studyNew = nextMain.dataset.studyNew || '0';
+
+      const nextDecks = [...nextMain.querySelectorAll('.deck[data-id]')];
+      nextDecks.forEach(nextDeck => {
+        const currentDeck = document.querySelector(`.deck[data-id="${nextDeck.dataset.id}"]`);
+        if (!currentDeck) return;
+        ['due', 'new', 'paused'].forEach(key => {
+          if (nextDeck.dataset[key] !== undefined) currentDeck.dataset[key] = nextDeck.dataset[key];
+        });
+        const nextMeta = nextDeck.querySelector('.meta small');
+        const currentMeta = currentDeck.querySelector('.meta small');
+        if (nextMeta && currentMeta) currentMeta.textContent = nextMeta.textContent;
+      });
+
+      const nextFolders = [...nextMain.querySelectorAll('.fold[data-folder]')];
+      nextFolders.forEach(nextFolder => {
+        const currentFolder = document.querySelector(`.fold[data-folder="${nextFolder.dataset.folder}"]`);
+        if (!currentFolder) return;
+        const nextSmall = nextFolder.querySelector('small');
+        const currentSmall = currentFolder.querySelector('small');
+        if (nextSmall && currentSmall) currentSmall.textContent = nextSmall.textContent;
+      });
+
+      updateStudyBar();
+    } catch (error) {
+      console.warn('Could not refresh home stats', error);
+    }
+  };
+
+  document.addEventListener('dex:practice-closed', () => refreshHomeStats());
+  document.addEventListener('dex:home-refresh', () => refreshHomeStats({allowStructuralReload: true}));
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) updateStudyBar();
+  });
+})();

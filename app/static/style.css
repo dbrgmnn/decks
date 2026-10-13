@@ -206,7 +206,7 @@ button,.stats div,.deck,.card,summary,#words li,.sheet .close::before,#close::be
 .quick-add input{flex:1;min-width:0;width:auto;margin-bottom:0}
 .quick-add button{flex:0 0 auto}
 .quick-add #quick-add-msg:empty,#account-sheet small:empty{margin:0}
-.quick-add-main{margin:0 0 1rem}
+.quick-add-main{margin:1rem 0 1rem}
 .quick-add-main .opt-label{margin:.25rem 0 .5rem}
 #account-sheet .panel .muted{margin:.25rem 0 1.3rem}
 #account-sheet #pw-form button{margin-top:.25rem}
@@ -247,3 +247,31 @@ button,.stats div,.deck,.card,summary,#words li,.sheet .close::before,#close::be
 select{appearance:none;-webkit-appearance:none;cursor:pointer;padding-right:3.35rem;background-color:var(--bg);background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='m4 7 6 6 6-6' fill='none' stroke='%23111' stroke-width='2' stroke-linecap='square' stroke-linejoin='miter'/%3E%3C/svg%3E");background-size:1rem 1rem;background-position:calc(100% - .65rem) center;background-repeat:no-repeat;box-shadow:inset 2px 2px 0 var(--lo),inset -2px -2px 0 var(--hi),3px 3px 0 var(--drop)}
 select::-ms-expand{display:none}
 [data-theme=dark] select{filter:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='m4 7 6 6 6-6' fill='none' stroke='%23f4f4f0' stroke-width='2' stroke-linecap='square' stroke-linejoin='miter'/%3E%3C/svg%3E")}
+
+
+/* Study bar */
+body{padding-bottom:6.5rem}
+.study-bar{
+  position:fixed;
+  left:50%;
+  bottom:calc(1rem + env(safe-area-inset-bottom));
+  transform:translateX(-50%);
+  z-index:6;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:.18rem;
+  width:min(calc(100vw - max(2rem,calc(env(safe-area-inset-left) + env(safe-area-inset-right) + 2rem))),calc(var(--content-max) - 2rem));
+  min-height:64px;
+  padding:.8rem 1rem;
+  background:var(--bg);
+  color:var(--fg);
+  border:1.5px solid var(--fg);
+  box-shadow:var(--bevel-raised);
+}
+.study-bar:disabled{opacity:.45;cursor:not-allowed;background:var(--bg);color:var(--fg);box-shadow:var(--bevel-pressed);transform:translateX(-50%)}
+.study-bar:active:not(:disabled){transform:translateX(-50%) translate(2px,2px)}
+.study-bar-title{font-weight:700;line-height:1}
+.study-bar-meta{font-size:.92rem;line-height:1.2;opacity:.8}
+main.wrap{padding-bottom:1rem}
