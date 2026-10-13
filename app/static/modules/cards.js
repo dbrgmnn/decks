@@ -150,6 +150,7 @@ export function initCards({confirmDelete, errText}) {
     addMsg.textContent = 'Saved ✓';
     addForm.reset();
     cardsByDeck.delete(String(curDeck.id));
+    document.dispatchEvent(new CustomEvent('dex:home-refresh'));
     addForm.front.focus();
 
     // Keep the list fresh if the current deck is already open.

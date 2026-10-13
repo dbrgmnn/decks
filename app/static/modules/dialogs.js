@@ -74,7 +74,10 @@ export function createDialogs({errText, loadWords, onDelete}) {
     if (kind === 'account') location.href = '/login';
     else if (kind === 'folder') location.href = '/';
     else if (kind === 'deck') location.reload();
-    else if (kind === 'card') await loadWords?.({force: true});
+    else if (kind === 'card') {
+      await loadWords?.({force: true});
+      document.dispatchEvent(new CustomEvent('dex:home-refresh'));
+    }
   };
 
   return {confirmDelete: openConfirm, closeConfirm};
