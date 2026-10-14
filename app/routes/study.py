@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Form, HTTPException
 
 from .. import auth, db, srs
-from ..services.decks import introduced_today
+from ..services.decks import introduced_counts, introduced_today
 from ..services.ownership import own_card, own_deck
 
 router = APIRouter()
@@ -21,17 +21,7 @@ def next_active_card(user=Depends(auth.current_user)):
         if not decks:
             return None
 
-        intro_rows = c.execute(
-            """SELECT c.deck_id, COUNT(DISTINCT r.card_id)
-            FROM reviews r
-            JOIN cards c ON c.id=r.card_id
-            JOIN decks d ON d.id=c.deck_id
-            WHERE d.user_id=? AND d.paused=0 AND r.ts>=? AND NOT EXISTS (
-              SELECT 1 FROM reviews p WHERE p.card_id=r.card_id AND p.ts<?)
-            GROUP BY c.deck_id""",
-            (uid, today, today),
-        ).fetchall()
-        introduced = {row[0]: row[1] for row in intro_rows}
+        introduced = introduced_counts(c, uid, today)
 
         due_candidates = c.execute(
             """SELECT id, deck_id, front, back, note
@@ -52,10 +42,14 @@ def next_active_card(user=Depends(auth.current_user)):
         ).fetchone()[0]
 
         actual_new_left = 0
+        eligible_new_decks = []
         for deck in decks:
             unseen = c.execute('SELECT COUNT(*) FROM cards WHERE deck_id=? AND state IS NULL', (deck['id'],)).fetchone()[0]
             quota_left = max(0, int(deck['new_per_day']) - int(introduced.get(deck['id'], 0)))
-            actual_new_left += min(unseen, quota_left)
+            can_new = min(unseen, quota_left)
+            actual_new_left += can_new
+            if can_new > 0:
+                eligible_new_decks.append(deck['id'])
 
         if due_candidates:
             return {
@@ -67,36 +61,28 @@ def next_active_card(user=Depends(auth.current_user)):
                 'left': due_left + actual_new_left,
             }
 
-        if actual_new_left <= 0:
+        if actual_new_left <= 0 or not eligible_new_decks:
             return None
 
-        new_candidates = c.execute(
-            """SELECT id, deck_id, front, back, note
+        placeholders = ','.join('?' * len(eligible_new_decks))
+        new_row = c.execute(
+            f"""SELECT id, front, back, note
             FROM cards
-            WHERE deck_id IN (SELECT id FROM decks WHERE user_id=? AND paused=0)
-              AND state IS NULL
+            WHERE deck_id IN ({placeholders}) AND state IS NULL
             ORDER BY RANDOM()
-            LIMIT 200""",
-            (uid,),
-        ).fetchall()
-
-        for row in new_candidates:
-            quota_left = 0
-            deck_id = row['deck_id']
-            for deck in decks:
-                if deck['id'] == deck_id:
-                    quota_left = max(0, int(deck['new_per_day']) - int(introduced.get(deck_id, 0)))
-                    break
-            if quota_left > 0:
-                return {
-                    'id': row['id'],
-                    'front': row['front'],
-                    'back': row['back'],
-                    'note': row['note'],
-                    'kind': 'new',
-                    'left': actual_new_left,
-                }
-        return None
+            LIMIT 1""",
+            eligible_new_decks,
+        ).fetchone()
+        if not new_row:
+            return None
+        return {
+            'id': new_row['id'],
+            'front': new_row['front'],
+            'back': new_row['back'],
+            'note': new_row['note'],
+            'kind': 'new',
+            'left': actual_new_left,
+        }
 
 
 @router.get('/api/next/{deck_id}')

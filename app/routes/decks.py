@@ -77,18 +77,30 @@ def deck_cards(deck_id: int, user=Depends(auth.current_user)):
 @router.post('/api/decks/order')
 async def order_decks(request: Request, user=Depends(auth.current_user)):
     form = await request.form()
-    ids = [int(x) for x in form.getlist('ids')]
+    try:
+        ids = [int(x) for x in form.getlist('ids')]
+    except (TypeError, ValueError):
+        raise HTTPException(400, 'Invalid deck order')
     uid = user['id']
     if not ids:
         return {'ok': True}
+    if len(ids) != len(set(ids)):
+        raise HTTPException(400, 'Invalid deck order')
     with db.conn() as c:
-        owned = {r[0] for r in c.execute('SELECT id FROM decks WHERE user_id=?', (uid,))}
-        if set(ids) - owned:
+        all_ids = [r[0] for r in c.execute(
+            'SELECT id FROM decks WHERE user_id=? ORDER BY pos, id',
+            (uid,),
+        ).fetchall()]
+        owned = set(all_ids)
+        subset = set(ids)
+        if subset - owned:
             raise HTTPException(400, 'Invalid deck order')
-        # Positions are rewritten in the exact order received from the client.
-        for temp_pos, deck_id in enumerate(ids, 1):
+        # Keep decks outside this view in place; only reshuffle the submitted subset.
+        it = iter(ids)
+        ordered = [next(it) if deck_id in subset else deck_id for deck_id in all_ids]
+        for temp_pos, deck_id in enumerate(ordered, 1):
             c.execute('UPDATE decks SET pos=? WHERE id=? AND user_id=?', (-temp_pos, deck_id, uid))
-        for pos, deck_id in enumerate(ids, 1):
+        for pos, deck_id in enumerate(ordered, 1):
             c.execute('UPDATE decks SET pos=? WHERE id=? AND user_id=?', (pos, deck_id, uid))
     return {'ok': True}
 

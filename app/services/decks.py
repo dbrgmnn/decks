@@ -25,6 +25,20 @@ def check_folder_name(c, uid, name, skip_id=0):
         raise HTTPException(400, "A folder with this name already exists")
 
 
+def introduced_counts(c, uid, since):
+    rows = c.execute(
+        """SELECT c.deck_id, COUNT(DISTINCT r.card_id)
+        FROM reviews r
+        JOIN cards c ON c.id=r.card_id
+        JOIN decks d ON d.id=c.deck_id
+        WHERE d.user_id=? AND r.ts>=? AND NOT EXISTS (
+          SELECT 1 FROM reviews p WHERE p.card_id=r.card_id AND p.ts<?)
+        GROUP BY c.deck_id""",
+        (uid, since, since),
+    ).fetchall()
+    return {row[0]: row[1] for row in rows}
+
+
 def introduced_today(c, deck_id, since):
     return c.execute(
         """SELECT COUNT(DISTINCT r.card_id)
@@ -32,7 +46,6 @@ def introduced_today(c, deck_id, since):
         JOIN cards c ON c.id = r.card_id
         WHERE c.deck_id=?
           AND r.ts>=?
-          AND NOT EXISTS (SELECT 1 FROM reviews p WHERE p.card_id=r.card_id AND p.ts<?)
-          AND NOT EXISTS (SELECT 1 FROM cards old WHERE old.id=r.card_id AND old.state IS NOT NULL AND old.due<?)""",
-        (deck_id, since, since, since),
+          AND NOT EXISTS (SELECT 1 FROM reviews p WHERE p.card_id=r.card_id AND p.ts<?)""",
+        (deck_id, since, since),
     ).fetchone()[0]

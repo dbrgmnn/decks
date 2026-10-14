@@ -23,6 +23,7 @@ export function initPractice() {
   let startX = null;
   let startY = null;
   let exitTimer = null;
+  let seq = 0;
 
   const clearActiveRating = () => {
     ratingButtons.forEach(button => button.classList.remove('active-swipe'));
@@ -55,6 +56,7 @@ export function initPractice() {
   };
 
   const closePractice = () => {
+    seq += 1;
     clearExitTimer();
     current = null;
     shown = false;
@@ -107,8 +109,11 @@ export function initPractice() {
   };
 
   const next = async () => {
+    const my = ++seq;
     const path = deckId === 'active' ? '/api/next/active' : '/api/next/' + deckId;
     const response = await fetch(path);
+    if (my !== seq) return;
+    if (!response.ok) return;
     show(await response.json());
   };
 
@@ -122,15 +127,29 @@ export function initPractice() {
 
   const rate = async rating => {
     if (!current || !shown) return;
+    const my = seq;
+    const cardId = current.id;
+    shown = false;
+    setRatingEnabled(false);
     clearActiveRating();
-    await fetch('/api/rate/' + current.id, {method: 'POST', body: new URLSearchParams({rating})});
+    const response = await fetch('/api/rate/' + cardId, {method: 'POST', body: new URLSearchParams({rating})});
+    if (my !== seq) return;
+    if (!response.ok) {
+      shown = true;
+      setRatingEnabled(true);
+      return;
+    }
     await next();
   };
 
   const startSession = id => {
+    seq += 1;
     deckId = id;
     n = 0;
     total = 0;
+    current = null;
+    shown = false;
+    setRatingEnabled(false);
     clearExitTimer();
     practiceSheet.hidden = false;
     counterCurrent.textContent = '0';
@@ -187,6 +206,7 @@ export function initPractice() {
   };
 
   card.onpointerup = event => {
+    if (startX == null) return;
     const dx = event.clientX - startX;
     const dy = event.clientY - startY;
     const distance = Math.hypot(dx, dy);

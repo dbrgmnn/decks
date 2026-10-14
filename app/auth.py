@@ -1,3 +1,5 @@
+import hashlib
+import hmac
 import os
 import re
 import secrets
@@ -72,16 +74,27 @@ def generate_api_token():
 
 
 def hash_api_token(token):
-    return _ph.hash(token)
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()
 
 
 def verify_api_token(hashed, token):
     if not hashed or len(token) > 256:
         return False
+    if hashed.startswith("$argon2"):
+        try:
+            return _ph.verify(hashed, token)
+        except (VerificationError, InvalidHashError):
+            return False
     try:
-        return _ph.verify(hashed, token)
-    except (VerificationError, InvalidHashError):
+        return hmac.compare_digest(hashed, hash_api_token(token))
+    except (TypeError, ValueError):
         return False
+
+
+def _user_dict(row):
+    if row is None:
+        return None
+    return {"id": row["id"], "email": row["email"], "name": row["name"], "tz": row["tz"]}
 
 
 def verify(hashed, pw):
@@ -129,7 +142,10 @@ def ip(request: Request):
 
 def current_user(request: Request):
     uid = request.session.get("uid")
-    row = db.conn().execute("SELECT id, email, name, tz FROM users WHERE id=?", (uid,)).fetchone() if uid else None
+    row = None
+    if uid:
+        with db.conn() as c:
+            row = _user_dict(c.execute("SELECT id, email, name, tz FROM users WHERE id=?", (uid,)).fetchone())
     if row:
         return row
     request.session.clear()
@@ -141,7 +157,8 @@ def current_user(request: Request):
 def current_user_or_token(request: Request):
     uid = request.session.get("uid")
     if uid:
-        row = db.conn().execute("SELECT id, email, name, tz FROM users WHERE id=?", (uid,)).fetchone()
+        with db.conn() as c:
+            row = _user_dict(c.execute("SELECT id, email, name, tz FROM users WHERE id=?", (uid,)).fetchone())
         if row:
             return row
         request.session.clear()
@@ -153,12 +170,23 @@ def current_user_or_token(request: Request):
     if not token:
         token = request.headers.get('X-API-Token', '').strip()
 
-    if token:
+    if token and len(token) <= 256:
+        digest = hash_api_token(token)
         with db.conn() as c:
-            rows = c.execute('SELECT id, email, name, tz, api_token_hash FROM users WHERE api_token_hash != ""').fetchall()
-        for row in rows:
-            if verify_api_token(row['api_token_hash'], token):
-                return row
+            row = c.execute(
+                'SELECT id, email, name, tz, api_token_hash FROM users WHERE api_token_hash=?',
+                (digest,),
+            ).fetchone()
+            if row:
+                return _user_dict(row)
+            legacy = c.execute(
+                'SELECT id, email, name, tz, api_token_hash FROM users WHERE api_token_hash LIKE "$argon2%"',
+            ).fetchall()
+            for candidate in legacy:
+                if not verify_api_token(candidate['api_token_hash'], token):
+                    continue
+                c.execute('UPDATE users SET api_token_hash=? WHERE id=?', (digest, candidate['id']))
+                return _user_dict(candidate)
 
     if request.url.path.startswith('/api/'):
         raise HTTPException(401, 'Please sign in')

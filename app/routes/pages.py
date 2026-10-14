@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import RedirectResponse
 from .. import auth, db, srs
+from ..services.decks import introduced_counts
 from ..web import tpl
 
 router = APIRouter()
@@ -24,11 +25,7 @@ def home(request: Request, folder: int = 0, user=Depends(auth.current_user)):
             WHERE d.user_id=?
             GROUP BY d.id
             ORDER BY d.pos, d.id""", (now, uid)).fetchall()
-        intro = dict(c.execute("""SELECT c.deck_id, COUNT(DISTINCT r.card_id) FROM reviews r
-            JOIN cards c ON c.id=r.card_id JOIN decks d ON d.id=c.deck_id
-            WHERE d.user_id=? AND r.ts>=? AND NOT EXISTS (
-              SELECT 1 FROM reviews p WHERE p.card_id=r.card_id AND p.ts<?)
-            GROUP BY c.deck_id""", (uid, today, today)))
+        intro = introduced_counts(c, uid, today)
         folder_rows = c.execute('SELECT id, name FROM folders WHERE user_id=? ORDER BY pos, id', (uid,)).fetchall()
 
     folder_names = {f['id']: f['name'] for f in folder_rows}

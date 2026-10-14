@@ -164,10 +164,7 @@ export function initDecks({confirmDelete, errText, getCurrentDeck, openDeckCards
     const body = new URLSearchParams();
     deckEls().forEach(deck => body.append('ids', deck.dataset.id));
     const response = await fetch('/api/decks/order', {method: 'POST', body});
-    if (!response.ok) {
-      alert('Could not save deck order.');
-      deckMsg.textContent = 'Saved ✓';
-    }
+    if (!response.ok) alert('Could not save deck order.');
   };
 
   const syncArrows = () => {
