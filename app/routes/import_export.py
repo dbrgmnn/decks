@@ -13,6 +13,9 @@ router = APIRouter()
 
 CSV_FIELDS = ['folder', 'deck', 'front', 'back', 'note']
 
+# A reasonable upper bound for a text CSV of flashcards.
+MAX_CSV_BYTES = 5 * 1024 * 1024
+
 
 @router.post('/api/export/cards.csv')
 def export_cards_csv(
@@ -59,7 +62,9 @@ def export_cards_csv(
 def import_cards_csv(file: UploadFile = File(...), user=Depends(auth.current_user)):
     if not file.filename or not file.filename.lower().endswith('.csv'):
         raise HTTPException(400, 'Upload a CSV file')
-    raw = file.file.read()
+    raw = file.file.read(MAX_CSV_BYTES + 1)
+    if len(raw) > MAX_CSV_BYTES:
+        raise HTTPException(413, 'CSV file is too large (max 5 MB)')
     try:
         text = raw.decode('utf-8-sig')
     except UnicodeDecodeError:
