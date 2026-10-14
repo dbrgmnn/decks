@@ -85,11 +85,25 @@ INDEXES = [
 ORDER = ["users", "folders", "decks", "cards", "reviews"]
 
 
+class _Connection:
+    def __init__(self, connection):
+        self._connection = connection
+
+    def __enter__(self):
+        return self._connection
+
+    def __exit__(self, exc_type, exc, tb):
+        try:
+            return self._connection.__exit__(exc_type, exc, tb)
+        finally:
+            self._connection.close()
+
+
 def conn():
     c = sqlite3.connect(DATA_DIR / "decks.db", timeout=10)
     c.row_factory = sqlite3.Row
     c.execute("PRAGMA foreign_keys=ON")
-    return c
+    return _Connection(c)
 
 
 def init():

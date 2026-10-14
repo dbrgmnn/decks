@@ -43,7 +43,7 @@ export function initDecks({confirmDelete, errText, getCurrentDeck, openDeckCards
     deck.dataset.newPerDay = String(payload.new_per_day);
     deck.dataset.paused = payload.paused;
     deck.dataset.folder = payload.folder_id || '';
-    const title = deck.querySelector('.title, .deck-name, [data-role="deck-name"]');
+    const title = deck.querySelector('h3');
     if (title) title.textContent = payload.name;
   };
 
@@ -164,7 +164,10 @@ export function initDecks({confirmDelete, errText, getCurrentDeck, openDeckCards
     const body = new URLSearchParams();
     deckEls().forEach(deck => body.append('ids', deck.dataset.id));
     const response = await fetch('/api/decks/order', {method: 'POST', body});
-    if (!response.ok) alert('Could not save deck order.');
+    if (!response.ok) {
+      if (deckMsg) deckMsg.textContent = 'Could not save deck order.';
+      return;
+    }
   };
 
   const syncArrows = () => {

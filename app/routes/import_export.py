@@ -78,9 +78,9 @@ def import_cards_csv(file: UploadFile = File(...), user=Depends(auth.current_use
     created_cards = 0
 
     with db.conn() as c:
-        folder_cache = {r['name'].lower(): r['id'] for r in c.execute('SELECT id, name FROM folders WHERE user_id=?', (uid,))}
+        folder_cache = {r['name'].casefold(): r['id'] for r in c.execute('SELECT id, name FROM folders WHERE user_id=?', (uid,))}
         deck_cache = {
-            (r['folder_id'], r['name'].lower()): r['id']
+            (r['folder_id'], r['name'].casefold()): r['id']
             for r in c.execute('SELECT id, folder_id, name FROM decks WHERE user_id=?', (uid,))
         }
 
@@ -91,7 +91,7 @@ def import_cards_csv(file: UploadFile = File(...), user=Depends(auth.current_use
             back = clean(row.get('back', ''), f'Back on line {i}', 200)
             note = clean(row.get('note', ''), f'Note on line {i}', 300, required=False)
 
-            folder_key = folder.lower()
+            folder_key = folder.casefold()
             folder_id = folder_cache.get(folder_key)
             if not folder_id:
                 check_folder_name(c, uid, folder)
@@ -103,7 +103,7 @@ def import_cards_csv(file: UploadFile = File(...), user=Depends(auth.current_use
                 folder_cache[folder_key] = folder_id
                 created_folders += 1
 
-            deck_key = (folder_id, deck.lower())
+            deck_key = (folder_id, deck.casefold())
             deck_id = deck_cache.get(deck_key)
             if not deck_id:
                 check_deck_name(c, folder_id, deck)
