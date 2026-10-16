@@ -1,4 +1,6 @@
-import {$, errText} from './modules/dom.js';
+import {$, errText, syncThemeColor} from './modules/dom.js';
+
+syncThemeColor();
 
 const form = $('#auth-form');
 const submitButton = $('#submit');

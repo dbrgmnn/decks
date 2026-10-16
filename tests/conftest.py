@@ -1,6 +1,8 @@
+import importlib
 import sqlite3
 
 import pytest
+from fastapi.testclient import TestClient
 
 import app.db as db
 
@@ -31,3 +33,14 @@ def user_id(conn):
     )
     conn.commit()
     return cur.lastrowid
+
+
+@pytest.fixture
+def client(tmp_path, monkeypatch):
+    """A TestClient backed by a throw-away SQLite database."""
+    monkeypatch.setattr(db, "DATA_DIR", tmp_path)
+    import app.main as main
+
+    importlib.reload(main)
+    with TestClient(main.app) as c:
+        yield c

@@ -1,0 +1,21 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Minimal flashcards app with folders, decks and FSRS-based study.">
+<title>decks</title>
+<script>try{document.documentElement.dataset.theme=localStorage.theme||"light"}catch{document.documentElement.dataset.theme="light"}</script>
+<link rel="manifest" href="{{ asset('icons/site.webmanifest') }}">
+<link rel="icon" href="{{ asset('icons/favicon.ico') }}" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="{{ asset('icons/favicon-32x32.png') }}">
+<link rel="icon" type="image/png" sizes="16x16" href="{{ asset('icons/favicon-16x16.png') }}">
+<link rel="apple-touch-icon" sizes="180x180" href="{{ asset('icons/apple-touch-icon.png') }}">
+<meta name="theme-color" content="#f4f4f0">
+<meta name="color-scheme" content="light dark">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="decks">
+<meta name="format-detection" content="telephone=no">
+{% for splash in splashes %}
+<link rel="apple-touch-startup-image" href="{{ asset(splash.href) }}" media="{{ splash.media }}">
+{% endfor %}
+<link rel="stylesheet" href="{{ asset('style.css') }}">

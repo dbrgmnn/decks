@@ -1,4 +1,4 @@
-import {$, root} from './dom.js';
+import {$, root, syncThemeColor} from './dom.js';
 
 export function initTheme() {
   const button = $('#theme');
@@ -11,6 +11,7 @@ export function initTheme() {
     button.setAttribute('aria-pressed', String(dark));
     button.setAttribute('aria-label', dark ? 'Switch to light theme' : 'Switch to dark theme');
     button.textContent = dark ? '◑' : '◐';
+    syncThemeColor();
   };
 
   const saveTheme = theme => {
