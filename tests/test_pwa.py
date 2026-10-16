@@ -98,3 +98,42 @@ def test_app_bundle_loads_keyboard_module(client):
     module = client.get("/static/modules/keyboard.js")
     assert module.status_code == 200
     assert "typing" in module.text
+
+
+def test_service_worker_is_served_from_root(client):
+    response = client.get("/sw.js")
+
+    assert response.status_code == 200
+    assert "javascript" in response.headers["content-type"]
+    assert "addEventListener" in response.text
+
+
+def test_service_worker_only_caches_static_assets(client):
+    source = client.get("/sw.js").text
+
+    # Cache Storage is used for /static/* only; navigations just fall back to
+    # the offline page and API answers are never touched.
+    assert "url.pathname.startsWith('/static/')" in source
+    assert "request.mode === 'navigate'" in source
+    assert "cache.put" in source
+    assert "/api" not in source
+
+
+def test_offline_page_and_stylesheet_are_shipped(client):
+    page = client.get("/static/offline.html")
+    assert page.status_code == 200
+    assert "offline" in page.text
+    assert client.get("/static/offline.css").status_code == 200
+
+    source = client.get("/sw.js").text
+    assert "'/static/offline.html'" in source
+    assert "'/static/offline.css'" in source
+
+
+def test_both_pages_register_the_service_worker(client):
+    assert "./modules/pwa.js" in client.get("/static/app.js").text
+    assert "./modules/pwa.js" in client.get("/static/login.js").text
+
+    module = client.get("/static/modules/pwa.js")
+    assert module.status_code == 200
+    assert "isSecureContext" in module.text

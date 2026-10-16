@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, Request
-from fastapi.responses import RedirectResponse
+from fastapi.responses import FileResponse, RedirectResponse
 from .. import auth, db, srs
 from ..services.decks import introduced_counts
-from ..web import tpl
+from ..web import BASE, tpl
 
 router = APIRouter()
 
@@ -11,6 +11,11 @@ def login_page(request: Request):
     if request.session.get('uid'):
         return RedirectResponse('/', 303)
     return tpl.TemplateResponse(request, 'login.html', {})
+
+@router.get('/sw.js', include_in_schema=False)
+def service_worker():
+    # Served from the site root so the worker scope covers the whole app.
+    return FileResponse(BASE / 'static' / 'sw.js', media_type='application/javascript')
 
 @router.get('/')
 def home(request: Request, folder: int = 0, user=Depends(auth.current_user)):

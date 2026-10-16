@@ -1,6 +1,8 @@
 import {$, errText, syncThemeColor} from './modules/dom.js';
+import {initServiceWorker} from './modules/pwa.js';
 
 syncThemeColor();
+initServiceWorker();
 
 const form = $('#auth-form');
 const submitButton = $('#submit');
