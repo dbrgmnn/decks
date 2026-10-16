@@ -4,7 +4,7 @@
 
 /* Base */
 *{box-sizing:border-box}
-html{-webkit-text-size-adjust:100%}
+html{-webkit-text-size-adjust:100%;overscroll-behavior:none}
 body{margin:0;background:var(--bg);color:var(--fg);font:clamp(1rem,.9rem + .5vw,1.15rem)/1.4 Georgia,"Noto Serif",serif}
 [hidden]{display:none!important}
 small{opacity:.7}
@@ -23,7 +23,7 @@ button,input,select,textarea,summary{font:inherit;color:inherit;background:trans
 button{transition:background-color .12s linear,color .12s linear,transform .12s linear,box-shadow .12s linear}
 button:active:not(:disabled),#theme:active,.rate button.active-swipe,.data-actions button.on,.data-actions button[aria-pressed="true"]{background:var(--fg);color:var(--bg);box-shadow:var(--bevel-pressed);transform:translate(2px,2px)}
 button:disabled{cursor:not-allowed}
-button,summary,.deck{-webkit-tap-highlight-color:transparent}
+button,summary,a,.deck,.fold,#words li{-webkit-tap-highlight-color:transparent}
 #theme,.sheet .close,#close,.edit,.plus,.star,#folder-edit,.arrow,.folder-arrow,.delete-card{width:44px;height:44px;min-height:44px;padding:0;display:grid;place-items:center}
 input,select,textarea{cursor:text;width:100%;margin-bottom:.5rem;box-shadow:var(--bevel-pressed)}
 textarea{display:block;box-sizing:border-box;min-height:5.5rem;line-height:1.35;resize:vertical}
@@ -218,6 +218,7 @@ button,.stats div,.deck,.card,summary,#words li,.sheet .close::before,#close::be
 .panel-block small{display:block;min-height:1.2rem}
 
 /* Touch safety */
+a,button,summary,input,select,textarea{touch-action:manipulation}
 .deck[data-id],.deck[data-id] *,.fold,.fold *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 .deck[data-id],.fold{touch-action:manipulation}
 
@@ -274,4 +275,7 @@ body{padding-bottom:6.5rem}
 .study-bar:active:not(:disabled){transform:translateX(-50%) translate(2px,2px)}
 .study-bar-title{font-weight:700;line-height:1}
 .study-bar-meta{font-size:.92rem;line-height:1.2;opacity:.8}
+/* While the on-screen keyboard is up the visual viewport shrinks, so a fixed
+   bottom bar would float mid-screen; hide it until the field loses focus. */
+html.typing .study-bar{display:none}
 main.wrap{padding-bottom:1rem}

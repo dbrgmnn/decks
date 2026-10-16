@@ -82,3 +82,19 @@ def test_splash_media_covers_modern_iphones(client):
     assert "device-width: 390px" in html  # iPhone 12/13/14
     assert "device-width: 393px" in html  # iPhone 15/16
     assert "device-width: 430px" in html  # iPhone 15/16 Plus
+
+
+def test_stylesheet_tames_ios_scroll_and_taps(client):
+    css = client.get("/static/style.css").text
+
+    assert "overscroll-behavior:none" in css
+    assert "touch-action:manipulation" in css
+    assert "html.typing .study-bar{display:none}" in css
+
+
+def test_app_bundle_loads_keyboard_module(client):
+    assert "./modules/keyboard.js" in client.get("/static/app.js").text
+
+    module = client.get("/static/modules/keyboard.js")
+    assert module.status_code == 200
+    assert "typing" in module.text
