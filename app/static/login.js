@@ -1,8 +1,10 @@
 import {$, errText, syncThemeColor} from './modules/dom.js';
 import {initServiceWorker} from './modules/pwa.js';
+import {initTouchFeedback} from './modules/touch.js';
 
 syncThemeColor();
 initServiceWorker();
+initTouchFeedback();
 
 const form = $('#auth-form');
 const submitButton = $('#submit');

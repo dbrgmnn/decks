@@ -1,4 +1,5 @@
 import {$} from './dom.js';
+import {haptic} from './haptics.js';
 
 const arrowSvg = axis => {
   const paths = {
@@ -212,7 +213,7 @@ export function initDecks({confirmDelete, errText, getCurrentDeck, openDeckCards
     }
 
     syncArrows();
-    navigator.vibrate?.(25);
+    haptic('medium');
   };
 
   const exitMove = () => {

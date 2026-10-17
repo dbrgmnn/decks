@@ -4,7 +4,7 @@
 
 /* Base */
 *{box-sizing:border-box}
-html{-webkit-text-size-adjust:100%;overscroll-behavior:none}
+html{-webkit-text-size-adjust:100%;overscroll-behavior:none;background:var(--bg);touch-action:manipulation}
 body{margin:0;background:var(--bg);color:var(--fg);font:clamp(1rem,.9rem + .5vw,1.15rem)/1.4 Georgia,"Noto Serif",serif}
 [hidden]{display:none!important}
 small{opacity:.7}
@@ -20,7 +20,10 @@ small{opacity:.7}
 
 /* Shared controls */
 button,input,select,textarea,summary{font:inherit;color:inherit;background:transparent;border:1.5px solid var(--fg);border-radius:0;padding:.6rem .8rem;min-height:44px;cursor:pointer}
-button{transition:background-color .12s linear,color .12s linear,transform .12s linear,box-shadow .12s linear}
+/* Only colour fades; the bevel and the 2px shove stay instant so a quick tap
+   still visibly presses the button on iOS. */
+button{transition:background-color .12s linear,color .12s linear}
+button,summary,a,[role=button]{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 button:active:not(:disabled),#theme:active,.rate button.active-swipe,.data-actions button.on,.data-actions button[aria-pressed="true"]{background:var(--fg);color:var(--bg);box-shadow:var(--bevel-pressed);transform:translate(2px,2px)}
 button:disabled{cursor:not-allowed}
 button,summary,a,.deck,.fold,#words li{-webkit-tap-highlight-color:transparent}
@@ -221,6 +224,12 @@ button,.stats div,.deck,.card,summary,#words li,.sheet .close::before,#close::be
 a,button,summary,input,select,textarea{touch-action:manipulation}
 .deck[data-id],.deck[data-id] *,.fold,.fold *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 .deck[data-id],.fold{touch-action:manipulation}
+#words li:active{box-shadow:var(--bevel-pressed);transform:translate(2px,2px)}
+
+/* Haptics: iOS needs a live <input type=checkbox switch> to tick the Taptic
+   Engine. Keep it rendered but out of the way so it never blocks taps. */
+.haptic-probe{position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;overflow:hidden}
+.haptic-probe input{all:initial;appearance:auto}
 
 /* Effects */
 .flash{position:fixed;inset:0;z-index:99;pointer-events:none;animation:eink .45s steps(1,end)}

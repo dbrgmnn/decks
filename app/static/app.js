@@ -3,6 +3,8 @@ import {initSessionGuard} from './modules/session.js';
 import {initTheme} from './modules/theme.js';
 import {initKeyboardHints} from './modules/keyboard.js';
 import {initServiceWorker} from './modules/pwa.js';
+import {initHaptics} from './modules/haptics.js';
+import {initTouchFeedback} from './modules/touch.js';
 import {createDialogs} from './modules/dialogs.js';
 import {initPractice} from './modules/practice.js';
 import {initCards} from './modules/cards.js';
@@ -15,6 +17,8 @@ initSessionGuard();
 initTheme();
 initKeyboardHints();
 initServiceWorker();
+initHaptics();
+initTouchFeedback();
 
 const accountSheet = $('#account-sheet');
 const confirmSheet = $('#confirm');

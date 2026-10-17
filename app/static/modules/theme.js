@@ -1,4 +1,5 @@
 import {$, root, syncThemeColor} from './dom.js';
+import {haptic} from './haptics.js';
 
 export function initTheme() {
   const button = $('#theme');
@@ -40,5 +41,6 @@ export function initTheme() {
     syncThemeButton();
     button.blur();
     showFlash();
+    haptic('light');
   };
 }

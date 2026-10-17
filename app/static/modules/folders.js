@@ -1,4 +1,5 @@
 import {$} from './dom.js';
+import {haptic} from './haptics.js';
 
 const arrowSvg = axis => {
   const paths = {
@@ -148,7 +149,7 @@ export function initFolders({confirmDelete, errText}) {
       folder.append(button);
     }
     syncFolderArrows();
-    navigator.vibrate?.(25);
+    haptic('medium');
   };
 
   const exitFolderMove = () => {

@@ -1,4 +1,5 @@
 import {$} from './dom.js';
+import {haptic} from './haptics.js';
 
 export function initPractice() {
   const practiceSheet = $('#practice');
@@ -24,15 +25,21 @@ export function initPractice() {
   let startY = null;
   let exitTimer = null;
   let seq = 0;
+  let lastPreview = null;
 
   const clearActiveRating = () => {
     ratingButtons.forEach(button => button.classList.remove('active-swipe'));
+    lastPreview = null;
   };
 
   const previewRating = rating => {
     ratingButtons.forEach(button => {
       button.classList.toggle('active-swipe', shown && Number(button.dataset.r) === rating);
     });
+    if (rating !== lastPreview) {
+      lastPreview = rating;
+      haptic('light');
+    }
   };
 
   const setRatingEnabled = enabled => {
@@ -102,6 +109,7 @@ export function initPractice() {
       badge.textContent = '';
       badge.classList.remove('is-new', 'is-review');
       exitTimer = setTimeout(closePractice, 1000);
+      haptic('success');
     }
 
     back.hidden = true;
@@ -123,6 +131,7 @@ export function initPractice() {
     setRatingEnabled(true);
     back.hidden = false;
     note.hidden = !current.note;
+    haptic('light');
   };
 
   const rate = async rating => {
@@ -132,6 +141,7 @@ export function initPractice() {
     shown = false;
     setRatingEnabled(false);
     clearActiveRating();
+    haptic('medium');
     const response = await fetch('/api/rate/' + cardId, {method: 'POST', body: new URLSearchParams({rating})});
     if (my !== seq) return;
     if (!response.ok) {
@@ -156,6 +166,7 @@ export function initPractice() {
     counterTotal.textContent = id === 'active' && main
       ? String(Number(main.dataset.studyDue || 0) + Number(main.dataset.studyNew || 0))
       : '0';
+    haptic('medium');
     next();
   };
 

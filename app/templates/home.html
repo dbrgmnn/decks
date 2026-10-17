@@ -11,7 +11,7 @@
 <main class="wrap" data-study-due="{{ stats.due }}" data-study-new="{{ stats.new }}">
   <form id="quick-add-form" class="quick-add quick-add-main">
     <div class="row">
-      <input id="quick-add-name" name="name" placeholder="folder/deck/front/back/note" maxlength="300" required autocomplete="off">
+      <input id="quick-add-name" name="name" placeholder="folder/deck/front/back/note" maxlength="300" required autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="done">
       <button type="submit">Quick add</button>
     </div>
     <small id="quick-add-msg"></small>
@@ -71,7 +71,7 @@
   <button class="close" aria-label="Close">✕</button>
   <div class="panel">
     <h2 id="list-title"></h2>
-    <input id="search" type="search" placeholder="Search" maxlength="100" autocomplete="off">
+    <input id="search" type="search" placeholder="Search" maxlength="100" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="search">
     <ul id="words"></ul>
   </div>
 </div>
@@ -80,9 +80,9 @@
   <button class="close" aria-label="Close">✕</button>
   <form class="panel" id="add-form">
     <h2 id="add-title"></h2>
-    <input name="front" placeholder="Front" maxlength="200" required autocomplete="off">
-    <input name="back" placeholder="Back" maxlength="200" required autocomplete="off">
-    <textarea name="note" placeholder="Note (optional)" maxlength="300" rows="2"></textarea>
+    <input name="front" placeholder="Front" maxlength="200" required autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="next">
+    <input name="back" placeholder="Back" maxlength="200" required autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="next">
+    <textarea name="note" placeholder="Note (optional)" maxlength="300" rows="2" enterkeyhint="done"></textarea>
     <button type="submit" id="add-btn">Save</button>
     <small id="add-msg"></small>
   </form>
@@ -159,6 +159,8 @@
         <small id="import-csv-msg"></small>
       </form>
     </div>
+    <h3 class="section">Feedback</h3>
+    <button type="button" id="haptics-toggle" class="toggle" aria-pressed="true">Vibration</button>
     <h3 class="section">Time zone</h3>
     <select id="tz" autocomplete="off">{% for z, label in timezones %}<option value="{{ z }}"{% if z == user.tz %} selected{% endif %}>{{ label }}</option>{% endfor %}</select>
     <small id="tz-msg"></small>
