@@ -127,3 +127,44 @@ def test_need_folder_and_own_folder(conn, user_id):
     assert own_folder(conn, user_id, folder_id) == folder_id
     with pytest.raises(Exception):
         own_folder(conn, 9999, folder_id)
+
+
+def _signup(client, email="folders@example.com"):
+    response = client.post(
+        "/api/signup",
+        data={"email": email, "password": "GoodPass123", "password2": "GoodPass123", "tz": "UTC"},
+    )
+    assert response.status_code == 200, response.text
+
+
+def _make_folder(client, name):
+    response = client.post("/api/quick-add", data={"text": name})
+    assert response.status_code == 200, response.text
+    return response.json()["folder"]["id"]
+
+
+def test_folder_order_rejects_non_integer_ids(client):
+    _signup(client)
+    assert client.post("/api/folders/order", data={"ids": "abc"}).status_code == 400
+
+
+def test_folder_order_rejects_duplicates(client):
+    _signup(client)
+    folder_id = _make_folder(client, "Folder")
+    assert client.post("/api/folders/order", data={"ids": [folder_id, folder_id]}).status_code == 400
+
+
+def test_folder_order_rejects_unknown_folder(client):
+    _signup(client)
+    assert client.post("/api/folders/order", data={"ids": 9999}).status_code == 400
+
+
+def test_folder_order_applies(client):
+    _signup(client)
+    first = _make_folder(client, "First")
+    second = _make_folder(client, "Second")
+
+    assert client.post("/api/folders/order", data={"ids": [second, first]}).status_code == 200
+
+    html = client.get("/").text
+    assert html.index(f'data-folder="{second}"') < html.index(f'data-folder="{first}"')

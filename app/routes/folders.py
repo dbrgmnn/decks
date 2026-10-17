@@ -140,10 +140,15 @@ def delete_folder(folder_id: int, user=Depends(auth.current_user)):
 @router.post('/api/folders/order')
 async def order_folders(request: Request, user=Depends(auth.current_user)):
     form = await request.form()
-    ids = [int(x) for x in form.getlist('ids')]
+    try:
+        ids = [int(x) for x in form.getlist('ids')]
+    except (TypeError, ValueError):
+        raise HTTPException(400, 'Invalid folder order')
     uid = user['id']
     if not ids:
         return {'ok': True}
+    if len(ids) != len(set(ids)):
+        raise HTTPException(400, 'Invalid folder order')
     with db.conn() as c:
         owned = {r[0] for r in c.execute('SELECT id FROM folders WHERE user_id=?', (uid,))}
         if set(ids) - owned:
