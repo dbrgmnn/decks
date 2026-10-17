@@ -64,7 +64,6 @@ button,.stats div,.deck,.card,summary,#words li,.sheet .close::before,#close::be
 .deck[data-id]{position:relative;cursor:pointer;-webkit-touch-callout:none;user-select:none}
 .deck h3{margin:0 0 .25rem;padding:0 3.4rem 0 0;min-height:44px;display:block;line-height:44px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .deck p{margin:0 0 .75rem}
-.deck.moving h3{text-align:center}
 .meta{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 .meta small{display:block;margin-top:.1rem;font-size:.82rem;overflow:hidden;text-overflow:ellipsis}
 .deck.paused h3,.deck.paused .meta{opacity:.45}
@@ -126,7 +125,6 @@ button,.stats div,.deck,.card,summary,#words li,.sheet .close::before,#close::be
 .count b{font-size:2.4rem;line-height:1}
 .count span:last-child{opacity:.7}
 .rate{display:grid;grid-template-columns:repeat(4,1fr);gap:.5rem;width:100%;max-width:var(--form-max)}
-.rate button:disabled{opacity:.35}
 .rate button.active-swipe:disabled{opacity:1;background:var(--fg);color:var(--bg);transform:translate(2px,2px)}
 #front,#back,#note{overflow-wrap:anywhere;word-break:break-word;hyphens:auto}
 #front{font-weight:700;opacity:1;line-height:1.25}

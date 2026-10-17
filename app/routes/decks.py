@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from .. import auth, db
 from ..services.decks import check_deck_name
 from ..services.ownership import need_folder, own_deck
-from ..services.validators import clean, clean_quick_add_name
+from ..services.validators import clean_quick_add_name
 
 router = APIRouter()
 
