@@ -47,7 +47,6 @@ def home(request: Request, folder: int = 0, user=Depends(auth.current_user)):
         'new_total': int(r['new'] or 0),
         'new': max(0, min(int(r['new'] or 0), int(r['new_per_day']) - int(intro.get(r['id'], 0)))),
         'due': int(r['due'] or 0),
-        'introduced': int(intro.get(r['id'], 0)),
         'total': int(r['total'] or 0),
     } for r in rows]
 
@@ -80,8 +79,6 @@ def home(request: Request, folder: int = 0, user=Depends(auth.current_user)):
     stats = {
         'due': sum(x['due'] for x in items if not x['paused']),
         'new': sum(x['new'] for x in items if not x['paused']),
-        'done': sum(x['introduced'] for x in items),
-        'total': sum(x['total'] for x in items),
     }
     return tpl.TemplateResponse(request, 'home.html', {
         'folders': folders,
