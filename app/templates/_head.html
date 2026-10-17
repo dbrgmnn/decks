@@ -18,4 +18,5 @@
 {% for splash in splashes %}
 <link rel="apple-touch-startup-image" href="{{ asset(splash.href) }}" media="{{ splash.media }}">
 {% endfor %}
+<link rel="stylesheet" href="{{ asset('tokens.css') }}">
 <link rel="stylesheet" href="{{ asset('style.css') }}">

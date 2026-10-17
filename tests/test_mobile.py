@@ -39,10 +39,14 @@ def test_account_sheet_has_no_vibration_toggle(client):
 def test_stylesheet_presses_buttons_instantly(client):
     css = client.get("/static/style.css").text
 
-    # The bevel/transform swap must not be animated, or a quick tap looks dead.
-    assert "button{transition:background-color .12s linear,color .12s linear}" in css
-    assert "transform .12s linear" not in css
-    assert "box-shadow .12s linear" not in css
+    # The bevel/transform swap must not be animated, or a quick tap looks dead:
+    # a button may only fade background-color and color.
+    rule = re.search(r"button\{transition:([^}]*)\}", css)
+    assert rule, "buttons no longer declare a transition"
+    animated = rule.group(1)
+    assert "background-color" in animated and "color" in animated
+    assert "transform" not in animated
+    assert "box-shadow" not in animated
 
 
 def test_stylesheet_blocks_white_flash_and_text_selection(client):

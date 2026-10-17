@@ -1,0 +1,107 @@
+/* ============================================================================
+   decks - design tokens
+   ----------------------------------------------------------------------------
+   The single source of truth for the whole look. Loaded before style.css (app)
+   and before offline.css (offline page), so every surface shares one palette,
+   one bevel grammar and one motion rhythm.
+
+   Two layers, never mixed:
+     INK    --bg / --fg .... content: paper, text, lists, charts. Flat.
+     CHROME --bevel-* ...... controls: bevels, press, volume.
+
+   Rule of thumb: box-shadow for chrome is authored ONLY in the --bevel-*
+   tokens below. Everything else composes them. Change a value here and the
+   entire app follows.
+   ============================================================================ */
+
+:root {
+  /* --- Palette (ink layer) ------------------------------------------------ */
+  --bg: #f4f4f0;                  /* paper */
+  --fg: #111;                     /* ink */
+
+  /* --- Bevel palette (chrome layer) --------------------------------------- */
+  --hi: #fff;                     /* bevel highlight (light comes from top-left) */
+  --lo: #9a9a94;                  /* bevel shade */
+  --drop: rgba(0, 0, 0, .28);     /* cast shadow under raised chrome */
+
+  /* --- Danger accent ------------------------------------------------------ */
+  --danger: #9b2020;              /* border + text */
+  --danger-bg: #9b2020;           /* pressed fill */
+  --danger-fg: #fff;              /* pressed text */
+
+  /* --- Bevel geometry -----------------------------------------------------
+     Every bevel is built from these five numbers, so elevation can never
+     drift again. */
+  --edge: 2px;                    /* inner bevel thickness */
+  --hair: 1.5px;                  /* border between surfaces */
+  --shove: 2px;                   /* the press offset */
+  --drop-1: 3px;                  /* E1 - resting controls */
+  --drop-2: 4px;                  /* E2 - raised panels (card, dialog) */
+  --drop-3: 6px;                  /* E3 - lifted / dragging */
+
+  /* --- Bevels (the only authored chrome shadows) --------------------------
+     raised  - controls at rest
+     panel   - floating ink surfaces (practice card, dialog)
+     float   - an element picked up for reordering
+     pressed - a control pushed in; also sunken fields and wells */
+  --bevel-raised:
+    inset var(--edge) var(--edge) 0 var(--hi),
+    inset calc(-1 * var(--edge)) calc(-1 * var(--edge)) 0 var(--lo),
+    var(--drop-1) var(--drop-1) 0 var(--drop);
+  --bevel-panel:
+    inset var(--edge) var(--edge) 0 var(--hi),
+    inset calc(-1 * var(--edge)) calc(-1 * var(--edge)) 0 var(--lo),
+    var(--drop-2) var(--drop-2) 0 var(--drop);
+  --bevel-float:
+    inset var(--edge) var(--edge) 0 var(--hi),
+    inset calc(-1 * var(--edge)) calc(-1 * var(--edge)) 0 var(--lo),
+    var(--drop-3) var(--drop-3) 0 var(--drop);
+  --bevel-pressed:
+    inset var(--edge) var(--edge) 0 var(--lo),
+    inset calc(-1 * var(--edge)) calc(-1 * var(--edge)) 0 var(--hi);
+
+  /* --- Typography ---------------------------------------------------------
+     One serif face throughout: it reads like print on e-ink paper. */
+  --font: Georgia, "Noto Serif", serif;
+
+  --text-2xs: .78rem;
+  --text-xs: .75rem;
+  --text-sm: .82rem;
+  --text-md: .9rem;
+  --text-base: 1rem;
+  --text-lg: 1.3rem;
+  --text-xl: 1.5rem;
+  --text-2xl: 2.4rem;
+  --text-body: clamp(1rem, .9rem + .5vw, 1.15rem);
+  --text-card: clamp(1.2rem, .95rem + 1.25vw, 1.75rem);
+  --text-note: clamp(.95rem, .88rem + .35vw, 1.08rem);
+
+  /* --- Motion -------------------------------------------------------------
+     E-ink is discrete: only colour glides, everything else snaps or steps. */
+  --dur: .12s;                    /* colour fade on press */
+  --dur-reorder: .18s;            /* reorder nudge */
+  --ease-steps: steps(6, end);
+
+  /* --- Focus -------------------------------------------------------------- */
+  --focus: 2px solid var(--fg);
+
+  /* --- Layout ------------------------------------------------------------- */
+  --top-gap: calc(1.25rem + env(safe-area-inset-top));
+  --content-max: 960px;
+  --panel-max: 720px;
+  --form-max: 640px;
+
+  color-scheme: light;
+}
+
+[data-theme=dark] {
+  --bg: #111;
+  --fg: #f4f4f0;
+  --hi: #6e6e6a;
+  --lo: #000;
+  --drop: rgba(244, 244, 240, .22);
+  --danger: #ff9b9b;
+  --danger-bg: #9b2020;
+  --danger-fg: #fff;
+  color-scheme: dark;
+}

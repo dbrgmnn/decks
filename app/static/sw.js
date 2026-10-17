@@ -5,10 +5,10 @@
 //   - serves /static/* network-first with a cache fallback, so the UI keeps its
 //     look on a flaky connection, and
 //   - answers navigation requests that fail offline with a small offline page.
-const VERSION = 'decks-v3';
+const VERSION = 'decks-v4';
 const STATIC_CACHE = `${VERSION}-static`;
 const OFFLINE_URL = '/static/offline.html';
-const PRECACHE = [OFFLINE_URL, '/static/offline.css'];
+const PRECACHE = ['/static/tokens.css', OFFLINE_URL, '/static/offline.css'];
 
 self.addEventListener('install', event => {
   event.waitUntil(
