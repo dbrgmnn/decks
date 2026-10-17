@@ -1,8 +1,8 @@
-fastapi
-uvicorn[standard]
-jinja2
-fsrs
-python-multipart
-argon2-cffi
-itsdangerous
-tzdata
+fastapi==0.143.0
+uvicorn[standard]==0.54.0
+jinja2==3.1.6
+fsrs==6.3.2
+python-multipart==0.0.32
+argon2-cffi==25.1.0
+itsdangerous==2.2.0
+tzdata==2026.5
