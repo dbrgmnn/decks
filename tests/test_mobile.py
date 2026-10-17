@@ -92,3 +92,17 @@ def test_deck_study_button_greys_out_when_nothing_to_study(client):
 
     assert "disabled" in learn_button_attrs(html, empty["deck"]["id"])
     assert "disabled" not in learn_button_attrs(html, full["deck"]["id"])
+
+
+def test_finished_session_shows_a_summary(client):
+    signup(client, email="summary@example.com")
+
+    assert 'id="summary"' in client.get("/").text
+
+    source = client.get("/static/modules/practice.js").text
+    assert "renderSummary" in source
+    assert "formatDuration" in source
+
+    css = client.get("/static/style.css").text
+    assert ".summary-grid" in css
+    assert ".summary-bars" in css

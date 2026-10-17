@@ -1,4 +1,4 @@
-import {$} from './dom.js';
+import {$, el} from './dom.js';
 
 export function initPractice() {
   const practiceSheet = $('#practice');
@@ -7,6 +7,7 @@ export function initPractice() {
   const front = $('#front');
   const back = $('#back');
   const note = $('#note');
+  const summary = $('#summary');
   const badge = $('#card-kind');
   const counterCurrent = $('#n');
   const counterTotal = $('#m');
@@ -15,6 +16,8 @@ export function initPractice() {
   const studyEnabledButton = $('#study-enabled');
   const main = document.querySelector('main.wrap');
 
+  const RATING_LABELS = {1: 'Again', 2: 'Hard', 3: 'Good', 4: 'Easy'};
+
   let current = null;
   let deckId = null;
   let shown = false;
@@ -22,8 +25,58 @@ export function initPractice() {
   let total = 0;
   let startX = null;
   let startY = null;
-  let exitTimer = null;
   let seq = 0;
+  let session = null;
+
+  const startStats = () => {
+    session = {start: Date.now(), ratings: {1: 0, 2: 0, 3: 0, 4: 0}, fresh: 0, reviews: 0};
+  };
+
+  const recordRating = (rating, kind) => {
+    if (!session) return;
+    session.ratings[rating] += 1;
+    if (kind === 'new') session.fresh += 1;
+    else session.reviews += 1;
+  };
+
+  const formatDuration = ms => {
+    const secs = Math.max(1, Math.round(ms / 1000));
+    if (secs < 60) return `${secs}s`;
+    return `${Math.floor(secs / 60)}m ${String(secs % 60).padStart(2, '0')}s`;
+  };
+
+  const renderSummary = () => {
+    const stats = session || {start: Date.now(), ratings: {1: 0, 2: 0, 3: 0, 4: 0}, fresh: 0, reviews: 0};
+    const rated = stats.ratings[1] + stats.ratings[2] + stats.ratings[3] + stats.ratings[4];
+    const recall = rated ? Math.round(((stats.ratings[3] + stats.ratings[4]) / rated) * 100) : 0;
+
+    const grid = el('dl', '', 'summary-grid');
+    for (const [label, value] of [
+      ['Due', String(stats.reviews)],
+      ['New', String(stats.fresh)],
+      ['Time', formatDuration(Date.now() - stats.start)],
+      ['Recall', `${recall}%`],
+    ]) {
+      const cell = el('div');
+      cell.append(el('dt', label), el('dd', value));
+      grid.append(cell);
+    }
+
+    const bars = el('div', '', 'summary-bars');
+    const legend = el('div', '', 'summary-legend');
+    for (const rating of [1, 2, 3, 4]) {
+      const count = stats.ratings[rating];
+      if (!count) continue;
+      const segment = el('span', '', 'summary-segment');
+      segment.dataset.r = String(rating);
+      segment.style.flexGrow = String(count);
+      segment.title = `${RATING_LABELS[rating]}: ${count}`;
+      bars.append(segment);
+      legend.append(el('span', `${RATING_LABELS[rating]} ${count}`, `summary-key r${rating}`));
+    }
+
+    summary.replaceChildren(grid, ...(rated ? [bars, legend] : []));
+  };
 
   const clearActiveRating = () => {
     ratingButtons.forEach(button => button.classList.remove('active-swipe'));
@@ -42,12 +95,6 @@ export function initPractice() {
     });
   };
 
-  const clearExitTimer = () => {
-    if (!exitTimer) return;
-    clearTimeout(exitTimer);
-    exitTimer = null;
-  };
-
   const resetCardTransform = () => {
     startX = null;
     startY = null;
@@ -57,7 +104,6 @@ export function initPractice() {
 
   const closePractice = () => {
     seq += 1;
-    clearExitTimer();
     current = null;
     shown = false;
     setRatingEnabled(false);
@@ -79,7 +125,6 @@ export function initPractice() {
   };
 
   const show = cardData => {
-    clearExitTimer();
     current = cardData;
     shown = false;
     setRatingEnabled(false);
@@ -87,21 +132,25 @@ export function initPractice() {
     if (cardData) n += 1;
 
     updateCounter(cardData ? Math.max(0, Number(cardData.left || 0) - 1) : 0);
-    front.textContent = cardData ? cardData.front : 'All done for today ✓';
-    back.textContent = cardData ? cardData.back : '';
-    note.textContent = cardData ? cardData.note : '';
 
     if (cardData) {
+      summary.hidden = true;
+      front.hidden = false;
+      front.textContent = cardData.front;
+      back.textContent = cardData.back;
+      note.textContent = cardData.note;
       const isNew = cardData.kind === 'new';
       badge.hidden = false;
       badge.textContent = isNew ? 'NEW' : 'REVIEW';
       badge.classList.toggle('is-new', isNew);
       badge.classList.toggle('is-review', !isNew);
     } else {
+      front.hidden = true;
       badge.hidden = true;
       badge.textContent = '';
       badge.classList.remove('is-new', 'is-review');
-      exitTimer = setTimeout(closePractice, 1000);
+      renderSummary();
+      summary.hidden = false;
     }
 
     back.hidden = true;
@@ -129,6 +178,7 @@ export function initPractice() {
     if (!current || !shown) return;
     const my = seq;
     const cardId = current.id;
+    const kind = current.kind;
     shown = false;
     setRatingEnabled(false);
     clearActiveRating();
@@ -139,6 +189,7 @@ export function initPractice() {
       setRatingEnabled(true);
       return;
     }
+    recordRating(rating, kind);
     await next();
   };
 
@@ -150,7 +201,9 @@ export function initPractice() {
     current = null;
     shown = false;
     setRatingEnabled(false);
-    clearExitTimer();
+    startStats();
+    summary.hidden = true;
+    front.hidden = false;
     practiceSheet.hidden = false;
     counterCurrent.textContent = '0';
     counterTotal.textContent = id === 'active' && main
@@ -211,9 +264,9 @@ export function initPractice() {
     const dy = event.clientY - startY;
     const distance = Math.hypot(dx, dy);
     resetCardTransform();
-    if (distance < 10) return flip();
-    if (!shown || distance < 80) return;
-    rate(getSwipeRating(dx, dy));
+    if (distance >= 80 && shown) return rate(getSwipeRating(dx, dy));
+    if (distance >= 10) return;
+    if (current) flip();
   };
 
   card.onpointercancel = resetCardTransform;
