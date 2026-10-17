@@ -153,6 +153,12 @@ button,.stats div,.deck,.card,summary,#words li,.sheet .close::before,#close::be
 .danger:hover,.danger:active{background:#9b2020;color:#fff}
 [data-theme=dark] .danger{border-color:#ff8888;color:#ff9b9b}
 [data-theme=dark] .danger:hover,[data-theme=dark] .danger:active{background:#9b2020;color:#fff}
+
+/* Indeterminate "working…" bar inside a button while a request is in flight. */
+.busy{position:relative;overflow:hidden;cursor:progress}
+.busy::after{content:"";position:absolute;inset:auto 0 0 0;height:3px;background:var(--fg);transform-origin:left;animation:busy 1.1s ease-in-out infinite}
+@keyframes busy{0%{transform:scaleX(0)}50%{transform:scaleX(1)}100%{transform:scaleX(0)}}
+@media (prefers-reduced-motion:reduce){.busy::after{animation:none;transform:scaleX(1);opacity:.5}}
 .confirm-panel{margin-top:18dvh;border:1.5px solid var(--fg);padding:1rem;box-shadow:inset 2px 2px 0 var(--hi),inset -2px -2px 0 var(--lo),4px 4px 0 var(--drop)}
 .confirm-panel p{overflow-wrap:anywhere}
 .confirm-actions{display:flex;gap:.5rem;justify-content:flex-end;margin-top:1rem}

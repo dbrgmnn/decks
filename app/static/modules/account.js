@@ -27,6 +27,7 @@ export function initAccount({confirmDelete, errText}) {
   const exportCsvMsg = $('#export-csv-msg');
   const importCsvForm = $('#import-csv-form');
   const importCsvMsg = $('#import-csv-msg');
+  const importSubmit = importCsvForm.querySelector('button[type="submit"]');
   const deleteAccountButton = $('#delete-account');
 
   const clearText = (...nodes) => {
@@ -171,16 +172,46 @@ export function initAccount({confirmDelete, errText}) {
 
   importCsvForm.onsubmit = async event => {
     event.preventDefault();
+    if (importSubmit.disabled) return;
+
     const form = event.target;
     const body = new FormData(form);
-    const response = await fetch('/api/import/cards.csv', {method: 'POST', body});
-    if (response.ok) {
-      const data = await response.json();
-      importCsvMsg.textContent = `Imported ${data.cards} cards · ${data.decks} decks · ${data.folders} folders ✓`;
-      form.reset();
-    } else {
-      importCsvMsg.textContent = await errText(response);
+    const label = importSubmit.textContent;
+
+    importSubmit.disabled = true;
+    importSubmit.textContent = 'Importing…';
+    importSubmit.classList.add('busy');
+    importCsvForm.setAttribute('aria-busy', 'true');
+    importCsvMsg.textContent = '';
+
+    let imported = null;
+    try {
+      const response = await fetch('/api/import/cards.csv', {method: 'POST', body});
+      if (response.ok) {
+        const data = await response.json();
+        importCsvMsg.textContent = `Imported ${data.cards} cards · ${data.decks} decks · ${data.folders} folders ✓`;
+        form.reset();
+        imported = data;
+      } else {
+        importCsvMsg.textContent = await errText(response);
+      }
+    } catch {
+      importCsvMsg.textContent = 'Import failed. Check your connection and try again.';
     }
+
+    importSubmit.classList.remove('busy');
+    importCsvForm.removeAttribute('aria-busy');
+
+    if (imported) {
+      // New folders/decks change the home layout, so a reload is the reliable
+      // way to show them — give the summary a beat to be read first.
+      importSubmit.textContent = 'Imported ✓';
+      setTimeout(() => location.reload(), 1200);
+      return;
+    }
+
+    importSubmit.disabled = false;
+    importSubmit.textContent = label;
   };
 
   deleteAccountButton.onclick = () => confirmDelete('account', null);

@@ -1,6 +1,9 @@
 import {$} from './dom.js';
 import {haptic} from './haptics.js';
 
+// Rating 1 gets a double tick ("missed"), 4 a single firm one. 2 and 3 sit between.
+const RATE_HAPTIC = {1: 'warning', 2: 'light', 3: 'medium', 4: 'heavy'};
+
 export function initPractice() {
   const practiceSheet = $('#practice');
   const closeButton = $('#close');
@@ -141,7 +144,7 @@ export function initPractice() {
     shown = false;
     setRatingEnabled(false);
     clearActiveRating();
-    haptic('medium');
+    haptic(RATE_HAPTIC[rating] || 'medium');
     const response = await fetch('/api/rate/' + cardId, {method: 'POST', body: new URLSearchParams({rating})});
     if (my !== seq) return;
     if (!response.ok) {

@@ -63,3 +63,24 @@ def test_inputs_carry_native_keyboard_hints(client):
     assert 'enterkeyhint="search"' in html
     assert 'enterkeyhint="done"' in html
     assert 'autocorrect="off"' in html
+
+
+def test_import_refreshes_home_and_shows_progress(client):
+    source = client.get("/static/modules/account.js").text
+
+    # A successful import must refresh the folder/deck lists, not just print a sum.
+    assert "location.reload()" in source
+    assert "Importing…" in source
+    assert "classList.add('busy')" in source
+
+    css = client.get("/static/style.css").text
+    assert ".busy::after" in css
+    assert "@keyframes busy" in css
+
+
+def test_rating_uses_graded_haptics(client):
+    source = client.get("/static/modules/practice.js").text
+
+    assert "RATE_HAPTIC" in source
+    assert "1: 'warning'" in source
+    assert "4: 'heavy'" in source
