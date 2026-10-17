@@ -46,7 +46,7 @@
       <h3>{{ d.path }}</h3>
       <p class="meta">{{ d.total }} card{{ "" if d.total == 1 else "s" }}<small>{% if d.paused %}Paused{% else %}{{ d.due }} due · {{ d.new }} new{% endif %}</small></p>
       <div class="actions">
-        <button class="learn" type="button" data-id="{{ d.id }}"{% if d.paused %} disabled{% endif %}>Study</button>
+        <button class="learn" type="button" data-id="{{ d.id }}"{% if d.paused or (not d.due and not d.new) %} disabled{% endif %}>Study</button>
         <button type="button" class="star{% if d.pinned %} on{% endif %}" aria-pressed="{{ 'true' if d.pinned else 'false' }}" aria-label="Show on main screen" title="Show on main screen"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6.1 6.6.9-4.8 4.6 1.2 6.6L12 17.6 6.1 20.7l1.2-6.6L2.5 9.5l6.6-.9z"/></svg></button>
       </div>
     </article>

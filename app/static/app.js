@@ -171,6 +171,11 @@ addEventListener('keydown', event => {
         const nextMeta = nextDeck.querySelector('.meta small');
         const currentMeta = currentDeck.querySelector('.meta small');
         if (nextMeta && currentMeta) currentMeta.textContent = nextMeta.textContent;
+
+        // Keep the Study button in step: it greys out once the queue is empty.
+        const nextLearn = nextDeck.querySelector('.learn');
+        const currentLearn = currentDeck.querySelector('.learn');
+        if (nextLearn && currentLearn) currentLearn.disabled = nextLearn.disabled;
       });
 
       const nextFolders = [...nextMain.querySelectorAll('.fold[data-folder]')];

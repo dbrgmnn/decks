@@ -1,3 +1,6 @@
+import re
+
+
 def signup(client, email="mobile@example.com", password="GoodPass123"):
     response = client.post(
         "/api/signup",
@@ -70,3 +73,22 @@ def test_import_refreshes_home_and_shows_progress(client):
     css = client.get("/static/style.css").text
     assert ".busy::after" in css
     assert "@keyframes busy" in css
+
+
+def learn_button_attrs(html, deck_id):
+    match = re.search(rf'<button class="learn" type="button" data-id="{deck_id}"([^>]*)>', html)
+    assert match, f"no Study button rendered for deck {deck_id}"
+    return match.group(1)
+
+
+def test_deck_study_button_greys_out_when_nothing_to_study(client):
+    signup(client, email="study@example.com")
+
+    empty = client.post("/api/quick-add", data={"text": "Folder/Empty"}).json()
+    full = client.post("/api/quick-add", data={"text": "Folder/Full/Front/Back"}).json()
+    folder_id = empty["folder"]["id"]
+
+    html = client.get(f"/?folder={folder_id}").text
+
+    assert "disabled" in learn_button_attrs(html, empty["deck"]["id"])
+    assert "disabled" not in learn_button_attrs(html, full["deck"]["id"])

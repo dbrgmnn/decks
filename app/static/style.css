@@ -70,7 +70,7 @@ button,.stats div,.deck,.card,summary,#words li,.sheet .close::before,#close::be
 .meta{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 .meta small{display:block;margin-top:.1rem;font-size:.82rem;overflow:hidden;text-overflow:ellipsis}
 .deck.paused h3,.deck.paused .meta{opacity:.45}
-.deck.paused .learn{opacity:.35;cursor:not-allowed}
+.deck .learn:disabled{opacity:.35;cursor:not-allowed}
 
 /* Deck card actions */
 .edit,.plus{line-height:1;position:absolute;right:.9rem;z-index:2}
