@@ -166,7 +166,6 @@ export function initCards({confirmDelete, errText}) {
   };
 
   return {
-    getCurrentDeck: () => curDeck,
     loadWords,
     openDeckCards,
   };

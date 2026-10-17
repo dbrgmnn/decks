@@ -45,7 +45,6 @@ Object.assign(cards, initCards({
 initDecks({
   confirmDelete: dialogs.confirmDelete,
   errText,
-  getCurrentDeck: cards.getCurrentDeck,
   openDeckCards: cards.openDeckCards,
 });
 

@@ -1,6 +1,6 @@
 import {$, arrowSvg} from './dom.js';
 
-export function initDecks({confirmDelete, errText, getCurrentDeck, openDeckCards}) {
+export function initDecks({confirmDelete, errText, openDeckCards}) {
   const deckEditSheet = $('#deck-edit');
   const deckForm = $('#deck-form');
   const deckNameField = $('#deck-form [name=name]');
@@ -65,11 +65,11 @@ export function initDecks({confirmDelete, errText, getCurrentDeck, openDeckCards
   };
 
   deleteDeckButton.onclick = () => {
-    const currentDeck = getCurrentDeck() || {
+    // Always the deck shown in this sheet: the card list may point at another deck.
+    confirmDelete('deck', {
       id: deckEditSheet.dataset.deckId,
       name: deckEditSheet.dataset.deckName,
-    };
-    confirmDelete('deck', currentDeck);
+    });
   };
 
   deckEditClose.onclick = () => {
