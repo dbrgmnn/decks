@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="512" height="512" role="img" aria-label="decks">
+  <!-- App icon master. Palette and bevel recipe mirror tokens.css: paper #f4f4f0, ink #111,
+       highlight #fff, shade #8f8f88, on the #e6e6e0 tile. Cards are 32/64 wide, stacked by
+       6/64, and only the front card carries the bevel. There is no cast shadow: the stack is
+       meant to read flat, so nothing is drawn behind the rearmost card.
+
+       The bevel is a ring 2.6/64 thick that starts flush with the card's inner edge. Its
+       highlight and shade halves are filled polygons that meet on the 45 degree miters running
+       from each card corner to the ring's inner corner, so the two tones split diagonally at a
+       corner instead of one clipping the other. -->
+  <rect width="64" height="64" fill="#e6e6e0"/>
+  <g id="art">
+    <g fill="#f4f4f0" stroke="#111" stroke-width="1.7">
+      <rect x="22" y="22" width="32" height="32"/>
+      <rect x="16" y="16" width="32" height="32"/>
+      <rect x="10" y="10" width="32" height="32"/>
+    </g>
+    <path fill="#8f8f88" d="M41.15 10.85V41.15H10.85L13.45 38.55H38.55V13.45Z"/>
+    <path fill="#fff" d="M10.85 41.15V10.85H41.15L38.55 13.45H13.45V38.55Z"/>
+  </g>
+</svg>

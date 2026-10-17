@@ -1,4 +1,4 @@
-import re
+import struct
 
 MANIFEST = "/static/icons/site.webmanifest"
 
@@ -27,7 +27,6 @@ def test_manifest_is_installable(client):
     sizes = {(icon["sizes"], icon["purpose"]) for icon in manifest["icons"]}
     assert ("192x192", "any") in sizes
     assert ("512x512", "any") in sizes
-    assert ("192x192", "maskable") in sizes
     assert ("512x512", "maskable") in sizes
 
 
@@ -36,6 +35,27 @@ def test_manifest_icons_are_served(client):
         response = client.get(icon["src"])
         assert response.status_code == 200, icon["src"]
         assert response.headers["content-type"] == "image/png"
+
+
+def test_icons_match_their_declared_size(client):
+    """A wrong pixel size is silent on the server and fatal in the browser: Chrome refuses to
+    install a manifest whose 192/512 entries are not really 192 and 512."""
+    for icon in client.get(MANIFEST).json()["icons"]:
+        width, height = struct.unpack(">II", client.get(icon["src"]).content[16:24])  # PNG IHDR
+        side = int(icon["sizes"].split("x")[0])
+        assert (width, height) == (side, side), icon["src"]
+
+    touch = client.get("/static/icons/apple-touch-icon.png").content
+    assert struct.unpack(">II", touch[16:24]) == (180, 180)
+
+
+def test_favicon_ico_holds_all_three_sizes(client):
+    """Not a renamed PNG: real 16, 32 and 48 entries, so the tab and the bookmarks list both work."""
+    raw = client.get("/static/icons/favicon.ico").content
+    reserved, kind, count = struct.unpack("<HHH", raw[:6])
+
+    assert (reserved, kind) == (0, 1)
+    assert {raw[6 + i * 16] for i in range(count)} == {16, 32, 48}
 
 
 def test_login_page_declares_ios_install_metadata(client):
@@ -62,26 +82,24 @@ def test_home_page_declares_ios_install_metadata(client):
 
     assert 'name="apple-mobile-web-app-status-bar-style"' in html
     assert 'name="theme-color"' in html
-    assert 'rel="apple-touch-startup-image"' in html
 
 
-def test_splash_images_are_served(client):
-    html = client.get("/login").text
-    hrefs = re.findall(r'<link rel="apple-touch-startup-image" href="([^"]+)"', html)
-
-    assert len(hrefs) >= 10
-    for href in hrefs:
-        response = client.get(href)
-        assert response.status_code == 200, href
-        assert response.headers["content-type"] == "image/png"
-
-
-def test_splash_media_covers_modern_iphones(client):
+def test_icons_are_the_minimal_set(client):
     html = client.get("/login").text
 
-    assert "device-width: 390px" in html  # iPhone 12/13/14
-    assert "device-width: 393px" in html  # iPhone 15/16
-    assert "device-width: 430px" in html  # iPhone 15/16 Plus
+    # No per-device splash artwork: a short blank launch beats 250 KB of PNGs that have to be
+    # redrawn by hand every time the icon changes.
+    assert "apple-touch-startup-image" not in html
+    assert html.count('rel="apple-touch-icon"') == 1
+
+    favicon = client.get("/static/icons/favicon.svg")
+    assert favicon.status_code == 200
+    assert "image/svg+xml" in favicon.headers["content-type"]
+    # The tab icon follows the system theme.
+    assert "prefers-color-scheme" in favicon.text
+
+    # Legacy fallback, checked in detail by test_favicon_ico_holds_all_three_sizes.
+    assert client.get("/static/icons/favicon.ico").status_code == 200
 
 
 def test_stylesheet_tames_ios_scroll_and_taps(client):
