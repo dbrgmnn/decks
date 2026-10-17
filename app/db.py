@@ -4,7 +4,7 @@ import sqlite3
 DATA_DIR = pathlib.Path(__file__).resolve().parent.parent / "data"
 
 USERS_SQL = """
-CREATE TABLE users(
+CREATE TABLE IF NOT EXISTS users(
   id INTEGER PRIMARY KEY,
   email TEXT NOT NULL,
   password_hash TEXT NOT NULL,
@@ -16,7 +16,7 @@ CREATE TABLE users(
 """
 
 FOLDERS_SQL = """
-CREATE TABLE folders(
+CREATE TABLE IF NOT EXISTS folders(
   id INTEGER PRIMARY KEY,
   user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
@@ -27,7 +27,7 @@ CREATE TABLE folders(
 """
 
 DECKS_SQL = """
-CREATE TABLE decks(
+CREATE TABLE IF NOT EXISTS decks(
   id INTEGER PRIMARY KEY,
   user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   folder_id INTEGER NOT NULL,
@@ -42,7 +42,7 @@ CREATE TABLE decks(
 """
 
 CARDS_SQL = """
-CREATE TABLE cards(
+CREATE TABLE IF NOT EXISTS cards(
   id INTEGER PRIMARY KEY,
   deck_id INTEGER NOT NULL REFERENCES decks(id) ON DELETE CASCADE,
   front TEXT NOT NULL,
@@ -54,7 +54,7 @@ CREATE TABLE cards(
 """
 
 REVIEWS_SQL = """
-CREATE TABLE reviews(
+CREATE TABLE IF NOT EXISTS reviews(
   id INTEGER PRIMARY KEY,
   card_id INTEGER NOT NULL REFERENCES cards(id) ON DELETE CASCADE,
   rating INTEGER NOT NULL CHECK(rating BETWEEN 1 AND 4),
@@ -84,6 +84,23 @@ INDEXES = [
 
 ORDER = ["users", "folders", "decks", "cards", "reviews"]
 
+# Bump SCHEMA_VERSION and add a step to MIGRATIONS when the schema changes.
+# Existing databases are upgraded in order; fresh ones run every step.
+SCHEMA_VERSION = 1
+
+
+def _migrate_1(c):
+    for name in ORDER:
+        c.execute(TABLES[name])
+    for sql in INDEXES:
+        c.execute(sql)
+
+
+# version -> callable applying the change that brings the database to it.
+MIGRATIONS = {
+    1: _migrate_1,
+}
+
 
 class _Connection:
     def __init__(self, connection):
@@ -112,17 +129,16 @@ def init():
     try:
         c.execute("PRAGMA journal_mode=WAL")
         c.execute("PRAGMA foreign_keys=ON")
-        has_users = c.execute(
-            "SELECT 1 FROM sqlite_master WHERE type='table' AND name='users'"
-        ).fetchone()
-        if has_users:
+        version = c.execute("PRAGMA user_version").fetchone()[0]
+        if version >= SCHEMA_VERSION:
             return
 
         c.execute("BEGIN")
-        for name in ORDER:
-            c.execute(TABLES[name])
-        for sql in INDEXES:
-            c.execute(sql)
+        # Databases created before schema versioning report 0 but already hold the
+        # version 1 tables, so the first step must stay idempotent (IF NOT EXISTS).
+        for target in range(version + 1, SCHEMA_VERSION + 1):
+            MIGRATIONS[target](c)
+        c.execute(f"PRAGMA user_version={SCHEMA_VERSION}")
         c.execute("COMMIT")
     except BaseException:
         c.execute("ROLLBACK")
