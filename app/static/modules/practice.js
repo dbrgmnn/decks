@@ -1,8 +1,4 @@
 import {$} from './dom.js';
-import {haptic, hapticTap} from './haptics.js';
-
-// Rating 1 gets a double tick ("missed"), 4 a single firm one. 2 and 3 sit between.
-const RATE_HAPTIC = {1: 'warning', 2: 'light', 3: 'medium', 4: 'heavy'};
 
 export function initPractice() {
   const practiceSheet = $('#practice');
@@ -19,12 +15,6 @@ export function initPractice() {
   const studyEnabledButton = $('#study-enabled');
   const main = document.querySelector('main.wrap');
 
-  // iOS fires a real-tap tick only when the finger lands on the switch itself,
-  // so the rating buttons each carry one (see modules/haptics.js).
-  ratingButtons.forEach(button => hapticTap(button, RATE_HAPTIC[Number(button.dataset.r)]));
-  hapticTap(closeButton);
-  hapticTap(studyEnabledButton, 'medium');
-
   let current = null;
   let deckId = null;
   let shown = false;
@@ -34,21 +24,15 @@ export function initPractice() {
   let startY = null;
   let exitTimer = null;
   let seq = 0;
-  let lastPreview = null;
 
   const clearActiveRating = () => {
     ratingButtons.forEach(button => button.classList.remove('active-swipe'));
-    lastPreview = null;
   };
 
   const previewRating = rating => {
     ratingButtons.forEach(button => {
       button.classList.toggle('active-swipe', shown && Number(button.dataset.r) === rating);
     });
-    if (rating !== lastPreview) {
-      lastPreview = rating;
-      haptic('light');
-    }
   };
 
   const setRatingEnabled = enabled => {
@@ -118,7 +102,6 @@ export function initPractice() {
       badge.textContent = '';
       badge.classList.remove('is-new', 'is-review');
       exitTimer = setTimeout(closePractice, 1000);
-      haptic('success');
     }
 
     back.hidden = true;
@@ -140,7 +123,6 @@ export function initPractice() {
     setRatingEnabled(true);
     back.hidden = false;
     note.hidden = !current.note;
-    haptic('light');
   };
 
   const rate = async rating => {
@@ -174,7 +156,6 @@ export function initPractice() {
     counterTotal.textContent = id === 'active' && main
       ? String(Number(main.dataset.studyDue || 0) + Number(main.dataset.studyNew || 0))
       : '0';
-    haptic('medium');
     next();
   };
 

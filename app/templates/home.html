@@ -159,8 +159,6 @@
         <small id="import-csv-msg"></small>
       </form>
     </div>
-    <h3 class="section">Feedback</h3>
-    <button type="button" id="haptics-toggle" class="toggle" aria-pressed="true">Vibration</button>
     <h3 class="section">Time zone</h3>
     <select id="tz" autocomplete="off">{% for z, label in timezones %}<option value="{{ z }}"{% if z == user.tz %} selected{% endif %}>{{ label }}</option>{% endfor %}</select>
     <small id="tz-msg"></small>

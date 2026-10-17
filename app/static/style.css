@@ -232,12 +232,6 @@ a,button,summary,input,select,textarea{touch-action:manipulation}
 .deck[data-id],.fold{touch-action:manipulation}
 #words li:active{box-shadow:var(--bevel-pressed);transform:translate(2px,2px)}
 
-/* Haptics: iOS only ticks the Taptic Engine on a *real tap* of a native switch
-   (programmatic clicks were blocked in iOS 26.5), so a transparent switch is
-   laid over the control. Its native appearance must stay intact or the haptic
-   stops firing — we only touch position/size/opacity here. */
-.haptic-switch{position:absolute;top:0;left:0;width:100%;height:100%;margin:0;padding:0;border:0;min-height:0;opacity:0;clip-path:inset(0);touch-action:inherit;-webkit-tap-highlight-color:transparent}
-
 /* Effects */
 .flash{position:fixed;inset:0;z-index:99;pointer-events:none;animation:eink .45s steps(1,end)}
 @keyframes eink{0%{background:#000}33%{background:#fff}66%{background:#000}100%{background:var(--bg)}}
