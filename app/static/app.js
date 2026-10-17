@@ -117,7 +117,7 @@ addEventListener('keydown', event => {
 
   const refreshHomeStats = async ({allowStructuralReload = false} = {}) => {
     try {
-      const response = await fetch(window.location.href, {headers: {'X-Requested-With': 'fetch'}});
+      const response = await fetch(window.location.href);
       if (!response.ok) return;
       const html = await response.text();
       const doc = new DOMParser().parseFromString(html, 'text/html');
