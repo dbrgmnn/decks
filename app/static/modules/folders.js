@@ -1,14 +1,4 @@
-import {$} from './dom.js';
-
-const arrowSvg = axis => {
-  const paths = {
-    up: '<path d="M12 5.5v13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square"/><path d="M5.5 12 12 5.5 18.5 12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" stroke-linejoin="miter"/>',
-    down: '<path d="M12 5.5v13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square"/><path d="M5.5 12 12 18.5 18.5 12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" stroke-linejoin="miter"/>',
-    left: '<path d="M5.5 12h13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square"/><path d="M12 5.5 5.5 12 12 18.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" stroke-linejoin="miter"/>',
-    right: '<path d="M5.5 12h13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square"/><path d="M12 5.5 18.5 12 12 18.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" stroke-linejoin="miter"/>'
-  };
-  return `<svg viewBox="0 0 24 24" aria-hidden="true">${paths[axis] || paths.right}</svg>`;
-};
+import {$, arrowSvg} from './dom.js';
 
 export function initFolders({confirmDelete, errText}) {
   const folderButtons = [...document.querySelectorAll('.fold[data-folder]')];
@@ -46,7 +36,7 @@ export function initFolders({confirmDelete, errText}) {
     const folder = getFolderNode(folderId);
     if (!folder) return;
     folder.dataset.name = payload.name;
-    const label = folder.querySelector('.title, .folder-name, [data-role="folder-name"]');
+    const label = folder.querySelector('.fname');
     if (label) label.textContent = payload.name;
   };
 

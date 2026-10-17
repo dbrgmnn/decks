@@ -2,8 +2,6 @@ from fastapi import HTTPException
 
 from .validators import normalize_name_key
 
-NEW_STEPS = (1, 5, 10, 15, 20, 30)
-
 
 def check_deck_name(c, folder_id, name, skip_id=0):
     key = normalize_name_key(name)

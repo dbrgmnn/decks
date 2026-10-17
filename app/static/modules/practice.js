@@ -72,7 +72,7 @@ export function initPractice() {
       segment.style.flexGrow = String(count);
       segment.title = `${RATING_LABELS[rating]}: ${count}`;
       bars.append(segment);
-      legend.append(el('span', `${RATING_LABELS[rating]} ${count}`, `summary-key r${rating}`));
+      legend.append(el('span', `${RATING_LABELS[rating]} ${count}`));
     }
 
     summary.replaceChildren(grid, ...(rated ? [bars, legend] : []));
@@ -142,13 +142,10 @@ export function initPractice() {
       const isNew = cardData.kind === 'new';
       badge.hidden = false;
       badge.textContent = isNew ? 'NEW' : 'REVIEW';
-      badge.classList.toggle('is-new', isNew);
-      badge.classList.toggle('is-review', !isNew);
     } else {
       front.hidden = true;
       badge.hidden = true;
       badge.textContent = '';
-      badge.classList.remove('is-new', 'is-review');
       renderSummary();
       summary.hidden = false;
     }
@@ -270,6 +267,4 @@ export function initPractice() {
   };
 
   card.onpointercancel = resetCardTransform;
-
-  return {rate, flip};
 }

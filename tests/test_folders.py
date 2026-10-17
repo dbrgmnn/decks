@@ -3,10 +3,7 @@ from fastapi import HTTPException
 
 from app.routes.folders import _apply_quick_add, _get_or_create_deck, _get_or_create_folder, _parse_quick_add
 from app.services.decks import check_deck_name, check_folder_name
-from app.services.ownership import need_folder, own_deck, own_folder, own_card
-
-# Re-exported for discoverability; unused names are kept for compatibility.
-_ = (own_deck, own_card)
+from app.services.ownership import need_folder, own_folder
 
 
 def test_parse_quick_add_formats():

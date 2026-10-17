@@ -29,9 +29,8 @@ const addSheet = $('#add');
 const addSheetClose = $('#add .close');
 const listSheet = $('#list');
 const listSheetClose = $('#list .close');
-const practiceSheet = $('#practice');
 
-const practice = initPractice();
+initPractice();
 const cards = {};
 const dialogs = createDialogs({
   errText,
@@ -89,17 +88,12 @@ const escapeActions = [
 ];
 
 addEventListener('keydown', event => {
-  if (event.key === 'Escape') {
-    for (const [sheet, close] of escapeActions) {
-      if (sheet && !sheet.hidden) {
-        close();
-        return;
-      }
+  if (event.key !== 'Escape') return;
+  for (const [sheet, close] of escapeActions) {
+    if (sheet && !sheet.hidden) {
+      close();
+      return;
     }
-  }
-
-  if (!practiceSheet?.hidden && event.key === ' ') {
-    practice.flip();
   }
 });
 

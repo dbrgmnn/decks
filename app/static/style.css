@@ -16,7 +16,6 @@ small{opacity:.7}
 #msg{text-align:center}
 .panel h2,#words li,#words b,.card div,.card small{overflow-wrap:anywhere;min-width:0;max-width:100%}
 .bar span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-right:1rem}
-.reorder-hint{white-space:normal;width:max-content;max-width:calc(100vw - 2rem);text-align:center}
 
 /* Shared controls */
 button,input,select,textarea,summary{font:inherit;color:inherit;background:transparent;border:1.5px solid var(--fg);border-radius:0;padding:.6rem .8rem;min-height:44px;cursor:pointer}
@@ -51,7 +50,6 @@ button,.stats div,.deck,.card,summary,#words li,.sheet .close::before,#close::be
 .bar::before{content:"";position:absolute;left:0;right:0;bottom:100%;height:env(safe-area-inset-top);background:var(--bg)}
 .bar #account{min-width:0;max-width:100%;justify-self:start;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #theme:not(:active){background:var(--bg);color:var(--fg);box-shadow:var(--bevel-raised);transform:none}
-.theme-float{position:fixed;top:calc(1rem + env(safe-area-inset-top));right:1rem;z-index:5}
 
 /* Stats */
 .stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.75rem;margin:1rem 0}
@@ -212,8 +210,6 @@ button,.stats div,.deck,.card,summary,#words li,.sheet .close::before,#close::be
 .ficon .hi,.ficon .lo{fill:none;stroke-width:2px}
 .ficon .hi{stroke:var(--hi)}
 .ficon .lo{stroke:var(--lo)}
-.ficon .dash{fill:none;stroke-dasharray:4 3}
-.ficon .pl{fill:none;stroke-width:2px}
 .fold.moving-folder{z-index:3;padding:.5rem .25rem .6rem;background:var(--bg);border:1.5px solid var(--fg);box-shadow:inset 2px 2px 0 var(--hi),inset -2px -2px 0 var(--lo),5px 5px 0 var(--drop);width:min(11rem,100%)}
 .fold.moving-folder .ficon{transform:scale(1.15);transform-origin:center}
 .fold.moving-folder .fname{font-weight:700}
@@ -236,7 +232,6 @@ button,.stats div,.deck,.card,summary,#words li,.sheet .close::before,#close::be
 #account-sheet .data-actions,#account-sheet .data-box,#account-sheet #tz,#account-sheet #pw-form,#account-sheet .account-actions{margin-top:1rem}
 #account-sheet .panel h3.section{margin-top:1.25rem}
 #account-sheet .panel h3.section:first-of-type{margin-top:1rem}
-.data-tools{display:grid;gap:.9rem}
 .panel-block{display:grid;gap:.55rem;padding:.9rem;border:1.5px solid var(--fg);box-shadow:2px 2px 0 var(--lo),-2px -2px 0 var(--hi)}
 .panel-block small{display:block;min-height:1.2rem}
 

@@ -1,6 +1,6 @@
 import {$} from './dom.js';
 
-export function createDialogs({errText, loadWords, onDelete}) {
+export function createDialogs({errText, loadWords}) {
   const confirmSheet = $('#confirm');
   const confirmTitle = $('#confirm-title');
   const confirmText = $('#confirm-text');
@@ -56,7 +56,7 @@ export function createDialogs({errText, loadWords, onDelete}) {
   confirmDelete.onclick = async () => {
     if (!pendingDelete) return;
 
-    const {kind, item} = pendingDelete;
+    const {kind} = pendingDelete;
     const response = await deleteRequest(pendingDelete);
     if (!response.ok) {
       confirmMsg.textContent = await errText(response);
@@ -64,12 +64,6 @@ export function createDialogs({errText, loadWords, onDelete}) {
     }
 
     closeConfirm();
-
-    // Prefer local follow-up hooks before falling back to page-level navigation.
-    if (onDelete) {
-      const handled = await onDelete({kind, item});
-      if (handled) return;
-    }
 
     if (kind === 'account') location.href = '/login';
     else if (kind === 'folder') location.href = '/';
@@ -80,5 +74,5 @@ export function createDialogs({errText, loadWords, onDelete}) {
     }
   };
 
-  return {confirmDelete: openConfirm, closeConfirm};
+  return {confirmDelete: openConfirm};
 }

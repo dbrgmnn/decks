@@ -1,14 +1,4 @@
-import {$} from './dom.js';
-
-const arrowSvg = axis => {
-  const paths = {
-    up: '<path d="M12 5.5v13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square"/><path d="M5.5 12 12 5.5 18.5 12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" stroke-linejoin="miter"/>',
-    down: '<path d="M12 5.5v13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square"/><path d="M5.5 12 12 18.5 18.5 12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" stroke-linejoin="miter"/>',
-    left: '<path d="M5.5 12h13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square"/><path d="M12 5.5 5.5 12 12 18.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" stroke-linejoin="miter"/>',
-    right: '<path d="M5.5 12h13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square"/><path d="M12 5.5 18.5 12 12 18.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" stroke-linejoin="miter"/>'
-  };
-  return `<svg viewBox="0 0 24 24" aria-hidden="true">${paths[axis] || paths.right}</svg>`;
-};
+import {$, arrowSvg} from './dom.js';
 
 export function initDecks({confirmDelete, errText, getCurrentDeck, openDeckCards}) {
   const deckEditSheet = $('#deck-edit');
@@ -33,19 +23,6 @@ export function initDecks({confirmDelete, errText, getCurrentDeck, openDeckCards
     paused: deck.dataset.paused === '1',
     folder: deck.dataset.folder,
   });
-
-  const getDeckNode = deckId => document.querySelector(`.deck[data-id="${deckId}"]`);
-
-  const updateDeckNode = (deckId, payload) => {
-    const deck = getDeckNode(deckId);
-    if (!deck) return;
-    deck.dataset.name = payload.name;
-    deck.dataset.newPerDay = String(payload.new_per_day);
-    deck.dataset.paused = payload.paused;
-    deck.dataset.folder = payload.folder_id || '';
-    const title = deck.querySelector('h3');
-    if (title) title.textContent = payload.name;
-  };
 
   const setDeckOpts = (newPerDay, paused) => {
     deckForm.new_per_day.value = newPerDay;
@@ -74,7 +51,6 @@ export function initDecks({confirmDelete, errText, getCurrentDeck, openDeckCards
   deckForm.onsubmit = async event => {
     event.preventDefault();
     const deckId = deckEditSheet.dataset.deckId;
-    const payload = Object.fromEntries(new FormData(deckForm));
     const response = await fetch('/api/decks/' + deckId, {
       method: 'PUT',
       body: new URLSearchParams(new FormData(deckForm)),
@@ -85,7 +61,6 @@ export function initDecks({confirmDelete, errText, getCurrentDeck, openDeckCards
       return;
     }
 
-    updateDeckNode(deckId, payload);
     location.reload();
   };
 
@@ -164,10 +139,7 @@ export function initDecks({confirmDelete, errText, getCurrentDeck, openDeckCards
     const body = new URLSearchParams();
     deckEls().forEach(deck => body.append('ids', deck.dataset.id));
     const response = await fetch('/api/decks/order', {method: 'POST', body});
-    if (!response.ok) {
-      if (deckMsg) deckMsg.textContent = 'Could not save deck order.';
-      return;
-    }
+    if (!response.ok && deckMsg) deckMsg.textContent = 'Could not save deck order.';
   };
 
   const syncArrows = () => {
@@ -199,7 +171,6 @@ export function initDecks({confirmDelete, errText, getCurrentDeck, openDeckCards
     swallow = true;
     deck.classList.remove('holding');
     deck.classList.add('moving');
-    deckGrid.classList.add('reordering');
 
     for (const cls of ['prev', 'next']) {
       const button = document.createElement('button');
@@ -218,7 +189,7 @@ export function initDecks({confirmDelete, errText, getCurrentDeck, openDeckCards
     if (!moving) return;
     moving.querySelectorAll('.arrow').forEach(arrow => arrow.remove());
     moving.classList.remove('moving');
-    deckGrid.classList.remove('reordering', 'vertical');
+    deckGrid.classList.remove('vertical');
     moving = null;
   };
 
