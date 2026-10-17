@@ -1,15 +1,19 @@
-// iPhone: with the on-screen keyboard up the visual viewport shrinks while fixed
-// elements keep their layout position, so a bottom bar would float mid-screen.
-// Mark the document so CSS can hide the study bar until the field loses focus.
-const FIELDS = new Set(['INPUT', 'TEXTAREA', 'SELECT']);
+// With an on-screen keyboard up the visual viewport shrinks while fixed elements
+// keep their layout position, so a bottom bar would float mid-screen. Mark the
+// document only while the viewport is actually shrunk: a focused field with no
+// keyboard (desktop, or a tablet with a hardware keyboard) keeps the bar.
+const KEYBOARD_MIN = 100; // px of shrink that counts as an on-screen keyboard
 
 export function initKeyboardHints() {
+  const viewport = window.visualViewport;
+  if (!viewport) return;
+
   const sync = () => {
-    const tag = document.activeElement?.tagName;
-    document.documentElement.classList.toggle('typing', FIELDS.has(tag));
+    const shrunk = window.innerHeight - viewport.height > KEYBOARD_MIN;
+    document.documentElement.classList.toggle('typing', shrunk);
   };
 
-  document.addEventListener('focusin', sync);
-  // focusout fires before document.activeElement moves on to the next element.
-  document.addEventListener('focusout', () => setTimeout(sync, 0));
+  viewport.addEventListener('resize', sync);
+  viewport.addEventListener('scroll', sync);
+  sync();
 }

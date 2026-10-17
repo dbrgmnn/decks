@@ -269,7 +269,7 @@ select::-ms-expand{display:none}
 .study-bar:active:not(:disabled){transform:translateX(-50%) translate(var(--shove),var(--shove))}
 .study-bar-title{font-weight:700;line-height:1}
 .study-bar-meta{font-size:.92rem;line-height:1.2;opacity:.8}
-/* While the on-screen keyboard is up the visual viewport shrinks, so a fixed
-   bottom bar would float mid-screen; hide it until the field loses focus. */
+/* While an on-screen keyboard is up the visual viewport shrinks, so a fixed
+   bottom bar would float mid-screen; hide it while the shrink lasts. */
 html.typing .study-bar{display:none}
 main.wrap{padding-bottom:1rem}

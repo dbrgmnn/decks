@@ -97,7 +97,11 @@ def test_app_bundle_loads_keyboard_module(client):
 
     module = client.get("/static/modules/keyboard.js")
     assert module.status_code == 200
-    assert "typing" in module.text
+    # The bar is hidden only while an on-screen keyboard actually shrinks the
+    # viewport, never just because a field has focus - on a desktop that would
+    # make the Study button vanish for no reason.
+    assert "visualViewport" in module.text
+    assert "focusin" not in module.text
 
 
 def test_service_worker_is_served_from_root(client):
