@@ -10,9 +10,11 @@ def test_haptics_module_is_shipped(client):
     module = client.get("/static/modules/haptics.js")
 
     assert module.status_code == 200
-    # Android path plus the iOS switch trick.
+    # Android path, plus the real-tap switch overlay for iOS.
     assert "navigator.vibrate" in module.text
+    assert "input" in module.text
     assert "switch" in module.text
+    assert "hapticTap" in module.text
     assert "decks.haptics" in module.text
 
 
@@ -20,6 +22,13 @@ def test_haptics_is_wired_into_the_app(client):
     assert "./modules/haptics.js" in client.get("/static/app.js").text
     assert "./haptics.js" in client.get("/static/modules/practice.js").text
     assert "./haptics.js" in client.get("/static/modules/decks.js").text
+
+
+def test_rating_buttons_carry_a_tap_haptic(client):
+    source = client.get("/static/modules/practice.js").text
+
+    assert "hapticTap(button" in source
+    assert ".rate button" in source
 
 
 def test_touch_feedback_module_is_wired(client):
@@ -52,7 +61,7 @@ def test_stylesheet_blocks_white_flash_and_text_selection(client):
 
     assert "html{-webkit-text-size-adjust:100%;overscroll-behavior:none;background:var(--bg)" in css
     assert "touch-action:manipulation" in css
-    assert ".haptic-probe" in css
+    assert ".haptic-switch" in css
     assert "#words li:active" in css
 
 

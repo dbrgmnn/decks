@@ -1,9 +1,10 @@
-// Haptic feedback for touch devices.
+// Haptic feedback.
 //
-// Android exposes the Vibration API. iOS Safari never shipped it, but Safari
-// 17.4+ fires a native Taptic tick whenever an <input type="checkbox" switch>
-// is activated — so on iOS we keep one hidden switch around and toggle it from
-// inside the user's tap. The pref is client-side only and lives in localStorage.
+// Android exposes navigator.vibrate(). iOS never did, and since iOS 26.5 Apple
+// also blocked the old programmatic trick — only a *real, physical tap* on an
+// <input type="checkbox" switch> ticks the Taptic Engine. So for iOS tap targets
+// we lay a transparent native switch over the control so the finger hits it
+// directly (verified approach: github.com/m1ckc3s/project-fathom).
 const STORAGE_KEY = 'decks.haptics';
 const PATTERNS = {
   light: 12,
@@ -14,7 +15,7 @@ const PATTERNS = {
 };
 
 let enabled = readEnabled();
-let probe = null;
+const overlays = new Set();
 
 function readEnabled() {
   try {
@@ -34,23 +35,46 @@ function storeEnabled(value) {
 
 const hasVibration = () => typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function';
 const isTouch = () => typeof window !== 'undefined' && (navigator.maxTouchPoints > 0 || 'ontouchstart' in window);
+const isIOS = () => typeof navigator !== 'undefined' && (
+  /iPad|iPhone|iPod/.test(navigator.userAgent)
+  || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+);
 
-function ensureProbe() {
-  if (probe || typeof document === 'undefined') return probe;
+const patternFor = kind => PATTERNS[kind] ?? PATTERNS.light;
 
-  const input = document.createElement('input');
-  input.type = 'checkbox';
-  input.setAttribute('switch', '');
-  input.setAttribute('aria-hidden', 'true');
-  input.tabIndex = -1;
+function syncOverlays() {
+  for (const overlay of overlays) overlay.style.pointerEvents = enabled ? '' : 'none';
+}
 
-  const label = document.createElement('label');
-  label.className = 'haptic-probe';
-  label.append(input);
+// Best effort for gestures we cannot overlay (card swipe) and the Android path.
+export function haptic(kind = 'light') {
+  if (!enabled || !hasVibration()) return;
+  navigator.vibrate(patternFor(kind));
+}
 
-  document.body.append(label);
-  probe = label;
-  return probe;
+// Wire a real-tap haptic onto a control. No-op on platforms without haptics.
+export function hapticTap(element, kind = 'light') {
+  if (!element || element.dataset.hapticBound) return;
+  element.dataset.hapticBound = '1';
+
+  if (hasVibration()) {
+    element.addEventListener('pointerdown', () => haptic(kind), {passive: true});
+    return;
+  }
+
+  if (!isIOS() || !isTouch()) return;
+
+  const overlay = document.createElement('input');
+  overlay.type = 'checkbox';
+  overlay.setAttribute('switch', '');
+  overlay.setAttribute('aria-hidden', 'true');
+  overlay.tabIndex = -1;
+  overlay.className = 'haptic-switch';
+
+  if (getComputedStyle(element).position === 'static') element.style.position = 'relative';
+  element.append(overlay);
+  overlays.add(overlay);
+  syncOverlays();
 }
 
 export const hapticsEnabled = () => enabled;
@@ -58,25 +82,7 @@ export const hapticsEnabled = () => enabled;
 export function setHapticsEnabled(value) {
   enabled = !!value;
   storeEnabled(enabled);
-}
-
-// Fire from inside a real tap/click handler — iOS needs that user activation.
-export function haptic(kind = 'light') {
-  if (!enabled) return;
-  const pattern = PATTERNS[kind] ?? PATTERNS.light;
-
-  if (hasVibration()) {
-    navigator.vibrate(pattern);
-    return;
-  }
-
-  if (!isTouch()) return;
-
-  const input = ensureProbe()?.querySelector('input');
-  if (!input) return;
-
-  input.click();
-  if (Array.isArray(pattern)) setTimeout(() => input.click(), 70);
+  syncOverlays();
 }
 
 export function initHaptics() {

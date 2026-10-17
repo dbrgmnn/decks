@@ -1,5 +1,5 @@
 import {$} from './dom.js';
-import {haptic} from './haptics.js';
+import {haptic, hapticTap} from './haptics.js';
 
 // Rating 1 gets a double tick ("missed"), 4 a single firm one. 2 and 3 sit between.
 const RATE_HAPTIC = {1: 'warning', 2: 'light', 3: 'medium', 4: 'heavy'};
@@ -18,6 +18,12 @@ export function initPractice() {
   const learnButtons = [...document.querySelectorAll('.learn')];
   const studyEnabledButton = $('#study-enabled');
   const main = document.querySelector('main.wrap');
+
+  // iOS fires a real-tap tick only when the finger lands on the switch itself,
+  // so the rating buttons each carry one (see modules/haptics.js).
+  ratingButtons.forEach(button => hapticTap(button, RATE_HAPTIC[Number(button.dataset.r)]));
+  hapticTap(closeButton);
+  hapticTap(studyEnabledButton, 'medium');
 
   let current = null;
   let deckId = null;
@@ -144,7 +150,6 @@ export function initPractice() {
     shown = false;
     setRatingEnabled(false);
     clearActiveRating();
-    haptic(RATE_HAPTIC[rating] || 'medium');
     const response = await fetch('/api/rate/' + cardId, {method: 'POST', body: new URLSearchParams({rating})});
     if (my !== seq) return;
     if (!response.ok) {
