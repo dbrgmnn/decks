@@ -34,12 +34,13 @@ button,input,select,textarea,summary{font:inherit;color:inherit;background:trans
    still visibly presses the button on iOS. */
 button{transition:background-color var(--dur) linear,color var(--dur) linear}
 button,summary,a,[role=button]{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
-/* One press contract for every control. */
-button:active:not(:disabled),[role=button]:active,#theme:active,.rate button.active-swipe,.data-actions button.on,.data-actions button[aria-pressed="true"]{background:var(--fg);color:var(--bg);box-shadow:var(--bevel-pressed);transform:translate(var(--shove),var(--shove))}
+/* One press contract for every beveled control. Folder tiles are ink, not
+   chrome: they stay transparent and only shove their icon (see .fold). */
+button:active:not(:disabled),.rate button.active-swipe{background:var(--fg);color:var(--bg);box-shadow:var(--bevel-pressed);transform:translate(var(--shove),var(--shove))}
 /* One disabled contract: sunken and faded, never animating. */
 button:disabled{cursor:not-allowed;opacity:.35;background:transparent;color:inherit;box-shadow:var(--bevel-pressed);transform:none}
 button,summary,a,.deck,.fold,#words li{-webkit-tap-highlight-color:transparent}
-#theme,.sheet .close,#close,.edit,.plus,.star,#folder-edit,.arrow,.folder-arrow,.delete-card{width:44px;height:44px;min-height:44px;padding:0;display:grid;place-items:center}
+#theme,.close,.edit,.plus,.star,#folder-edit,.arrow,.folder-arrow,.delete-card{width:44px;height:44px;min-height:44px;padding:0;display:grid;place-items:center}
 input,select,textarea{cursor:text;width:100%;margin-bottom:.5rem;box-shadow:var(--bevel-pressed)}
 textarea{display:block;box-sizing:border-box;min-height:5.5rem;line-height:1.35;resize:vertical}
 select{display:block;background-color:var(--bg)}
@@ -49,22 +50,26 @@ select{display:block;background-color:var(--bg)}
 .password-toggle{position:absolute;top:50%;right:.45rem;translate:0 -50%;transform:none !important;transition:none !important;width:36px;height:36px;min-height:36px;padding:0;border:0;background:transparent;box-shadow:none;display:grid;place-items:center;color:var(--fg);z-index:1}
 .password-toggle svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .password-toggle:hover,.password-toggle:active,.password-toggle:focus-visible{background:transparent !important;color:var(--fg) !important;box-shadow:none !important;transform:none !important;translate:0 -50%}
-@media (hover:hover){button:hover:not(:disabled),#theme:hover:not(:disabled){background:var(--fg);color:var(--bg)}}
+/* One hover contract. State rules below are classes, never ids: an id selector
+   would outrank :hover/:active and silently kill the feedback. */
+@media (hover:hover){button:hover:not(:disabled){background:var(--fg);color:var(--bg)}}
 /* One focus ring for every keyboard-reachable control. */
 :focus-visible{outline:var(--focus);outline-offset:2px}
 
 /* --- Bevels -------------------------------------------------------------- */
-button,.deck,.card,summary,#words li,.sheet .close,#close,.study-bar{box-shadow:var(--bevel-raised)}
-.steps button.on,.toggle[aria-pressed="true"]{background:var(--fg);color:var(--bg);box-shadow:var(--bevel-pressed)}
+button,.deck,.card,summary,#words li,.close,.study-bar{box-shadow:var(--bevel-raised)}
+/* One latched "selected" look: filled and sunken, never displaced. */
+.steps button.on,.toggle[aria-pressed="true"],.data-actions button.on,.data-actions button[aria-pressed="true"]{background:var(--fg);color:var(--bg);box-shadow:var(--bevel-pressed)}
 .toggle[aria-pressed="false"]{background:transparent;color:inherit;box-shadow:var(--bevel-raised);transform:none}
 .danger{border-color:var(--danger);color:var(--danger)}
-.danger:hover,.danger:active{background:var(--danger-bg);color:var(--danger-fg)}
+/* Same behaviour as every other button, only the fill hue differs, so this
+   needs the same specificity as the :hover/:active contracts above. */
+button.danger:hover,button.danger:active{background:var(--danger-bg);color:var(--danger-fg)}
 
 /* --- Header -------------------------------------------------------------- */
 .bar{display:grid;grid-template-columns:minmax(0,1fr) 44px;align-items:center;gap:.75rem;padding:.75rem 1rem .75rem;padding-top:calc(.75rem + env(safe-area-inset-top));padding-left:max(1rem,env(safe-area-inset-left));padding-right:max(1rem,env(safe-area-inset-right));position:sticky;top:0;background:var(--bg);border-bottom:var(--hair) solid var(--fg);box-shadow:0 var(--drop-1) 0 var(--drop);z-index:5}
 .bar::before{content:"";position:absolute;left:0;right:0;bottom:100%;height:env(safe-area-inset-top);background:var(--bg)}
 .bar #account{min-width:0;max-width:100%;justify-self:start;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-#theme:not(:active){background:var(--bg);color:var(--fg);box-shadow:var(--bevel-raised);transform:none}
 
 /* --- Deck grid and cards ------------------------------------------------- */
 .decks{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:1rem;margin-bottom:1rem}
@@ -106,7 +111,7 @@ button,.deck,.card,summary,#words li,.sheet .close,#close,.study-bar{box-shadow:
 .sheet[hidden],#practice[hidden]{display:none}
 #add,#deck-edit,#folder-sheet{z-index:11}
 #confirm{z-index:30}
-.sheet .close,#close{position:fixed;top:calc(.75rem + env(safe-area-inset-top));right:max(max(1rem,env(safe-area-inset-right)),calc(50% - (var(--panel-max) / 2) + 1rem));z-index:2;background:var(--bg)}
+.close{position:fixed;top:calc(.75rem + env(safe-area-inset-top));right:max(max(1rem,env(safe-area-inset-right)),calc(50% - (var(--panel-max) / 2) + 1rem));z-index:2}
 .panel{width:100%;max-width:var(--panel-max);margin:0 auto}
 .panel h2{margin:0 0 1rem}
 .panel .muted{margin:.5rem 0 1rem}
@@ -177,7 +182,6 @@ button,.deck,.card,summary,#words li,.sheet .close,#close,.study-bar{box-shadow:
 .opt-label,.panel h3.section{display:block;margin:1rem 0 .5rem;font-size:var(--text-md);font-weight:400;opacity:.8}
 .data-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.5rem}
 .data-actions button,.account-actions button{width:100%}
-.data-actions button[aria-pressed="false"]{transform:none}
 .data-box{margin-top:.5rem}
 .data-box .panel-block{display:flex;flex-direction:column}
 .data-box .panel-block button,.data-box .panel-block small{margin-top:auto}

@@ -57,6 +57,19 @@ def test_stylesheet_blocks_white_flash_and_text_selection(client):
     assert "#words li:active" in css
 
 
+def test_close_button_keeps_the_shared_button_contract(client):
+    """Every control shares one :hover/:active/disabled contract, so none of them
+    may be keyed to an id: an id selector outranks those contracts and silently
+    kills the feedback. The practice close button did exactly that - on hover its
+    glyph faded to the background colour and the button went blank."""
+    css = client.get("/static/style.css").text
+    assert "#close" not in css
+    assert ".close{position:fixed" in css
+
+    signup(client)
+    assert 'class="close"' in client.get("/").text
+
+
 def test_inputs_carry_native_keyboard_hints(client):
     signup(client)
 
