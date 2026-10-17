@@ -40,7 +40,7 @@ def home(request: Request, folder: int = 0, user=Depends(auth.current_user)):
         'name': r['name'],
         'folder_id': r['folder_id'],
         'folder_name': folder_names.get(r['folder_id']),
-        'path': f"{folder_names[r['folder_id']]}/{r['name']}" if r['folder_id'] else r['name'],
+        'path': f"{folder_names[r['folder_id']]}/{r['name']}" if r['folder_id'] in folder_names else r['name'],
         'new_per_day': r['new_per_day'],
         'paused': bool(r['paused']),
         'pinned': bool(r['pinned']),

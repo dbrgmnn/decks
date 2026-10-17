@@ -40,6 +40,23 @@ COMMON = {
 
 # Tiny in-memory rate limiter (resets on restart, fine for a home server)
 _fails = {}
+_last_prune = 0.0
+MAX_WINDOW = 3600
+
+
+def _prune(now):
+    # Drop stale buckets so an attacker cannot grow _fails without bound by
+    # cycling through random emails.
+    global _last_prune
+    if now - _last_prune < 300:
+        return
+    _last_prune = now
+    for key in list(_fails):
+        kept = [t for t in _fails[key] if now - t < MAX_WINDOW]
+        if kept:
+            _fails[key] = kept
+        else:
+            del _fails[key]
 
 
 def tz_options(current):
@@ -124,6 +141,7 @@ def check_password(pw):
 
 def blocked(key, limit=5, window=600):
     now = time.time()
+    _prune(now)
     _fails[key] = [t for t in _fails.get(key, []) if now - t < window]
     return len(_fails[key]) >= limit
 
@@ -145,9 +163,15 @@ def current_user(request: Request):
     row = None
     if uid:
         with db.conn() as c:
-            row = _user_dict(c.execute("SELECT id, email, name, tz FROM users WHERE id=?", (uid,)).fetchone())
+            row = c.execute(
+                "SELECT id, email, name, tz, token_version FROM users WHERE id=?", (uid,)
+            ).fetchone()
+        # A stale cookie (after sign-out or a password change) carries an older
+        # token_version than the database and is treated as no session at all.
+        if row and row["token_version"] != request.session.get("tv"):
+            row = None
     if row:
-        return row
+        return _user_dict(row)
     request.session.clear()
     if request.url.path.startswith("/api/"):
         raise HTTPException(401, "Please sign in")
@@ -158,9 +182,11 @@ def current_user_or_token(request: Request):
     uid = request.session.get("uid")
     if uid:
         with db.conn() as c:
-            row = _user_dict(c.execute("SELECT id, email, name, tz FROM users WHERE id=?", (uid,)).fetchone())
-        if row:
-            return row
+            row = c.execute(
+                "SELECT id, email, name, tz, token_version FROM users WHERE id=?", (uid,)
+            ).fetchone()
+        if row and row["token_version"] == request.session.get("tv"):
+            return _user_dict(row)
         request.session.clear()
 
     auth_header = request.headers.get('Authorization', '')

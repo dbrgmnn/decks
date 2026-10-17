@@ -68,7 +68,7 @@ def deck_cards(deck_id: int, user=Depends(auth.current_user)):
     with db.conn() as c:
         own_deck(c, uid, deck_id)
         rows = c.execute(
-            'SELECT id, front, back, note, state, due FROM cards WHERE deck_id=? ORDER BY id DESC',
+            'SELECT id, front, back, note FROM cards WHERE deck_id=? ORDER BY id DESC',
             (deck_id,),
         ).fetchall()
     return [dict(r) for r in rows]

@@ -150,11 +150,18 @@ async def order_folders(request: Request, user=Depends(auth.current_user)):
     if len(ids) != len(set(ids)):
         raise HTTPException(400, 'Invalid folder order')
     with db.conn() as c:
-        owned = {r[0] for r in c.execute('SELECT id FROM folders WHERE user_id=?', (uid,))}
-        if set(ids) - owned:
+        all_ids = [r[0] for r in c.execute(
+            'SELECT id FROM folders WHERE user_id=? ORDER BY pos, id',
+            (uid,),
+        ).fetchall()]
+        subset = set(ids)
+        if subset - set(all_ids):
             raise HTTPException(400, 'Invalid folder order')
-        for temp_pos, folder_id in enumerate(ids, 1):
+        # Keep folders outside this view in place; only reshuffle the submitted subset.
+        it = iter(ids)
+        ordered = [next(it) if folder_id in subset else folder_id for folder_id in all_ids]
+        for temp_pos, folder_id in enumerate(ordered, 1):
             c.execute('UPDATE folders SET pos=? WHERE id=? AND user_id=?', (-temp_pos, folder_id, uid))
-        for pos, folder_id in enumerate(ids, 1):
+        for pos, folder_id in enumerate(ordered, 1):
             c.execute('UPDATE folders SET pos=? WHERE id=? AND user_id=?', (pos, folder_id, uid))
     return {'ok': True}

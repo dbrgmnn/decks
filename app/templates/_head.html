@@ -2,7 +2,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="Minimal flashcards app with folders, decks and FSRS-based study.">
 <title>decks</title>
-<script>try{document.documentElement.dataset.theme=localStorage.theme||"light"}catch{document.documentElement.dataset.theme="light"}</script>
+<script nonce="{{ request.state.csp_nonce }}">try{document.documentElement.dataset.theme=localStorage.theme||"light"}catch{document.documentElement.dataset.theme="light"}</script>
 <link rel="manifest" href="{{ asset('icons/site.webmanifest') }}">
 <link rel="icon" href="{{ asset('icons/favicon.ico') }}" sizes="any">
 <link rel="icon" type="image/svg+xml" href="{{ asset('icons/favicon.svg') }}">

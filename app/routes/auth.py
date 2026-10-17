@@ -1,3 +1,5 @@
+import sqlite3
+
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 
 from .. import auth, db
@@ -17,13 +19,18 @@ def signup(request: Request, email: str = Form(...), password: str = Form(...), 
     with db.conn() as c:
         if c.execute('SELECT 1 FROM users WHERE lower(email)=?', (email,)).fetchone():
             raise HTTPException(400, 'This email is already registered')
-        uid = c.execute(
-            'INSERT INTO users(email,password_hash,name,tz) VALUES(?,?,?,?)',
-            (email, auth.hash_pw(password), email.split('@')[0][:40], tz if tz in auth.TZ_SET else 'UTC'),
-        ).lastrowid
+        try:
+            uid = c.execute(
+                'INSERT INTO users(email,password_hash,name,tz) VALUES(?,?,?,?)',
+                (email, auth.hash_pw(password), email.split('@')[0][:40], tz if tz in auth.TZ_SET else 'UTC'),
+            ).lastrowid
+        except sqlite3.IntegrityError:
+            # Lost a race against a concurrent signup for the same address.
+            raise HTTPException(400, 'This email is already registered')
     auth.clear(key)
     request.session.clear()
     request.session['uid'] = uid
+    request.session['tv'] = 0
     return {'ok': True}
 
 @router.post('/api/login')
@@ -33,17 +40,23 @@ def login(request: Request, email: str = Form(...), password: str = Form(...)):
     if auth.blocked(key):
         raise HTTPException(429, 'Too many attempts. Try again in a few minutes.')
     with db.conn() as c:
-        row = c.execute('SELECT id, password_hash FROM users WHERE lower(email)=?', (email,)).fetchone()
+        row = c.execute('SELECT id, password_hash, token_version FROM users WHERE lower(email)=?', (email,)).fetchone()
     if not auth.verify(row['password_hash'] if row else auth.DUMMY, password) or not row:
         auth.fail(key)
         raise HTTPException(400, 'Invalid email or password')
     auth.clear(key)
     request.session.clear()
     request.session['uid'] = row['id']
+    request.session['tv'] = row['token_version']
     return {'ok': True}
 
 @router.post('/api/logout')
 def logout(request: Request):
+    uid = request.session.get('uid')
+    if uid:
+        # Bumping the version revokes every cookie issued for this account.
+        with db.conn() as c:
+            c.execute('UPDATE users SET token_version=token_version+1 WHERE id=?', (uid,))
     request.session.clear()
     return {'ok': True}
 
@@ -62,8 +75,14 @@ def change_password(request: Request, current: str = Form(...), password: str = 
             raise HTTPException(400, 'Passwords do not match')
         if password == current:
             raise HTTPException(400, 'New password must be different')
-        c.execute('UPDATE users SET password_hash=? WHERE id=?', (auth.hash_pw(password), user['id']))
+        c.execute(
+            'UPDATE users SET password_hash=?, token_version=token_version+1 WHERE id=?',
+            (auth.hash_pw(password), user['id']),
+        )
+        token_version = c.execute('SELECT token_version FROM users WHERE id=?', (user['id'],)).fetchone()[0]
     auth.clear(key)
+    # Keep this device signed in, but every other session is now invalid.
+    request.session['tv'] = token_version
     return {'ok': True}
 
 @router.post('/api/settings')

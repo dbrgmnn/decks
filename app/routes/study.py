@@ -41,12 +41,19 @@ def next_active_card(user=Depends(auth.current_user)):
             (uid, now),
         ).fetchone()[0]
 
+        # One grouped count instead of a query per deck.
+        unseen_by_deck = dict(c.execute(
+            """SELECT deck_id, COUNT(*) FROM cards
+            WHERE state IS NULL AND deck_id IN (SELECT id FROM decks WHERE user_id=? AND paused=0)
+            GROUP BY deck_id""",
+            (uid,),
+        ).fetchall())
+
         actual_new_left = 0
         eligible_new_decks = []
         for deck in decks:
-            unseen = c.execute('SELECT COUNT(*) FROM cards WHERE deck_id=? AND state IS NULL', (deck['id'],)).fetchone()[0]
             quota_left = max(0, int(deck['new_per_day']) - int(introduced.get(deck['id'], 0)))
-            can_new = min(unseen, quota_left)
+            can_new = min(int(unseen_by_deck.get(deck['id'], 0)), quota_left)
             actual_new_left += can_new
             if can_new > 0:
                 eligible_new_decks.append(deck['id'])
@@ -92,6 +99,9 @@ def next_card(deck_id: int, user=Depends(auth.current_user)):
     today = srs.day_start(user['tz'])
     with db.conn() as c:
         deck = own_deck(c, uid, deck_id)
+        # A paused deck is not studied from the API either.
+        if deck['paused']:
+            return None
         # New-card quota is calculated per user's local day.
         seen_today = introduced_today(c, deck_id, today)
         new_left = max(0, int(deck['new_per_day']) - seen_today)

@@ -168,3 +168,18 @@ def test_folder_order_applies(client):
 
     html = client.get("/").text
     assert html.index(f'data-folder="{second}"') < html.index(f'data-folder="{first}"')
+
+
+def test_folder_order_accepts_a_subset(client):
+    # A partial list used to collide with the other folders' positions (400).
+    _signup(client)
+    first = _make_folder(client, "First")
+    second = _make_folder(client, "Second")
+    third = _make_folder(client, "Third")
+
+    assert client.post("/api/folders/order", data={"ids": [third, first]}).status_code == 200
+
+    # Submitted folders fill their own slots; "Second" keeps slot 2 in between.
+    html = client.get("/").text
+    assert html.index(f'data-folder="{third}"') < html.index(f'data-folder="{second}"')
+    assert html.index(f'data-folder="{second}"') < html.index(f'data-folder="{first}"')

@@ -80,3 +80,39 @@ def test_tz_options_includes_valid_current_zone():
     zones = [zone for zone, _label in options]
     assert "Europe/Berlin" in zones or "Europe/Berlin" in auth.POPULAR_TZ
     assert all(isinstance(zone, str) and isinstance(_label, str) for zone, _label in options)
+
+
+def _signup(client, email="sessions@example.com", password="GoodPass123"):
+    response = client.post(
+        "/api/signup",
+        data={"email": email, "password": password, "password2": password, "tz": "UTC"},
+    )
+    assert response.status_code == 200, response.text
+
+
+def test_logout_revokes_the_session_cookie(client):
+    _signup(client)
+    cookie = client.cookies.get("decks_session")
+    assert client.get("/api/next/active").status_code == 200
+
+    assert client.post("/api/logout").status_code == 200
+
+    client.cookies.set("decks_session", cookie)
+    assert client.get("/api/next/active").status_code == 401
+
+
+def test_password_change_revokes_other_sessions(client):
+    _signup(client)
+    cookie = client.cookies.get("decks_session")
+
+    changed = client.post(
+        "/api/password",
+        data={"current": "GoodPass123", "password": "NewPass999", "password2": "NewPass999"},
+    )
+    assert changed.status_code == 200
+    # The device that changed the password stays signed in...
+    assert client.get("/api/next/active").status_code == 200
+
+    # ...but a copy of the old cookie no longer works.
+    client.cookies.set("decks_session", cookie)
+    assert client.get("/api/next/active").status_code == 401

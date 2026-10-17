@@ -11,7 +11,8 @@ CREATE TABLE IF NOT EXISTS users(
   api_token_hash TEXT NOT NULL DEFAULT '',
   name TEXT NOT NULL DEFAULT '',
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  tz TEXT NOT NULL DEFAULT 'UTC'
+  tz TEXT NOT NULL DEFAULT 'UTC',
+  token_version INTEGER NOT NULL DEFAULT 0
 )
 """
 
@@ -86,7 +87,7 @@ ORDER = ["users", "folders", "decks", "cards", "reviews"]
 
 # Bump SCHEMA_VERSION and add a step to MIGRATIONS when the schema changes.
 # Existing databases are upgraded in order; fresh ones run every step.
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 
 
 def _migrate_1(c):
@@ -96,9 +97,17 @@ def _migrate_1(c):
         c.execute(sql)
 
 
+def _migrate_2(c):
+    # token_version lets a password change or sign-out invalidate old sessions.
+    columns = {row[1] for row in c.execute("PRAGMA table_info(users)")}
+    if "token_version" not in columns:
+        c.execute("ALTER TABLE users ADD COLUMN token_version INTEGER NOT NULL DEFAULT 0")
+
+
 # version -> callable applying the change that brings the database to it.
 MIGRATIONS = {
     1: _migrate_1,
+    2: _migrate_2,
 }
 
 
@@ -130,18 +139,23 @@ def init():
         c.execute("PRAGMA journal_mode=WAL")
         c.execute("PRAGMA foreign_keys=ON")
         version = c.execute("PRAGMA user_version").fetchone()[0]
-        if version >= SCHEMA_VERSION:
+        if version > SCHEMA_VERSION:
+            raise RuntimeError(
+                f"Database schema version {version} is newer than this app ({SCHEMA_VERSION}); upgrade the app"
+            )
+        if version == SCHEMA_VERSION:
             return
 
         c.execute("BEGIN")
-        # Databases created before schema versioning report 0 but already hold the
-        # version 1 tables, so the first step must stay idempotent (IF NOT EXISTS).
-        for target in range(version + 1, SCHEMA_VERSION + 1):
-            MIGRATIONS[target](c)
-        c.execute(f"PRAGMA user_version={SCHEMA_VERSION}")
-        c.execute("COMMIT")
-    except BaseException:
-        c.execute("ROLLBACK")
-        raise
+        try:
+            # Databases created before schema versioning report 0 but already
+            # hold the version 1 tables, so the first step stays idempotent.
+            for target in range(version + 1, SCHEMA_VERSION + 1):
+                MIGRATIONS[target](c)
+            c.execute(f"PRAGMA user_version={SCHEMA_VERSION}")
+            c.execute("COMMIT")
+        except BaseException:
+            c.execute("ROLLBACK")
+            raise
     finally:
         c.close()

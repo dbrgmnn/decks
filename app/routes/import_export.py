@@ -33,10 +33,14 @@ def export_cards_csv(
     params = [uid]
     with db.conn() as c:
         if scope == 'folder':
+            if not folder_id:
+                raise HTTPException(400, 'Choose a folder to export')
             folder_id = own_folder(c, uid, folder_id)
             sql += ' AND d.folder_id = ?'
             params.append(folder_id)
         elif scope == 'deck':
+            if not deck_id:
+                raise HTTPException(400, 'Choose a deck to export')
             deck = own_deck(c, uid, deck_id)
             sql += ' AND d.id = ?'
             params.append(deck['id'])
@@ -69,11 +73,15 @@ def import_cards_csv(file: UploadFile = File(...), user=Depends(auth.current_use
         text = raw.decode('utf-8-sig')
     except UnicodeDecodeError:
         raise HTTPException(400, 'CSV must be UTF-8 encoded')
-    reader = csv.DictReader(io.StringIO(text))
-    if reader.fieldnames != CSV_FIELDS:
-        raise HTTPException(400, 'CSV columns must be exactly: folder, deck, front, back, note')
+    try:
+        reader = csv.DictReader(io.StringIO(text))
+        if reader.fieldnames != CSV_FIELDS:
+            raise HTTPException(400, 'CSV columns must be exactly: folder, deck, front, back, note')
+        rows = list(reader)
+    except csv.Error:
+        # A malformed file or a single field past csv's size limit.
+        raise HTTPException(400, 'CSV could not be parsed')
 
-    rows = list(reader)
     if not rows:
         return {'ok': True, 'folders': 0, 'decks': 0, 'cards': 0}
 
