@@ -4,6 +4,7 @@ import {initTheme} from './modules/theme.js';
 import {initKeyboardHints} from './modules/keyboard.js';
 import {initServiceWorker} from './modules/pwa.js';
 import {initTouchFeedback} from './modules/touch.js';
+import {initPasswordToggles} from './modules/password.js';
 import {createDialogs} from './modules/dialogs.js';
 import {initPractice} from './modules/practice.js';
 import {initCards} from './modules/cards.js';
@@ -17,6 +18,7 @@ initTheme();
 initKeyboardHints();
 initServiceWorker();
 initTouchFeedback();
+initPasswordToggles();
 
 const accountSheet = $('#account-sheet');
 const confirmSheet = $('#confirm');
@@ -55,26 +57,6 @@ initQuickAdd({
   onCreated: async () => {
     document.dispatchEvent(new CustomEvent('dex:home-refresh'));
   },
-});
-
-const togglePasswordField = button => {
-  const field = button.closest('.password-field');
-  const input = field?.querySelector('input');
-  if (!input) return;
-
-  const visible = input.type === 'text';
-  input.type = visible ? 'password' : 'text';
-  button.setAttribute('aria-pressed', String(!visible));
-  button.setAttribute('aria-label', visible ? 'Show password' : 'Hide password');
-  field.querySelector('.eye-open')?.toggleAttribute('hidden', !visible);
-  field.querySelector('.eye-closed')?.toggleAttribute('hidden', visible);
-};
-
-// One delegated listener is cheaper than per-button bindings.
-document.addEventListener('click', event => {
-  const button = event.target.closest('.password-toggle');
-  if (!button) return;
-  togglePasswordField(button);
 });
 
 const escapeActions = [

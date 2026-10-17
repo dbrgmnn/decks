@@ -2,7 +2,6 @@ import {$, arrowSvg} from './dom.js';
 
 export function initFolders({confirmDelete, errText}) {
   const folderButtons = [...document.querySelectorAll('.fold[data-folder]')];
-  const folderTitle = $('#folder-title');
   const folderForm = $('#folder-form');
   const folderNameField = $('#folder-form [name=name]');
   const folderMsg = $('#fe-msg');
@@ -20,10 +19,8 @@ export function initFolders({confirmDelete, errText}) {
 
   const openFolderSheet = folder => {
     curFolder = folder;
-    folderTitle.textContent = folder ? 'Edit folder' : 'New folder';
-    folderNameField.value = folder ? folder.name : '';
+    folderNameField.value = folder.name;
     folderMsg.textContent = '';
-    deleteFolderButton.hidden = !folder;
     folderSheet.hidden = false;
     folderNameField.focus();
   };
@@ -32,12 +29,18 @@ export function initFolders({confirmDelete, errText}) {
     folderSheet.hidden = true;
   };
 
-  const updateFolderNode = (folderId, payload) => {
-    const folder = getFolderNode(folderId);
-    if (!folder) return;
-    folder.dataset.name = payload.name;
-    const label = folder.querySelector('.fname');
-    if (label) label.textContent = payload.name;
+  const applyFolderName = name => {
+    const tile = getFolderNode(curFolder.id);
+    if (tile) {
+      tile.dataset.name = name;
+      const label = tile.querySelector('.fname');
+      if (label) label.textContent = name;
+    }
+    // The edit button and the back label read the same folder, so keep them in
+    // step without a full reload.
+    folderEditButton.dataset.name = name;
+    folderBackButton.textContent = '← ' + name;
+    curFolder.name = name;
   };
 
   folderButtons.forEach(folder => {
@@ -57,25 +60,24 @@ export function initFolders({confirmDelete, errText}) {
 
   folderForm.onsubmit = async event => {
     event.preventDefault();
-    const payload = Object.fromEntries(new FormData(folderForm));
-    const response = await fetch(curFolder ? '/api/folders/' + curFolder.id : '/api/folders', {
-      method: curFolder ? 'PUT' : 'POST',
-      body: new URLSearchParams(new FormData(folderForm)),
-    });
+    let response;
+    try {
+      response = await fetch('/api/folders/' + curFolder.id, {
+        method: 'PUT',
+        body: new URLSearchParams(new FormData(folderForm)),
+      });
+    } catch {
+      folderMsg.textContent = 'Could not save. Check your connection.';
+      return;
+    }
 
     if (!response.ok) {
       folderMsg.textContent = await errText(response);
       return;
     }
 
-    // Edit can be patched locally; create still needs a page refresh for new layout.
-    if (curFolder) {
-      updateFolderNode(curFolder.id, payload);
-      closeFolderSheet();
-      return;
-    }
-
-    location.reload();
+    applyFolderName(folderNameField.value.trim());
+    closeFolderSheet();
   };
 
   deleteFolderButton.onclick = () => confirmDelete('folder', curFolder);
@@ -91,7 +93,14 @@ export function initFolders({confirmDelete, errText}) {
   const saveFolderOrder = async () => {
     const body = new URLSearchParams();
     folderEls().forEach(folder => body.append('ids', folder.dataset.folder));
-    const response = await fetch('/api/folders/order', {method: 'POST', body});
+    let response;
+    try {
+      response = await fetch('/api/folders/order', {method: 'POST', body});
+    } catch {
+      alert('Could not save folder order.');
+      location.reload();
+      return;
+    }
     if (!response.ok) {
       alert('Could not save folder order.');
       location.reload();

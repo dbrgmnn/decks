@@ -155,17 +155,25 @@ export function initAccount({confirmDelete, errText}) {
     event.preventDefault();
     const form = event.target;
     const scope = form.scope.value;
-    if (scope === 'folder' && !form.folder_id.value) return exportCsvMsg.textContent = 'Choose a folder to export';
-    if (scope === 'deck' && !form.deck_id.value) return exportCsvMsg.textContent = 'Choose a deck to export';
+    const chosen = value => value && value !== '0';
+    if (scope === 'folder' && !chosen(form.folder_id.value)) return exportCsvMsg.textContent = 'Choose a folder to export';
+    if (scope === 'deck' && !chosen(form.deck_id.value)) return exportCsvMsg.textContent = 'Choose a deck to export';
     exportCsvMsg.textContent = '';
-    const response = await fetch('/api/export/cards.csv', {method: 'POST', body: new URLSearchParams(new FormData(form))});
+    let response;
+    try {
+      response = await fetch('/api/export/cards.csv', {method: 'POST', body: new URLSearchParams(new FormData(form))});
+    } catch {
+      return exportCsvMsg.textContent = 'Export failed. Check your connection and try again.';
+    }
     if (!response.ok) return exportCsvMsg.textContent = await errText(response);
     const blob = await response.blob();
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
     link.download = 'decks-cards.csv';
+    document.body.append(link);
     link.click();
+    link.remove();
     URL.revokeObjectURL(url);
     exportCsvMsg.textContent = 'CSV downloaded ✓';
   };

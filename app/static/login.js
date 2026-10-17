@@ -1,10 +1,12 @@
 import {$, errText, syncThemeColor} from './modules/dom.js';
 import {initServiceWorker} from './modules/pwa.js';
 import {initTouchFeedback} from './modules/touch.js';
+import {initPasswordToggles, resetPassword} from './modules/password.js';
 
 syncThemeColor();
 initServiceWorker();
 initTouchFeedback();
+initPasswordToggles();
 
 const form = $('#auth-form');
 const submitButton = $('#submit');
@@ -13,45 +15,13 @@ const message = $('#msg');
 const passwordField = form.password.closest('.password-field');
 const password2Field = form.password2.closest('.password-field');
 
-const passwordToggle = button => {
-  const field = button.closest('.password-field');
-  const input = field?.querySelector('input');
-  if (!input) return;
-
-  const visible = input.type === 'text';
-  input.type = visible ? 'password' : 'text';
-  button.setAttribute('aria-pressed', String(!visible));
-  button.setAttribute('aria-label', visible ? 'Show password' : 'Hide password');
-  field.querySelector('.eye-open')?.toggleAttribute('hidden', !visible);
-  field.querySelector('.eye-closed')?.toggleAttribute('hidden', visible);
-};
-
-const resetPasswordToggle = field => {
-  const input = field?.querySelector('input');
-  const button = field?.querySelector('.password-toggle');
-  if (!input || !button) return;
-
-  input.type = 'password';
-  button.setAttribute('aria-pressed', 'false');
-  button.setAttribute('aria-label', 'Show password');
-  field.querySelector('.eye-open')?.removeAttribute('hidden');
-  field.querySelector('.eye-closed')?.setAttribute('hidden', '');
-};
-
-// Use one delegated handler for both password fields.
-document.addEventListener('click', event => {
-  const button = event.target.closest('.password-toggle');
-  if (!button) return;
-  passwordToggle(button);
-});
-
 let signup = false;
 
 const setMode = on => {
   signup = on;
   form.reset();
-  resetPasswordToggle(passwordField);
-  resetPasswordToggle(password2Field);
+  resetPassword(passwordField);
+  resetPassword(password2Field);
   password2Field.hidden = !on;
   form.password2.required = on;
   form.password2.disabled = !on;

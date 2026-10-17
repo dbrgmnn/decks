@@ -18,7 +18,10 @@ export function initCards({confirmDelete, errText}) {
   let editing = null;
   const cardsByDeck = new Map();
 
-  const getDeckCards = deckId => cardsByDeck.get(String(deckId)) || [];
+  const getDeckCards = deckId => {
+    const cards = cardsByDeck.get(String(deckId));
+    return Array.isArray(cards) ? cards : [];
+  };
 
   const setCurrentDeck = deck => {
     curDeck = deck;
@@ -73,8 +76,16 @@ export function initCards({confirmDelete, errText}) {
       return;
     }
 
-    const response = await fetch(`/api/decks/${curDeck.id}/cards`);
+    let response;
+    try {
+      response = await fetch(`/api/decks/${curDeck.id}/cards`);
+    } catch {
+      return;
+    }
+    // A deck deleted elsewhere answers with an error object, not a list.
+    if (!response.ok) return;
     const cards = await response.json();
+    if (!Array.isArray(cards)) return;
     cardsByDeck.set(String(curDeck.id), cards);
     renderWords();
   };

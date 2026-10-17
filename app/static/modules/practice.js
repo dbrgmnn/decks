@@ -8,6 +8,7 @@ export function initPractice() {
   const back = $('#back');
   const note = $('#note');
   const summary = $('#summary');
+  const message = $('#practice-msg');
   const badge = $('#card-kind');
   const counterCurrent = $('#n');
   const counterTotal = $('#m');
@@ -82,6 +83,16 @@ export function initPractice() {
     ratingButtons.forEach(button => button.classList.remove('active-swipe'));
   };
 
+  const showError = text => {
+    message.textContent = text;
+    message.hidden = false;
+  };
+
+  const clearError = () => {
+    message.hidden = true;
+    message.textContent = '';
+  };
+
   const previewRating = rating => {
     ratingButtons.forEach(button => {
       button.classList.toggle('active-swipe', shown && Number(button.dataset.r) === rating);
@@ -108,6 +119,7 @@ export function initPractice() {
     shown = false;
     setRatingEnabled(false);
     resetCardTransform();
+    clearError();
     practiceSheet.hidden = true;
     document.dispatchEvent(new CustomEvent('dex:practice-closed'));
   };
@@ -157,9 +169,19 @@ export function initPractice() {
   const next = async () => {
     const my = ++seq;
     const path = deckId === 'active' ? '/api/next/active' : '/api/next/' + deckId;
-    const response = await fetch(path);
+    let response;
+    try {
+      response = await fetch(path);
+    } catch {
+      if (my === seq) showError('Could not load cards. Check your connection.');
+      return;
+    }
     if (my !== seq) return;
-    if (!response.ok) return;
+    if (!response.ok) {
+      showError('Could not load cards. Check your connection.');
+      return;
+    }
+    clearError();
     show(await response.json());
   };
 
@@ -179,11 +201,22 @@ export function initPractice() {
     shown = false;
     setRatingEnabled(false);
     clearActiveRating();
-    const response = await fetch('/api/rate/' + cardId, {method: 'POST', body: new URLSearchParams({rating})});
+    let response;
+    try {
+      response = await fetch('/api/rate/' + cardId, {method: 'POST', body: new URLSearchParams({rating})});
+    } catch {
+      if (my === seq) {
+        shown = true;
+        setRatingEnabled(true);
+        showError('Could not save. Check your connection.');
+      }
+      return;
+    }
     if (my !== seq) return;
     if (!response.ok) {
       shown = true;
       setRatingEnabled(true);
+      showError('Could not save. Try again.');
       return;
     }
     recordRating(rating, kind);
@@ -199,6 +232,7 @@ export function initPractice() {
     shown = false;
     setRatingEnabled(false);
     startStats();
+    clearError();
     summary.hidden = true;
     front.hidden = false;
     practiceSheet.hidden = false;

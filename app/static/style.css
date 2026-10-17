@@ -134,6 +134,7 @@ button.danger:hover,button.danger:active{background:var(--danger-bg);color:var(-
 .count{display:flex;align-items:baseline;gap:.6rem;font-size:var(--text-lg);letter-spacing:.05em}
 .count b{font-size:var(--text-2xl);line-height:1}
 .count span:last-child{opacity:.7}
+#practice-msg{display:block;text-align:center;overflow-wrap:anywhere}
 .rate{display:grid;grid-template-columns:repeat(4,1fr);gap:.5rem;width:100%;max-width:var(--form-max)}
 .rate button.active-swipe:disabled{opacity:1;background:var(--fg);color:var(--bg);transform:translate(var(--shove),var(--shove))}
 #front,#back,#note{overflow-wrap:anywhere;word-break:break-word;hyphens:auto}

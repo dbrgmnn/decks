@@ -5,7 +5,7 @@
 //   - serves /static/* network-first with a cache fallback, so the UI keeps its
 //     look on a flaky connection, and
 //   - answers navigation requests that fail offline with a small offline page.
-const VERSION = 'decks-v4';
+const VERSION = 'decks-v5';
 const STATIC_CACHE = `${VERSION}-static`;
 const OFFLINE_URL = '/static/offline.html';
 const PRECACHE = ['/static/tokens.css', OFFLINE_URL, '/static/offline.css'];
@@ -47,12 +47,14 @@ self.addEventListener('fetch', event => {
 
 async function networkFirst(request, cacheName) {
   const cache = await caches.open(cacheName);
+  // Cache by path so the ?v= cache-buster never piles up stale entries.
+  const key = new Request(new URL(request.url).pathname);
   try {
     const response = await fetch(request);
-    if (response.ok && response.type === 'basic') cache.put(request, response.clone());
+    if (response.ok && response.type === 'basic') cache.put(key, response.clone());
     return response;
   } catch (error) {
-    const cached = await cache.match(request);
+    const cached = await cache.match(key);
     if (cached) return cached;
     throw error;
   }
