@@ -135,7 +135,13 @@ button.danger:hover,button.danger:active{background:var(--danger-bg);color:var(-
 .count span:last-child{opacity:.7}
 #practice-msg{display:block;text-align:center;overflow-wrap:anywhere}
 .rate{display:grid;grid-template-columns:repeat(4,1fr);gap:.5rem;width:100%;max-width:var(--form-max)}
-.rate button.active-swipe:disabled{opacity:1;background:var(--fg);color:var(--bg);transform:translate(var(--shove),var(--shove))}
+.rate button[data-r="1"]{--rate:var(--danger);--rate-bg:var(--danger-bg);--rate-fg:var(--danger-fg)}
+.rate button[data-r="2"]{--rate:var(--rating-hard);--rate-bg:var(--rating-hard-bg);--rate-fg:var(--rating-hard-fg)}
+.rate button[data-r="3"]{--rate:var(--rating-good);--rate-bg:var(--rating-good-bg);--rate-fg:var(--rating-good-fg)}
+.rate button[data-r="4"]{--rate:var(--rating-easy);--rate-bg:var(--rating-easy-bg);--rate-fg:var(--rating-easy-fg)}
+.rate button[data-r]:not(:disabled){border-color:var(--rate);color:var(--rate)}
+.rate button[data-r]:hover:not(:disabled),.rate button[data-r]:active:not(:disabled),.rate button[data-r].active-swipe:not(:disabled){background:var(--rate-bg);color:var(--rate-fg)}
+.rate button[data-r].active-swipe:not(:disabled){opacity:1;transform:translate(var(--shove),var(--shove))}
 #front,#back,#note{overflow-wrap:anywhere;word-break:break-word;hyphens:auto}
 #front{position:relative;width:auto;max-width:calc(100% - 3.4rem);font-weight:700;opacity:1;line-height:1.25}
 #front-text{display:block}

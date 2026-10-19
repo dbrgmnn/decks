@@ -29,6 +29,17 @@
   --danger-bg: #9b2020;           /* pressed fill */
   --danger-fg: #fff;              /* pressed text */
 
+  /* --- Rating accents ----------------------------------------------------- */
+  --rating-hard: #a34a00;         /* border + text */
+  --rating-hard-bg: #b45309;      /* pressed fill */
+  --rating-hard-fg: #fff;         /* pressed text */
+  --rating-good: #7a5c00;         /* border + text */
+  --rating-good-bg: #f0c419;      /* pressed fill */
+  --rating-good-fg: #111;         /* pressed text */
+  --rating-easy: #1f6b3a;         /* border + text */
+  --rating-easy-bg: #1f7a3f;      /* pressed fill */
+  --rating-easy-fg: #fff;         /* pressed text */
+
   /* --- Bevel geometry -----------------------------------------------------
      Every bevel is built from these five numbers, so elevation can never
      drift again. */
@@ -103,5 +114,8 @@
   --danger: #ff9b9b;
   --danger-bg: #9b2020;
   --danger-fg: #fff;
+  --rating-hard: #ffb066;
+  --rating-good: #ffd95c;
+  --rating-easy: #7ddc9a;
   color-scheme: dark;
 }
