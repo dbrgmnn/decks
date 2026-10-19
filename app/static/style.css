@@ -137,8 +137,13 @@ button.danger:hover,button.danger:active{background:var(--danger-bg);color:var(-
 .rate{display:grid;grid-template-columns:repeat(4,1fr);gap:.5rem;width:100%;max-width:var(--form-max)}
 .rate button.active-swipe:disabled{opacity:1;background:var(--fg);color:var(--bg);transform:translate(var(--shove),var(--shove))}
 #front,#back,#note{overflow-wrap:anywhere;word-break:break-word;hyphens:auto}
-#front{font-weight:700;opacity:1;line-height:1.25}
+#front{position:relative;width:auto;max-width:calc(100% - 3.4rem);font-weight:700;opacity:1;line-height:1.25}
+#front-text{display:block}
 #back{opacity:.82;line-height:1.35}
+#speak{position:absolute;left:100%;top:50%;translate:0 -50%;margin-left:.3rem;width:44px;height:44px;min-height:44px;padding:0;border:0;background:transparent;box-shadow:none;display:grid;place-items:center;color:var(--fg)}
+#speak svg{width:1.25rem;height:1.25rem;display:block}
+#speak:hover,#speak:active,#speak:focus-visible{background:transparent!important;color:var(--fg)!important;box-shadow:none!important;transform:none!important}
+#speak.speaking{opacity:.45}
 #note{font-size:var(--text-note);opacity:.82;line-height:1.45;max-width:46ch;margin:0 auto}
 
 /* --- Session summary ----------------------------------------------------- */

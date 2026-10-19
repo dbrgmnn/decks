@@ -1,11 +1,21 @@
 import {$, el} from './dom.js';
+import {
+  canSpeak,
+  detectSpeechLanguage,
+  resetSpeechLanguage,
+  speakText,
+  speechLanguageFor,
+  stopSpeaking,
+} from './speech.js';
 
 export function initPractice() {
   const practiceSheet = $('#practice');
   const closeButton = $('#close');
   const card = $('#card');
   const front = $('#front');
+  const frontText = $('#front-text');
   const back = $('#back');
+  const speakButton = $('#speak');
   const note = $('#note');
   const summary = $('#summary');
   const message = $('#practice-msg');
@@ -19,6 +29,8 @@ export function initPractice() {
 
   const RATING_LABELS = {1: 'Again', 2: 'Hard', 3: 'Good', 4: 'Easy'};
 
+  if (speakButton && !canSpeak()) speakButton.hidden = true;
+
   let current = null;
   let deckId = null;
   let shown = false;
@@ -28,6 +40,23 @@ export function initPractice() {
   let startY = null;
   let seq = 0;
   let session = null;
+  const deckLanguages = new Map();
+  const requestedDecks = new Set();
+
+  const requestDeckLanguage = id => {
+    const key = Number(id);
+    if (!Number.isInteger(key) || key <= 0 || requestedDecks.has(key)) return;
+    requestedDecks.add(key);
+    fetch('/api/decks/' + key + '/cards')
+      .then(response => (response.ok ? response.json() : null))
+      .then(cards => {
+        if (!Array.isArray(cards) || !cards.length) return;
+        const sample = cards.slice(0, 100).map(card => card.front).join(' ');
+        const lang = detectSpeechLanguage(sample);
+        if (lang) deckLanguages.set(key, lang);
+      })
+      .catch(() => requestedDecks.delete(key));
+  };
 
   const startStats = () => {
     session = {start: Date.now(), ratings: {1: 0, 2: 0, 3: 0, 4: 0}, fresh: 0, reviews: 0};
@@ -83,6 +112,11 @@ export function initPractice() {
     ratingButtons.forEach(button => button.classList.remove('active-swipe'));
   };
 
+  const stopSpeech = () => {
+    stopSpeaking();
+    if (speakButton) speakButton.classList.remove('speaking');
+  };
+
   const showError = text => {
     message.textContent = text;
     message.hidden = false;
@@ -117,6 +151,7 @@ export function initPractice() {
     seq += 1;
     current = null;
     shown = false;
+    stopSpeech();
     setRatingEnabled(false);
     resetCardTransform();
     clearError();
@@ -137,9 +172,11 @@ export function initPractice() {
   };
 
   const show = cardData => {
+    stopSpeech();
     current = cardData;
     shown = false;
     setRatingEnabled(false);
+    if (cardData) requestDeckLanguage(cardData.deck_id);
 
     if (cardData) n += 1;
 
@@ -148,12 +185,17 @@ export function initPractice() {
     if (cardData) {
       summary.hidden = true;
       front.hidden = false;
-      front.textContent = cardData.front;
+      frontText.textContent = cardData.front;
       back.textContent = cardData.back;
       note.textContent = cardData.note;
+      if (speakButton) speakButton.hidden = true;
       const isNew = cardData.kind === 'new';
       badge.hidden = false;
       badge.textContent = isNew ? 'NEW' : 'REVIEW';
+      if (speakButton) {
+        speakButton.setAttribute('aria-label', `Pronounce ${cardData.front}`);
+        speakButton.title = `Pronounce ${cardData.front}`;
+      }
     } else {
       front.hidden = true;
       badge.hidden = true;
@@ -191,6 +233,15 @@ export function initPractice() {
     setRatingEnabled(true);
     back.hidden = false;
     note.hidden = !current.note;
+    if (speakButton && canSpeak()) speakButton.hidden = false;
+  };
+
+  const speakFront = () => {
+    if (!canSpeak() || !shown || !current || !current.front) return;
+    const deckLanguage = deckLanguages.get(Number(current.deck_id));
+    const done = () => speakButton?.classList.remove('speaking');
+    speakButton?.classList.add('speaking');
+    speakText(current.front, speechLanguageFor(current.front, deckLanguage), done);
   };
 
   const rate = async rating => {
@@ -230,11 +281,17 @@ export function initPractice() {
     total = 0;
     current = null;
     shown = false;
+    stopSpeech();
+    resetSpeechLanguage();
+    deckLanguages.clear();
+    requestedDecks.clear();
+    if (id !== 'active') requestDeckLanguage(id);
     setRatingEnabled(false);
     startStats();
     clearError();
     summary.hidden = true;
     front.hidden = false;
+    if (speakButton) speakButton.hidden = true;
     practiceSheet.hidden = false;
     counterCurrent.textContent = '0';
     counterTotal.textContent = id === 'active' && main
@@ -262,8 +319,18 @@ export function initPractice() {
     button.onclick = () => rate(Number(button.dataset.r));
   });
 
+  if (speakButton) {
+    speakButton.onpointerdown = event => event.stopPropagation();
+    speakButton.onpointerup = event => event.stopPropagation();
+    speakButton.onclick = event => {
+      event.stopPropagation();
+      speakFront();
+    };
+  }
+
   addEventListener('keydown', event => {
     if (practiceSheet.hidden) return;
+    if (event.target === speakButton && event.key === ' ') return;
     const keymap = {1: 1, 2: 2, 3: 3, 4: 4, ArrowLeft: 1, ArrowDown: 2, ArrowRight: 3, ArrowUp: 4};
     const rating = keymap[event.key];
     if (rating) rate(rating);

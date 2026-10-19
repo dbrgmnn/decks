@@ -17,6 +17,7 @@ def test_single_deck_queue_serves_then_stops(client):
 
     first = client.get(f"/api/next/{deck_id}").json()
     assert first["kind"] == "new"
+    assert first["deck_id"] == deck_id
     assert first["front"] == "front"
     assert first["left"] == 1
 
@@ -53,5 +54,6 @@ def test_active_queue_skips_paused_decks(client):
 
     served = client.get("/api/next/active").json()
     assert served is not None
+    assert served["deck_id"] == active["deck"]["id"]
     assert served["front"] == "other"
     assert served["left"] == 1

@@ -111,6 +111,22 @@ def test_deck_study_button_greys_out_when_nothing_to_study(client):
     assert "disabled" not in learn_button_attrs(html, full["deck"]["id"])
 
 
+def test_practice_pronounces_the_front_word(client):
+    signup(client)
+
+    html = client.get("/").text
+    assert 'id="front-text"' in html
+    assert 'id="speak"' in html
+
+    practice = client.get("/static/modules/practice.js").text
+    assert "speech.js" in practice
+    assert "speechLanguageFor" in practice
+
+    speech = client.get("/static/modules/speech.js").text
+    assert "SpeechSynthesisUtterance" in speech
+    assert "detectSpeechLanguage" in speech
+
+
 def test_finished_session_shows_a_summary(client):
     signup(client, email="summary@example.com")
 

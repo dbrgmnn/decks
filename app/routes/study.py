@@ -61,6 +61,7 @@ def next_active_card(user=Depends(auth.current_user)):
         if due_candidates:
             return {
                 'id': due_candidates['id'],
+                'deck_id': due_candidates['deck_id'],
                 'front': due_candidates['front'],
                 'back': due_candidates['back'],
                 'note': due_candidates['note'],
@@ -73,7 +74,7 @@ def next_active_card(user=Depends(auth.current_user)):
 
         placeholders = ','.join('?' * len(eligible_new_decks))
         new_row = c.execute(
-            f"""SELECT id, front, back, note
+            f"""SELECT id, deck_id, front, back, note
             FROM cards
             WHERE deck_id IN ({placeholders}) AND state IS NULL
             ORDER BY RANDOM()
@@ -84,6 +85,7 @@ def next_active_card(user=Depends(auth.current_user)):
             return None
         return {
             'id': new_row['id'],
+            'deck_id': new_row['deck_id'],
             'front': new_row['front'],
             'back': new_row['back'],
             'note': new_row['note'],
@@ -126,6 +128,7 @@ def next_card(deck_id: int, user=Depends(auth.current_user)):
             ).fetchone()[0]
             return {
                 'id': due_row['id'],
+                'deck_id': deck_id,
                 'front': due_row['front'],
                 'back': due_row['back'],
                 'note': due_row['note'],
@@ -146,6 +149,7 @@ def next_card(deck_id: int, user=Depends(auth.current_user)):
             return None
     return {
         'id': new_row['id'],
+        'deck_id': deck_id,
         'front': new_row['front'],
         'back': new_row['back'],
         'note': new_row['note'],
