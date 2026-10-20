@@ -17,6 +17,7 @@
 /* --- Base ---------------------------------------------------------------- */
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%;overscroll-behavior:none;background:var(--bg);touch-action:manipulation}
+html.sheet-open,html.sheet-open body{overflow:hidden}
 body{margin:0;background:var(--bg);color:var(--fg);font:var(--text-body)/1.4 var(--font);padding-bottom:6.5rem}
 [hidden]{display:none!important}
 small{opacity:.7}

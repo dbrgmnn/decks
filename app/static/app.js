@@ -18,6 +18,31 @@ initSessionGuard();
 initTheme();
 initKeyboardHints();
 
+// Lock background scroll while a sheet is open (prevents the page behind the
+// keyboard from scrolling), but keep the sheet itself scrollable.
+let savedScrollY = 0;
+let openSheetCount = 0;
+const lockBodyScroll = () => {
+  const openSheets = [...document.querySelectorAll('.sheet, #practice')].filter(el => !el.hidden);
+  if (openSheets.length > 0 && openSheetCount === 0) {
+    savedScrollY = window.scrollY;
+    document.documentElement.classList.add('sheet-open');
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${savedScrollY}px`;
+    document.body.style.width = '100%';
+  } else if (openSheets.length === 0 && openSheetCount > 0) {
+    document.documentElement.classList.remove('sheet-open');
+    document.body.style.position = '';
+    document.body.style.top = '';
+    document.body.style.width = '';
+    window.scrollTo(0, savedScrollY);
+  }
+  openSheetCount = openSheets.length;
+};
+const sheetObserver = new MutationObserver(lockBodyScroll);
+document.querySelectorAll('.sheet, #practice').forEach(el => sheetObserver.observe(el, {attributes: true, attributeFilter: ['hidden']}));
+lockBodyScroll();
+
 // Keep focused inputs visible when the on-screen keyboard shrinks the viewport.
 document.addEventListener('focusin', (event) => {
   const target = event.target;
