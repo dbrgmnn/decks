@@ -17,6 +17,17 @@ import {initQuickAdd} from './modules/quick-add.js';
 initSessionGuard();
 initTheme();
 initKeyboardHints();
+
+// Keep focused inputs visible when the on-screen keyboard shrinks the viewport.
+document.addEventListener('focusin', (event) => {
+  const target = event.target;
+  if (!target || !target.matches('input, textarea, select')) return;
+  if (!target.closest('.sheet')) return;
+  requestAnimationFrame(() => {
+    target.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  });
+});
+
 initServiceWorker();
 initTouchFeedback();
 initPasswordToggles();
