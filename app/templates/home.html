@@ -9,7 +9,7 @@
   <button type="button" id="theme" aria-label="{{ t('home.theme') }}">◐</button>
 </header>
 <main class="wrap" data-study-due="{{ stats.due }}" data-study-new="{{ stats.new }}">
-  <form id="quick-add-form" class="quick-add quick-add-main">
+  <form id="quick-add-form" class="quick-add quick-add-main" autocomplete="off">
     <div class="row">
       <input id="quick-add-name" name="name" placeholder="{{ t('home.quick_add_placeholder') }}" maxlength="300" required autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="done">
       <button type="submit">{{ t('home.quick_add') }}</button>
@@ -48,7 +48,7 @@
       </div>
       <p class="meta"><span class="count">{{ n('home.cards', d.total) }}</span><small>{% if d.paused %}{{ t('home.folder.paused') }}{% else %}{{ t('home.folder.stats', due=d.due, new=d.new) }}{% endif %}</small></p>
       <div class="deck-settings">
-        <select class="daily-limit" aria-label="{{ t('home.new_cards_per_day') }}: {{ d.name }}">
+        <select class="daily-limit" autocomplete="off" aria-label="{{ t('home.new_cards_per_day') }}: {{ d.name }}">
           {% for value in new_per_day_values %}<option value="{{ value }}"{% if value == d.new_per_day %} selected{% endif %}>{{ value }}/{{ t('home.day_short') }}</option>{% endfor %}
         </select>
       </div>
@@ -61,9 +61,9 @@
     </article>
     {% endfor %}
     {% if folder %}
-    <form class="deck" id="new-deck" method="post" action="/api/decks">
+    <form class="deck" id="new-deck" method="post" action="/api/decks" autocomplete="off">
       <input type="hidden" name="folder_id" value="{{ folder.id }}">
-      <input name="name" placeholder="{{ t('home.new_deck') }}" maxlength="60" required>
+      <input name="name" placeholder="{{ t('home.new_deck') }}" maxlength="60" required autocomplete="off">
       <button type="submit">{{ t('home.create') }}</button>
       <small id="new-msg"></small>
     </form>
@@ -87,11 +87,11 @@
 
 <div id="add" class="sheet" hidden>
   <button class="close" aria-label="{{ t('common.close') }}">✕</button>
-  <form class="panel" id="add-form">
+  <form class="panel" id="add-form" autocomplete="off">
     <h2 id="add-title"></h2>
     <input name="front" placeholder="{{ t('home.field.front') }}" maxlength="200" required autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="next">
     <input name="back" placeholder="{{ t('home.field.back') }}" maxlength="200" required autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="next">
-    <textarea name="note" placeholder="{{ t('home.field.note') }}" maxlength="300" rows="2" enterkeyhint="done"></textarea>
+    <textarea name="note" placeholder="{{ t('home.field.note') }}" maxlength="300" rows="2" autocomplete="off" enterkeyhint="done"></textarea>
     <button type="submit" id="add-btn">{{ t('common.save') }}</button>
     <small id="add-msg"></small>
   </form>
@@ -99,12 +99,12 @@
 
 <div id="deck-edit" class="sheet" hidden>
   <button class="close" aria-label="{{ t('common.close') }}">✕</button>
-  <form class="panel" id="deck-form">
+  <form class="panel" id="deck-form" autocomplete="off">
     <h2>{{ t('home.deck.edit') }}</h2>
     <input name="name" placeholder="{{ t('home.deck.name') }}" maxlength="60" required autocomplete="off">
     {% if folders %}
     <label class="opt-label" for="deck-folder">{{ t('common.folder') }}</label>
-    <select name="folder_id" id="deck-folder" required><option value="" disabled hidden>{{ t('home.choose_folder') }}</option>{% for f in folders %}<option value="{{ f.id }}">{{ f.name }}</option>{% endfor %}</select>
+    <select name="folder_id" id="deck-folder" autocomplete="off" required><option value="" disabled hidden>{{ t('home.choose_folder') }}</option>{% for f in folders %}<option value="{{ f.id }}">{{ f.name }}</option>{% endfor %}</select>
     {% endif %}
     <input type="hidden" name="new_per_day" value="10">
     <input type="hidden" name="paused" value="0">
@@ -118,7 +118,7 @@
 
 <div id="folder-sheet" class="sheet" hidden>
   <button class="close" aria-label="{{ t('common.close') }}">✕</button>
-  <form class="panel" id="folder-form">
+  <form class="panel" id="folder-form" autocomplete="off">
     <h2 id="folder-title">{{ t('home.folder.edit') }}</h2>
     <input name="name" placeholder="{{ t('home.folder.name') }}" maxlength="60" required autocomplete="off">
     <div class="form-actions">
@@ -140,16 +140,16 @@
       <button type="button" id="show-import">{{ t('home.import') }}</button>
     </div>
     <div id="export-box" class="data-box" hidden>
-      <form id="export-csv-form" class="panel-block">
-        <select id="export-scope" name="scope">
+      <form id="export-csv-form" class="panel-block" autocomplete="off">
+        <select id="export-scope" name="scope" autocomplete="off">
           <option value="all">{{ t('home.export.all') }}</option>
           <option value="folder">{{ t('home.export.folder') }}</option>
           <option value="deck">{{ t('home.export.deck') }}</option>
         </select>
-        <select id="export-folder" name="folder_id" hidden>
+        <select id="export-folder" name="folder_id" autocomplete="off" hidden>
           <option value="0" disabled selected>{{ t('home.choose_export_folder') }}</option>{% for f in folders %}<option value="{{ f.id }}">{{ f.name }}</option>{% endfor %}
         </select>
-        <select id="export-deck" name="deck_id" hidden>
+        <select id="export-deck" name="deck_id" autocomplete="off" hidden>
           <option value="0" disabled selected>{{ t('home.choose_export_deck') }}</option>{% for d in all_decks %}<option value="{{ d.id }}">{{ d.path }}</option>{% endfor %}
         </select>
         <button type="submit">{{ t('home.download_csv') }}</button>
@@ -157,8 +157,8 @@
       </form>
     </div>
     <div id="import-box" class="data-box" hidden>
-      <form id="import-csv-form" class="panel-block">
-        <input id="import-csv-file" name="file" type="file" accept=".csv,text/csv" required>
+      <form id="import-csv-form" class="panel-block" autocomplete="off">
+        <input id="import-csv-file" name="file" type="file" accept=".csv,text/csv" required autocomplete="off">
         <button type="submit">{{ t('home.import_csv') }}</button>
         <small id="import-csv-msg"></small>
       </form>
@@ -177,23 +177,23 @@
     <button type="button" id="api-token">{{ t('home.generate_token') }}</button>
     <small id="api-token-msg"></small>
     <h3 class="section">{{ t('home.change_password') }}</h3>
-    <form id="pw-form">
+    <form id="pw-form" autocomplete="off">
       <div class="password-field">
-        <input name="current" type="password" placeholder="{{ t('home.current_password') }}" maxlength="128" autocomplete="current-password" required>
+        <input name="current" type="password" placeholder="{{ t('home.current_password') }}" maxlength="128" autocomplete="off" required>
         <button type="button" class="password-toggle" aria-label="{{ t('password.show') }}" aria-pressed="false">
           <svg class="eye-open" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="2.5"/></svg>
           <svg class="eye-closed" viewBox="0 0 24 24" aria-hidden="true" hidden><path d="m3 3 18 18M10.6 6.2A10.9 10.9 0 0 1 12 6c6.5 0 10 6 10 6a18.4 18.4 0 0 1-3.1 3.6M6.3 6.4C3.5 8.1 2 12 2 12s3.5 6 10 6a10.8 10.8 0 0 0 4.2-.9"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>
         </button>
       </div>
       <div class="password-field">
-        <input name="password" type="password" placeholder="{{ t('home.new_password') }}" maxlength="128" autocomplete="new-password" required>
+        <input name="password" type="password" placeholder="{{ t('home.new_password') }}" maxlength="128" autocomplete="off" required>
         <button type="button" class="password-toggle" aria-label="{{ t('password.show') }}" aria-pressed="false">
           <svg class="eye-open" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="2.5"/></svg>
           <svg class="eye-closed" viewBox="0 0 24 24" aria-hidden="true" hidden><path d="m3 3 18 18M10.6 6.2A10.9 10.9 0 0 1 12 6c6.5 0 10 6 10 6a18.4 18.4 0 0 1-3.1 3.6M6.3 6.4C3.5 8.1 2 12 2 12s3.5 6 10 6a10.8 10.8 0 0 0 4.2-.9"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>
         </button>
       </div>
       <div class="password-field">
-        <input name="password2" type="password" placeholder="{{ t('home.repeat_new_password') }}" maxlength="128" autocomplete="new-password" required>
+        <input name="password2" type="password" placeholder="{{ t('home.repeat_new_password') }}" maxlength="128" autocomplete="off" required>
         <button type="button" class="password-toggle" aria-label="{{ t('password.show') }}" aria-pressed="false">
           <svg class="eye-open" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="2.5"/></svg>
           <svg class="eye-closed" viewBox="0 0 24 24" aria-hidden="true" hidden><path d="m3 3 18 18M10.6 6.2A10.9 10.9 0 0 1 12 6c6.5 0 10 6 10 6a18.4 18.4 0 0 1-3.1 3.6M6.3 6.4C3.5 8.1 2 12 2 12s3.5 6 10 6a10.8 10.8 0 0 0 4.2-.9"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>
@@ -214,7 +214,7 @@
     <h2 id="confirm-title">{{ t('home.confirm_title') }}</h2>
     <p id="confirm-text"></p>
     <div class="password-field" id="confirm-password" hidden>
-      <input id="confirm-pw" type="password" placeholder="{{ t('home.password') }}" maxlength="128" autocomplete="current-password">
+      <input id="confirm-pw" type="password" placeholder="{{ t('home.password') }}" maxlength="128" autocomplete="off">
       <button type="button" class="password-toggle" aria-label="{{ t('password.show') }}" aria-pressed="false">
         <svg class="eye-open" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="2.5"/></svg>
         <svg class="eye-closed" viewBox="0 0 24 24" aria-hidden="true" hidden><path d="m3 3 18 18M10.6 6.2A10.9 10.9 0 0 1 12 6c6.5 0 10 6 10 6a18.4 18.4 0 0 1-3.1 3.6M6.3 6.4C3.5 8.1 2 12 2 12s3.5 6 10 6a10.8 10.8 0 0 0 4.2-.9"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>
@@ -232,7 +232,7 @@
   <div class="panel confirm-panel">
     <h2>{{ t('home.api_token_title') }}</h2>
     <p>{{ t('home.api_token_hint') }}</p>
-    <textarea id="api-token-value" rows="3" readonly></textarea>
+    <textarea id="api-token-value" rows="3" readonly autocomplete="off"></textarea>
     <small id="api-token-copy-msg"></small>
     <div class="confirm-actions">
       <button type="button" id="api-token-copy">{{ t('home.copy') }}</button>

@@ -79,6 +79,24 @@ def test_inputs_carry_native_keyboard_hints(client):
     assert 'autocorrect="off"' in html
 
 
+def test_autocomplete_is_disabled_outside_auth_pages(client):
+    login = client.get("/login").text
+    assert 'autocomplete="email"' in login
+    assert 'autocomplete="current-password"' in login
+    assert 'autocomplete="new-password"' in login
+
+    signup(client)
+    html = client.get("/").text
+    assert 'autocomplete="email"' not in html
+    assert 'autocomplete="current-password"' not in html
+    assert 'autocomplete="new-password"' not in html
+
+    for tag in re.findall(r"<(?:input|textarea|select)\b[^>]*>", html, re.I):
+        if re.match(r"<input\b", tag, re.I) and 'type="hidden"' in tag:
+            continue
+        assert 'autocomplete="off"' in tag, tag
+
+
 def test_import_refreshes_home_and_shows_progress(client):
     source = client.get("/static/modules/account.js").text
 
