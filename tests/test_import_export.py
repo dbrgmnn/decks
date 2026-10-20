@@ -43,6 +43,41 @@ def test_import_rejects_field_past_csv_size_limit():
     assert exc.value.status_code == 400
 
 
+def _signup(client):
+    response = client.post(
+        "/api/signup",
+        data={"email": "csv@example.com", "password": "GoodPass123", "password2": "GoodPass123", "tz": "UTC"},
+    )
+    assert response.status_code == 200, response.text
+
+
+def test_import_accepts_semicolon_delimiter(client):
+    _signup(client)
+    # A quoted field may contain the delimiter itself; a comma inside a
+    # semicolon-separated row is just data.
+    body = (
+        "folder;deck;front;back;note\n"
+        'F;D;"front; with semicolon";back;note, with comma\n'
+    )
+    response = client.post(
+        "/api/import/cards.csv",
+        files={"file": ("cards.csv", body.encode(), "text/csv")},
+    )
+    assert response.status_code == 200, response.text
+    assert response.json() == {"ok": True, "folders": 1, "decks": 1, "cards": 1}
+
+
+def test_import_still_accepts_comma_delimiter(client):
+    _signup(client)
+    body = "folder,deck,front,back,note\nF,D,f,b,n\n"
+    response = client.post(
+        "/api/import/cards.csv",
+        files={"file": ("cards.csv", body.encode(), "text/csv")},
+    )
+    assert response.status_code == 200, response.text
+    assert response.json() == {"ok": True, "folders": 1, "decks": 1, "cards": 1}
+
+
 def test_export_requires_a_selected_folder_or_deck(client):
     signup = client.post(
         "/api/signup",

@@ -17,6 +17,31 @@ CSV_FIELDS = ['folder', 'deck', 'front', 'back', 'note']
 # A reasonable upper bound for a text CSV of flashcards.
 MAX_CSV_BYTES = 5 * 1024 * 1024
 
+# Spreadsheet apps in many locales save CSV with semicolons. Import accepts
+# both, detected from the header; export always writes commas.
+CSV_DELIMITERS = (',', ';')
+
+
+def read_csv_rows(text):
+    """Parse CSV rows, trying each supported delimiter.
+
+    The delimiter is picked by matching the header against CSV_FIELDS, so a
+    quoted value containing the other delimiter is not mistaken for a column
+    separator. Raises ``error.csv_columns`` when no delimiter matches and
+    ``error.csv_unparseable`` for a malformed file (e.g. an oversized field).
+    """
+    parse_error = False
+    for delimiter in CSV_DELIMITERS:
+        try:
+            reader = csv.DictReader(io.StringIO(text), delimiter=delimiter)
+            if reader.fieldnames == CSV_FIELDS:
+                return list(reader)
+        except csv.Error:
+            parse_error = True
+    if parse_error:
+        raise error(400, 'error.csv_unparseable')
+    raise error(400, 'error.csv_columns')
+
 
 @router.post('/api/export/cards.csv')
 def export_cards_csv(
@@ -75,10 +100,7 @@ def import_cards_csv(file: UploadFile = File(...), user=Depends(auth.current_use
     except UnicodeDecodeError:
         raise error(400, 'error.csv_not_utf8')
     try:
-        reader = csv.DictReader(io.StringIO(text))
-        if reader.fieldnames != CSV_FIELDS:
-            raise error(400, 'error.csv_columns')
-        rows = list(reader)
+        rows = read_csv_rows(text)
     except csv.Error:
         # A malformed file or a single field past csv's size limit.
         raise error(400, 'error.csv_unparseable')
