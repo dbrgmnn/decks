@@ -12,10 +12,6 @@
   "common.passwords_mismatch": "Passwörter stimmen nicht überein",
   "common.invalid_input": "Ungültige Eingabe",
   "common.save_failed_connection": "Speichern fehlgeschlagen. Prüfe deine Verbindung.",
-  "common.move_up": "Nach oben verschieben",
-  "common.move_down": "Nach unten verschieben",
-  "common.move_left": "Nach links verschieben",
-  "common.move_right": "Nach rechts verschieben",
   "common.folder": "Ordner",
   "common.deck": "Deck",
 
@@ -51,6 +47,7 @@
   "home.field.note": "Notiz (optional)",
   "home.choose_folder": "Ordner wählen",
   "home.new_cards_per_day": "Neue Karten pro Tag",
+  "home.day_short": "Tag",
   "home.pause": "Pausieren",
   "home.delete_deck": "Deck löschen",
   "home.delete_folder": "Ordner löschen",
@@ -111,8 +108,7 @@
   "cards.edit_title": "Karte bearbeiten",
   "cards.add_to": "Karte zu {deck} hinzufügen",
 
-  "deck.pause": "Pausieren",
-  "deck.paused": "Pausiert",
+  "deck.resume": "Fortsetzen",
   "deck.order_failed": "Reihenfolge der Decks konnte nicht gespeichert werden.",
 
   "folder.order_failed": "Reihenfolge der Ordner konnte nicht gespeichert werden.",

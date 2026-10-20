@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import FileResponse, RedirectResponse
 from .. import auth, db, i18n, srs
-from ..services.decks import introduced_counts
+from ..services.decks import NEW_PER_DAY_VALUES, introduced_counts
 from ..web import BASE, page
 
 router = APIRouter()
@@ -90,4 +90,5 @@ def home(request: Request, folder: int = 0, user=Depends(auth.current_user)):
         'today': today,
         'timezones': auth.tz_options(user['tz']),
         'all_decks': items,
+        'new_per_day_values': NEW_PER_DAY_VALUES,
     }, lang=i18n.resolve(request, user))

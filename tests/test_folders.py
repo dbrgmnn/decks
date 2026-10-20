@@ -170,6 +170,14 @@ def test_folder_order_applies(client):
     assert html.index(f'data-folder="{second}"') < html.index(f'data-folder="{first}"')
 
 
+def test_folder_reorder_uses_a_hold(client):
+    source = client.get("/static/modules/folders.js").text
+    assert "HOLD_MS = 400" in source
+    assert "insideRect" in source
+    assert "folder-drag-handle" not in source
+    assert "arrowSvg" not in source
+
+
 def test_folder_order_accepts_a_subset(client):
     # A partial list used to collide with the other folders' positions (400).
     _signup(client)

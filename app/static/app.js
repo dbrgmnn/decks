@@ -141,12 +141,26 @@ addEventListener('keydown', event => {
       nextDecks.forEach(nextDeck => {
         const currentDeck = document.querySelector(`.deck[data-id="${nextDeck.dataset.id}"]`);
         if (!currentDeck) return;
-        ['due', 'new', 'paused'].forEach(key => {
+        ['due', 'new', 'paused', 'newPerDay'].forEach(key => {
           if (nextDeck.dataset[key] !== undefined) currentDeck.dataset[key] = nextDeck.dataset[key];
         });
+        currentDeck.classList.toggle('paused', nextDeck.dataset.paused === '1');
         const nextMeta = nextDeck.querySelector('.meta small');
         const currentMeta = currentDeck.querySelector('.meta small');
         if (nextMeta && currentMeta) currentMeta.textContent = nextMeta.textContent;
+        const nextCount = nextDeck.querySelector('.count');
+        const currentCount = currentDeck.querySelector('.count');
+        if (nextCount && currentCount) currentCount.textContent = nextCount.textContent;
+        const nextLimit = nextDeck.querySelector('.daily-limit');
+        const currentLimit = currentDeck.querySelector('.daily-limit');
+        if (nextLimit && currentLimit) currentLimit.value = nextLimit.value;
+        const nextPause = nextDeck.querySelector('.pause');
+        const currentPause = currentDeck.querySelector('.pause');
+        if (nextPause && currentPause) {
+          currentPause.setAttribute('aria-pressed', nextPause.getAttribute('aria-pressed'));
+          currentPause.setAttribute('aria-label', nextPause.getAttribute('aria-label'));
+          currentPause.textContent = nextPause.textContent;
+        }
 
         // Keep the Study button in step: it greys out once the queue is empty.
         const nextLearn = nextDeck.querySelector('.learn');
@@ -158,6 +172,7 @@ addEventListener('keydown', event => {
       nextFolders.forEach(nextFolder => {
         const currentFolder = document.querySelector(`.fold[data-folder="${nextFolder.dataset.folder}"]`);
         if (!currentFolder) return;
+        currentFolder.classList.toggle('paused', nextFolder.classList.contains('paused'));
         const nextSmall = nextFolder.querySelector('small');
         const currentSmall = currentFolder.querySelector('small');
         if (nextSmall && currentSmall) currentSmall.textContent = nextSmall.textContent;

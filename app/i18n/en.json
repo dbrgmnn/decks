@@ -12,10 +12,6 @@
   "common.passwords_mismatch": "Passwords do not match",
   "common.invalid_input": "Invalid input",
   "common.save_failed_connection": "Could not save. Check your connection.",
-  "common.move_up": "Move up",
-  "common.move_down": "Move down",
-  "common.move_left": "Move left",
-  "common.move_right": "Move right",
   "common.folder": "Folder",
   "common.deck": "Deck",
 
@@ -51,6 +47,7 @@
   "home.field.note": "Note (optional)",
   "home.choose_folder": "Choose a folder",
   "home.new_cards_per_day": "New cards per day",
+  "home.day_short": "day",
   "home.pause": "Pause",
   "home.delete_deck": "Delete deck",
   "home.delete_folder": "Delete folder",
@@ -111,8 +108,7 @@
   "cards.edit_title": "Edit card",
   "cards.add_to": "Add card to {deck}",
 
-  "deck.pause": "Pause",
-  "deck.paused": "Paused",
+  "deck.resume": "Resume",
   "deck.order_failed": "Could not save deck order.",
 
   "folder.order_failed": "Could not save folder order.",

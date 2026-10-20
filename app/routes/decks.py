@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Form, Request
 
 from .. import auth, db
 from ..i18n import error
-from ..services.decks import check_deck_name
+from ..services.decks import check_deck_name, parse_new_per_day
 from ..services.ownership import need_folder, own_deck
 from ..services.validators import clean_quick_add_name
 
@@ -35,12 +35,7 @@ def update_deck(
     user=Depends(auth.current_user),
 ):
     name = clean_quick_add_name(name, 'field.deck_name', 60)
-    try:
-        new_per_day = int(new_per_day)
-    except (TypeError, ValueError):
-        raise error(400, 'error.daily_limit_invalid')
-    if new_per_day not in (1, 5, 10, 15, 20, 30):
-        raise error(400, 'error.daily_limit_not_allowed')
+    new_per_day = parse_new_per_day(new_per_day)
     uid = user['id']
     with db.conn() as c:
         own_deck(c, uid, deck_id)
@@ -50,6 +45,25 @@ def update_deck(
         c.execute(
             'UPDATE decks SET name=?, folder_id=?, new_per_day=?, paused=? WHERE id=? AND user_id=?',
             (name, folder_id, new_per_day, 1 if paused else 0, deck_id, uid),
+        )
+    return {'ok': True}
+
+
+@router.post('/api/decks/{deck_id}/settings')
+def update_deck_settings(
+    deck_id: int,
+    new_per_day: str = Form(...),
+    paused: int = Form(0),
+    user=Depends(auth.current_user),
+):
+    """Change only the quick study settings shown on a deck."""
+    uid = user['id']
+    with db.conn() as c:
+        own_deck(c, uid, deck_id)
+        new_per_day = parse_new_per_day(new_per_day)
+        c.execute(
+            'UPDATE decks SET new_per_day=?, paused=? WHERE id=? AND user_id=?',
+            (new_per_day, 1 if paused else 0, deck_id, uid),
         )
     return {'ok': True}
 

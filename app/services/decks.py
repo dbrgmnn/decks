@@ -3,6 +3,19 @@ from ..i18n import error
 from .validators import normalize_name_key
 
 
+NEW_PER_DAY_VALUES = (1, 5, 10, 15, 20, 30)
+
+
+def parse_new_per_day(value):
+    try:
+        value = int(value)
+    except (TypeError, ValueError):
+        raise error(400, 'error.daily_limit_invalid')
+    if value not in NEW_PER_DAY_VALUES:
+        raise error(400, 'error.daily_limit_not_allowed')
+    return value
+
+
 def check_deck_name(c, folder_id, name, skip_id=0):
     key = normalize_name_key(name)
     rows = c.execute(

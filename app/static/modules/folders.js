@@ -1,4 +1,4 @@
-import {$, arrowSvg} from './dom.js';
+import {$, afterCenterX, insideRect} from './dom.js';
 import {t} from './i18n.js';
 
 export function initFolders({confirmDelete, errText}) {
@@ -83,13 +83,17 @@ export function initFolders({confirmDelete, errText}) {
 
   deleteFolderButton.onclick = () => confirmDelete('folder', curFolder);
 
-  const HOLD_MS = 2000;
-  let folderTimer = null;
-  let folderStart = null;
+  const HOLD_MS = 400;
+  let holdTimer = null;
+  let holdPos = null;
+  let holdPointer = null;
   let movingFolder = null;
+  let dragPointer = null;
+  let dragStartX = 0;
+  let dragStartY = 0;
+  let dragMoved = false;
   let swallowFolder = false;
-
-  const isVertical = () => getComputedStyle(folderRow).gridTemplateColumns.split(' ').length === 1;
+  let swallowTimer = null;
 
   const saveFolderOrder = async () => {
     const body = new URLSearchParams();
@@ -108,59 +112,78 @@ export function initFolders({confirmDelete, errText}) {
     }
   };
 
-  const syncFolderArrows = () => {
+  const exitFolderMove = () => {
     if (!movingFolder) return;
-    const vertical = isVertical();
-    const all = folderEls();
-    const index = all.indexOf(movingFolder);
-    const [prev, next] = movingFolder.querySelectorAll('.folder-arrow');
-    prev.innerHTML = arrowSvg(vertical ? 'up' : 'left');
-    next.innerHTML = arrowSvg(vertical ? 'down' : 'right');
-    prev.setAttribute('aria-label', vertical ? t('common.move_up') : t('common.move_left'));
-    next.setAttribute('aria-label', vertical ? t('common.move_down') : t('common.move_right'));
-    prev.disabled = index === 0;
-    next.disabled = index === all.length - 1;
-  };
-
-  const shiftFolder = async dir => {
-    const all = folderEls();
-    const other = all[all.indexOf(movingFolder) + dir];
-    if (!other) return;
-    dir < 0 ? other.before(movingFolder) : other.after(movingFolder);
-    movingFolder.scrollIntoView({block: 'nearest'});
-    syncFolderArrows();
-    await saveFolderOrder();
+    movingFolder.classList.remove('moving-folder', 'dragging');
+    movingFolder = null;
+    dragPointer = null;
+    dragMoved = false;
   };
 
   const enterFolderMove = folder => {
+    if (movingFolder && movingFolder !== folder) exitFolderMove();
     movingFolder = folder;
-    swallowFolder = true;
     folder.classList.remove('holding');
     folder.classList.add('moving-folder');
-    for (const cls of ['prev', 'next']) {
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className = 'folder-arrow ' + cls;
-      button.onclick = event => {
-        event.stopPropagation();
-        shiftFolder(cls === 'prev' ? -1 : 1);
-      };
-      folder.append(button);
-    }
-    syncFolderArrows();
+    holdTimer = null;
+    holdPos = null;
+    holdPointer = null;
+    clearTimeout(swallowTimer);
+    swallowFolder = true;
   };
 
-  const exitFolderMove = () => {
+  const onFolderDragMove = event => {
+    if (!movingFolder || event.pointerId !== dragPointer) return;
+    if (Math.hypot(event.clientX - dragStartX, event.clientY - dragStartY) > 4) dragMoved = true;
+    if (insideRect(movingFolder.getBoundingClientRect(), event.clientX, event.clientY)) return;
+
+    const target = document.elementFromPoint(event.clientX, event.clientY)?.closest('.fold[data-folder]');
+    const rect = target?.getBoundingClientRect();
+    if (!target || target === movingFolder || !rect) return;
+
+    const after = afterCenterX(rect, event.clientX);
+    if (after === null) return;
+    if (after) {
+      if (movingFolder.previousElementSibling !== target) target.after(movingFolder);
+    } else if (movingFolder.nextElementSibling !== target) {
+      target.before(movingFolder);
+    }
+  };
+
+  const endFolderDrag = event => {
+    if (event && event.pointerId !== dragPointer) return;
+    document.removeEventListener('pointermove', onFolderDragMove);
+    document.removeEventListener('pointerup', endFolderDrag);
+    document.removeEventListener('pointercancel', endFolderDrag);
+    dragPointer = null;
     if (!movingFolder) return;
-    movingFolder.querySelectorAll('.folder-arrow').forEach(arrow => arrow.remove());
-    movingFolder.classList.remove('moving-folder');
-    movingFolder = null;
+    movingFolder.classList.remove('dragging');
+    const moved = dragMoved;
+    swallowFolder = true;
+    clearTimeout(swallowTimer);
+    swallowTimer = setTimeout(() => { swallowFolder = false; }, 400);
+    exitFolderMove();
+    if (moved) saveFolderOrder();
+  };
+
+  const beginFolderDrag = (pointerId, x, y) => {
+    if (!movingFolder || dragPointer !== null) return;
+    dragPointer = pointerId;
+    dragStartX = x;
+    dragStartY = y;
+    dragMoved = false;
+    movingFolder.classList.add('dragging');
+    document.addEventListener('pointermove', onFolderDragMove);
+    document.addEventListener('pointerup', endFolderDrag);
+    document.addEventListener('pointercancel', endFolderDrag);
   };
 
   const cancelFolderHold = folder => {
-    clearTimeout(folderTimer);
+    clearTimeout(holdTimer);
+    holdTimer = null;
+    holdPos = null;
+    holdPointer = null;
     folder.classList.remove('holding');
-    folderStart = null;
   };
 
   for (const folder of folderEls()) {
@@ -172,37 +195,43 @@ export function initFolders({confirmDelete, errText}) {
       }
     });
     folder.addEventListener('pointerdown', event => {
-      if (movingFolder || event.button > 0 || event.target.closest('button,input,select,summary')) return;
-      folderStart = [event.clientX, event.clientY];
+      if (movingFolder || event.button > 0 || event.target.closest('button,input,select,summary,a')) return;
+      holdPos = [event.clientX, event.clientY];
+      holdPointer = event.pointerId;
       folder.classList.add('holding');
-      folderTimer = setTimeout(() => enterFolderMove(folder), HOLD_MS);
+      holdTimer = setTimeout(() => {
+        const pointer = holdPointer;
+        const startX = holdPos ? holdPos[0] : event.clientX;
+        const startY = holdPos ? holdPos[1] : event.clientY;
+        enterFolderMove(folder);
+        beginFolderDrag(pointer, startX, startY);
+      }, HOLD_MS);
     });
     folder.addEventListener('pointermove', event => {
-      if (folderStart && Math.hypot(event.clientX - folderStart[0], event.clientY - folderStart[1]) > 10) cancelFolderHold(folder);
+      if (holdPos && Math.hypot(event.clientX - holdPos[0], event.clientY - holdPos[1]) > 10) cancelFolderHold(folder);
     });
-    for (const name of ['pointerup', 'pointercancel', 'pointerleave']) {
+    for (const name of ['pointerup', 'pointercancel']) {
       folder.addEventListener(name, () => {
-        cancelFolderHold(folder);
-        if (movingFolder) setTimeout(() => { swallowFolder = false; }, 400);
+        if (holdTimer) cancelFolderHold(folder);
       });
     }
+    folder.addEventListener('pointerleave', () => {
+      if (!movingFolder && holdTimer) cancelFolderHold(folder);
+    });
   }
 
   document.addEventListener('click', event => {
     if (swallowFolder) {
       swallowFolder = false;
+      clearTimeout(swallowTimer);
       event.preventDefault();
       event.stopPropagation();
       return;
     }
-    if (movingFolder && event.target.closest('.folder-arrow')) return;
-    if (movingFolder && event.target.closest('.fold')) {
-      event.preventDefault();
-      event.stopPropagation();
-      exitFolderMove();
-      return;
-    }
-    if (movingFolder) exitFolderMove();
+    if (!movingFolder) return;
+    event.preventDefault();
+    event.stopPropagation();
+    exitFolderMove();
   }, true);
 
   addEventListener('keydown', event => {

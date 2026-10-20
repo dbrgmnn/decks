@@ -24,7 +24,7 @@ small{opacity:.7}
 .wrap{max-width:var(--content-max);margin:0 auto;padding:0 1rem;padding-inline:max(1rem,env(safe-area-inset-left),env(safe-area-inset-right))}
 
 /* --- Typography and overflow safety -------------------------------------- */
-#new-msg,#fe-msg,#quick-add-msg,#add-msg,#deck-msg,#pw-msg,#tz-msg,#confirm-msg,#msg{display:block;margin-top:.5rem;overflow-wrap:anywhere}
+#new-msg,#fe-msg,#deck-list-msg,#quick-add-msg,#add-msg,#deck-msg,#pw-msg,#tz-msg,#confirm-msg,#msg{display:block;margin-top:.5rem;overflow-wrap:anywhere}
 #msg{text-align:center}
 .panel h2,#words li,#words b,.card div,.card small{overflow-wrap:anywhere;min-width:0;max-width:100%}
 
@@ -40,7 +40,7 @@ button:active:not(:disabled),.rate button.active-swipe{background:var(--fg);colo
 /* One disabled contract: sunken and faded, never animating. */
 button:disabled{cursor:not-allowed;opacity:.35;background:transparent;color:inherit;box-shadow:var(--bevel-pressed);transform:none}
 button,summary,a,.deck,.fold,#words li{-webkit-tap-highlight-color:transparent}
-#theme,.close,.edit,.plus,.star,#folder-edit,.arrow,.folder-arrow,.delete-card{width:44px;height:44px;min-height:44px;padding:0;display:grid;place-items:center}
+#theme,.close,.edit,.plus,.star,#folder-edit,.delete-card{width:44px;height:44px;min-height:44px;padding:0;display:grid;place-items:center}
 input,select,textarea{cursor:text;width:100%;margin-bottom:.5rem;box-shadow:var(--bevel-pressed)}
 textarea{display:block;box-sizing:border-box;min-height:5.5rem;line-height:1.35;resize:vertical}
 select{display:block}
@@ -59,8 +59,7 @@ select{display:block}
 /* --- Bevels -------------------------------------------------------------- */
 button,.deck,.card,summary,#words li,.close,.study-bar{box-shadow:var(--bevel-raised)}
 /* One latched "selected" look: filled and sunken, never displaced. */
-.steps button.on,.toggle[aria-pressed="true"],.data-actions button.on,.data-actions button[aria-pressed="true"]{background:var(--fg);color:var(--bg);box-shadow:var(--bevel-pressed)}
-.toggle[aria-pressed="false"]{background:transparent;color:inherit;box-shadow:var(--bevel-raised);transform:none}
+.data-actions button.on,.data-actions button[aria-pressed="true"]{background:var(--fg);color:var(--bg);box-shadow:var(--bevel-pressed)}
 .danger{border-color:var(--danger);color:var(--danger)}
 /* Same behaviour as every other button, only the fill hue differs, so this
    needs the same specificity as the :hover/:active contracts above. */
@@ -73,37 +72,45 @@ button.danger:hover,button.danger:active{background:var(--danger-bg);color:var(-
 
 /* --- Deck grid and cards ------------------------------------------------- */
 .decks{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:1rem;margin-bottom:1rem}
-.deck{min-width:0;border:var(--hair) solid var(--fg);padding:.9rem}
+.deck{min-width:0;border:var(--hair) solid var(--fg);padding:.9rem;display:flex;flex-direction:column;gap:.6rem}
 .deck[data-id]{position:relative;cursor:pointer;-webkit-touch-callout:none;user-select:none}
-.deck h3{margin:0 0 .25rem;padding:0 3.4rem 0 0;min-height:44px;display:block;line-height:44px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.deck p{margin:0 0 .75rem}
+.deck-head{display:flex;align-items:center;gap:.5rem;min-width:0}
+.deck-head h3{flex:1;min-width:0;margin:0;padding:0;min-height:44px;display:flex;align-items:center;line-height:1.25}
+.deck-head h3 span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.deck-head .star{flex:none}
+.deck p{margin:0}
 .meta{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 .meta small{display:block;margin-top:.1rem;font-size:var(--text-sm);overflow:hidden;text-overflow:ellipsis}
 .deck.paused h3,.deck.paused .meta{opacity:.45}
-
-/* --- Deck card actions --------------------------------------------------- */
-.edit,.plus{line-height:1;position:absolute;right:.9rem;z-index:2}
-.edit{top:.9rem;left:auto;font-size:1.2rem}
-.plus{bottom:.9rem;top:auto;font-size:1.5rem}
-.actions{display:flex;align-items:center;gap:.5rem}
+.deck-settings{display:flex;align-items:center;gap:.5rem}
+.deck-settings select{flex:1;min-width:0;margin:0}
+.daily-limit{padding-right:1.9rem;padding-left:.5rem;text-align:left}
+.pause{width:44px;height:44px;min-height:44px;padding:0;display:grid;place-items:center;font-size:1rem;line-height:1}
+.actions{display:flex;align-items:center;gap:.4rem}
+.actions .learn{flex:1;min-width:0;padding:.6rem .5rem}
+.actions .plus,.actions .edit,.actions .pause{flex:none;position:static;line-height:1}
+.actions .edit{font-size:1.2rem}
+.actions .plus{font-size:1.5rem}
 .star svg{width:1.3rem;height:1.3rem;fill:none;stroke:currentColor;stroke-width:2;stroke-linejoin:round}
 .star.on svg{fill:currentColor}
 
+/* The folder uses the same deck cards as the main screen. The new-deck form
+   spans the full row so it never becomes a narrow tile. */
+.decks-list #new-deck{grid-column:1/-1;flex-direction:row;flex-wrap:wrap;gap:.5rem}
+.decks-list #new-deck input{flex:1;min-width:0;margin:0}
+.decks-list #new-deck button{flex:none}
+.decks-list #new-deck small{flex-basis:100%;margin:0}
+
 /* --- Deck + folder reorder ----------------------------------------------- */
 .deck,.fold{transition:transform var(--dur-reorder) var(--ease-steps),box-shadow var(--dur-reorder) var(--ease-steps)}
-.deck.holding{animation:hold 2s steps(8,end) forwards}
-.fold.holding{animation:hold-folder 2s steps(8,end) forwards}
+.deck.holding{animation:hold .4s steps(8,end) forwards}
+.fold.holding{animation:hold-folder .4s steps(8,end) forwards}
 @keyframes hold{to{transform:scale(1.03)}}
 @keyframes hold-folder{to{transform:scale(1.06)}}
 .deck.moving,.fold.moving-folder{scroll-margin-top:5rem;scroll-margin-bottom:6rem}
-.deck.moving{z-index:3;transform:scale(1.04);box-shadow:var(--bevel-float)}
-.deck.moving .edit,.deck.moving .plus,.deck.moving .learn,.deck.moving p,.deck.moving .actions{visibility:hidden}
-.decks.vertical .deck.moving .actions{display:none}
-.deck.moving h3{padding:0 3.4rem;justify-content:center;text-align:center}
-.arrow{position:absolute;font-size:1.1rem;z-index:2;top:50%;margin-top:-22px}
-.arrow svg,.folder-arrow svg{width:1rem;height:1rem;display:block}
-.arrow.prev{left:.6rem}
-.arrow.next{right:.6rem}
+.deck.moving{z-index:3;transform:scale(1.06);box-shadow:var(--bevel-float),10px 12px 0 var(--drop);touch-action:none}
+.deck.moving.dragging{pointer-events:none}
+.deck.moving .deck-head .star,.deck.moving .deck-settings,.deck.moving .actions{opacity:.25;pointer-events:none}
 
 /* --- Sheets and panels --------------------------------------------------- */
 .sheet{position:fixed;inset:0;height:100dvh;background:var(--bg);z-index:10;overflow-y:auto;overscroll-behavior:contain;padding:1rem;padding-top:var(--top-gap);padding-bottom:calc(1rem + env(safe-area-inset-bottom));padding-left:max(1rem,env(safe-area-inset-left));padding-right:max(1rem,env(safe-area-inset-right))}
@@ -196,9 +203,6 @@ button.danger:hover,button.danger:active{background:var(--danger-bg);color:var(-
 .data-box{margin-top:.5rem}
 .data-box .panel-block{display:flex;flex-direction:column}
 .data-box .panel-block button,.data-box .panel-block small{margin-top:auto}
-.steps{display:grid;grid-template-columns:repeat(6,1fr);gap:.5rem}
-.steps button{padding:.6rem 0;text-align:center}
-.toggle{width:100%;margin:1rem 0}
 
 /* --- Folder navigation --------------------------------------------------- */
 .crumb{display:flex;gap:.5rem;margin:1rem 0}
@@ -221,12 +225,9 @@ button.danger:hover,button.danger:active{background:var(--danger-bg);color:var(-
 .ficon .hi,.ficon .lo{fill:none;stroke-width:2px}
 .ficon .hi{stroke:var(--hi)}
 .ficon .lo{stroke:var(--lo)}
-.fold.moving-folder{z-index:3;padding:.5rem .25rem .6rem;background:var(--bg);border:var(--hair) solid var(--fg);box-shadow:var(--bevel-float);width:min(11rem,100%)}
-.fold.moving-folder .ficon{transform:scale(1.15);transform-origin:center}
+.fold.moving-folder{z-index:3;background:var(--bg);outline:var(--hair) solid var(--fg);box-shadow:var(--bevel-float),8px 10px 0 var(--drop);transform:scale(1.1);touch-action:none}
+.fold.moving-folder.dragging{pointer-events:none}
 .fold.moving-folder .fname{font-weight:700}
-.folder-arrow{position:absolute;top:calc(.5rem + 1.54rem - 22px);min-width:44px;font-size:1rem;z-index:4}
-.folder-arrow.prev{left:.35rem}
-.folder-arrow.next{right:.35rem}
 
 /* --- Account sheet ------------------------------------------------------- */
 .account-actions{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
@@ -234,7 +235,7 @@ button.danger:hover,button.danger:active{background:var(--danger-bg);color:var(-
 .quick-add .row{display:flex;gap:.5rem;align-items:stretch}
 .quick-add input{flex:1;min-width:0;width:auto;margin-bottom:0}
 .quick-add button{flex:0 0 auto}
-.quick-add #quick-add-msg:empty,#account-sheet small:empty{margin:0}
+.quick-add #quick-add-msg:empty,#deck-list-msg:empty,#account-sheet small:empty{margin:0}
 .quick-add-main{margin:1rem 0 1rem}
 .quick-add-main .opt-label{margin:.25rem 0 .5rem}
 #account-sheet .panel .muted{margin:.25rem 0 1.3rem}
