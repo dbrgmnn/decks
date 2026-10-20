@@ -25,6 +25,7 @@ export function initPractice() {
   const counterTotal = $('#m');
   const ratingButtons = [...document.querySelectorAll('.rate button')];
   const learnButtons = [...document.querySelectorAll('.learn')];
+  const undoButton = $('#undo');
   const studyEnabledButton = $('#study-enabled');
   const main = document.querySelector('main.wrap');
 
@@ -42,6 +43,7 @@ export function initPractice() {
   let seq = 0;
   let session = null;
   const deckLanguages = new Map();
+  const undoStack = [];
   const requestedDecks = new Set();
 
   const requestDeckLanguage = id => {
@@ -159,6 +161,8 @@ export function initPractice() {
     setRatingEnabled(false);
     resetCardTransform();
     clearError();
+    undoStack.length = 0;
+    if (undoButton) undoButton.disabled = true;
     practiceSheet.hidden = true;
     document.dispatchEvent(new CustomEvent('dex:practice-closed'));
   };
@@ -175,14 +179,14 @@ export function initPractice() {
     counterTotal.textContent = total;
   };
 
-  const show = cardData => {
+  const show = (cardData, {count = true} = {}) => {
     stopSpeech();
     current = cardData;
     shown = false;
     setRatingEnabled(false);
     if (cardData) requestDeckLanguage(cardData.deck_id);
 
-    if (cardData) n += 1;
+    if (cardData && count) n += 1;
 
     updateCounter(cardData ? Math.max(0, Number(cardData.left || 0) - 1) : 0);
 
@@ -253,13 +257,20 @@ export function initPractice() {
     const my = seq;
     const cardId = current.id;
     const kind = current.kind;
+    const prevState = current.state;
+    const prevDue = current.due;
     shown = false;
     setRatingEnabled(false);
     clearActiveRating();
+
+    // Remember this rating for a possible undo.
+    undoStack.push({card: current, prevState, prevDue, rating, kind});
+
     let response;
     try {
       response = await fetch('/api/rate/' + cardId, {method: 'POST', body: new URLSearchParams({rating})});
     } catch {
+      undoStack.pop();
       if (my === seq) {
         shown = true;
         setRatingEnabled(true);
@@ -269,12 +280,14 @@ export function initPractice() {
     }
     if (my !== seq) return;
     if (!response.ok) {
+      undoStack.pop();
       shown = true;
       setRatingEnabled(true);
       showError(t('practice.save_failed'));
       return;
     }
     recordRating(rating, kind);
+    if (undoButton) undoButton.disabled = undoStack.length === 0;
     await next();
   };
 
@@ -284,6 +297,8 @@ export function initPractice() {
     n = 0;
     total = 0;
     current = null;
+    undoStack.length = 0;
+    if (undoButton) undoButton.disabled = true;
     shown = false;
     stopSpeech();
     resetSpeechLanguage();
@@ -322,6 +337,44 @@ export function initPractice() {
   ratingButtons.forEach(button => {
     button.onclick = () => rate(Number(button.dataset.r));
   });
+
+  if (undoButton) {
+    undoButton.onclick = async () => {
+      const entry = undoStack.pop();
+      if (!entry) return;
+
+      // Revert session stats.
+      if (session) {
+        session.ratings[entry.rating] = Math.max(0, (session.ratings[entry.rating] || 0) - 1);
+        if (entry.kind === 'new') session.fresh = Math.max(0, session.fresh - 1);
+        else session.reviews = Math.max(0, session.reviews - 1);
+      }
+
+      let response;
+      try {
+        response = await fetch('/api/undo/' + entry.card.id, {
+          method: 'POST',
+          body: new URLSearchParams({prev_state: entry.prevState || '', prev_due: entry.prevDue || ''}),
+        });
+      } catch {
+        undoStack.push(entry);
+        showError(t('practice.save_failed_connection'));
+        return;
+      }
+      if (!response.ok) {
+        undoStack.push(entry);
+        showError(t('practice.save_failed'));
+        return;
+      }
+
+      // Restore previous card without incrementing counter.
+      n = Math.max(0, n - 1);
+      show(entry.card, {count: false});
+      updateCounter(entry.card.left ? Math.max(0, Number(entry.card.left) - 1) : 0);
+      undoButton.disabled = undoStack.length === 0;
+      document.dispatchEvent(new CustomEvent('dex:home-refresh'));
+    };
+  }
 
   if (speakButton) {
     speakButton.onpointerdown = event => event.stopPropagation();

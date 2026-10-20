@@ -1,6 +1,5 @@
 {
   "meta.description": "Minimalistische Lernkarten-App mit Ordnern, Decks und FSRS-basiertem Lernen.",
-
   "common.save": "Speichern",
   "common.save_changes": "Änderungen speichern",
   "common.cancel": "Abbrechen",
@@ -14,13 +13,10 @@
   "common.save_failed_connection": "Speichern fehlgeschlagen. Prüfe deine Verbindung.",
   "common.folder": "Ordner",
   "common.deck": "Deck",
-
   "password.show": "Passwort anzeigen",
   "password.hide": "Passwort verbergen",
-
   "theme.light": "Zum hellen Design wechseln",
   "theme.dark": "Zum dunklen Design wechseln",
-
   "home.theme": "Design wechseln",
   "home.folders": "Ordner",
   "home.folder.empty": "Leer",
@@ -79,7 +75,6 @@
   "home.api_token_hint": "Kopiere den Token jetzt. Du kannst ihn später nicht erneut ansehen.",
   "home.copy": "Kopieren",
   "home.ok": "OK",
-
   "practice.again": "1 Nochmal",
   "practice.hard": "2 Schwer",
   "practice.good": "3 Gut",
@@ -101,18 +96,14 @@
   "practice.recall": "Trefferquote",
   "practice.duration_seconds": "{seconds} s",
   "practice.duration_minutes": "{minutes} Min. {seconds} s",
-
   "cards.no_matches": "Keine Treffer.",
   "cards.range": "{shown} von {total}",
   "cards.delete": "Karte löschen",
   "cards.edit_title": "Karte bearbeiten",
   "cards.add_to": "Karte zu {deck} hinzufügen",
-
   "deck.resume": "Fortsetzen",
   "deck.order_failed": "Reihenfolge der Decks konnte nicht gespeichert werden.",
-
   "folder.order_failed": "Reihenfolge der Ordner konnte nicht gespeichert werden.",
-
   "account.password_changed": "Passwort geändert ✓",
   "account.choose_folder_export": "Wähle einen Ordner zum Exportieren",
   "account.choose_deck_export": "Wähle ein Deck zum Exportieren",
@@ -128,21 +119,18 @@
   "account.deck_count.other": "{count} Decks",
   "account.folder_count.one": "{count} Ordner",
   "account.folder_count.other": "{count} Ordner",
-
   "quick_add.enter_value": "Gib einen Wert ein",
   "quick_add.exists": "Existiert bereits",
   "quick_add.folder_exists": "Ordner „{name}“ existiert bereits",
   "quick_add.deck_exists": "Deck „{name}“ existiert bereits im Ordner „{folder}“",
   "quick_add.card_exists": "Diese Karte existiert bereits in {path}",
   "quick_add.path": "„{folder} / {deck}“",
-
   "login.email": "E-Mail",
   "login.password": "Passwort",
   "login.repeat_password": "Passwort wiederholen",
   "login.sign_in": "Anmelden",
   "login.create_account": "Konto erstellen",
   "login.have_account": "Ich habe bereits ein Konto",
-
   "dialogs.deck.title": "Deck löschen?",
   "dialogs.deck.text": "„{name}“ und alle Karten darin löschen? Das kann nicht rückgängig gemacht werden.",
   "dialogs.folder.title": "Ordner löschen?",
@@ -155,7 +143,6 @@
   "dialogs.deck_count.other": "{count} Decks",
   "dialogs.card_count.one": "{count} Karte",
   "dialogs.card_count.other": "{count} Karten",
-
   "field.front": "Vorderseite",
   "field.back": "Rückseite",
   "field.note": "Notiz",
@@ -164,7 +151,6 @@
   "field.folder": "Ordner",
   "field.deck": "Deck",
   "field.name": "Name",
-
   "error.deck_not_found": "Deck nicht gefunden",
   "error.card_not_found": "Karte nicht gefunden",
   "error.folder_not_found": "Ordner nicht gefunden",
@@ -210,5 +196,6 @@
   "error.field_reserved": "{field} darf / oder , nicht enthalten",
   "error.field_required_line": "{field} in Zeile {line} ist erforderlich",
   "error.field_too_long_line": "{field} in Zeile {line} ist zu lang (max. {limit})",
-  "error.field_reserved_line": "{field} in Zeile {line} darf / oder , nicht enthalten"
+  "error.field_reserved_line": "{field} in Zeile {line} darf / oder , nicht enthalten",
+  "practice.undo": "Rückgängig"
 }

@@ -1,6 +1,5 @@
 {
   "meta.description": "Minimal flashcards app with folders, decks and FSRS-based study.",
-
   "common.save": "Save",
   "common.save_changes": "Save changes",
   "common.cancel": "Cancel",
@@ -14,13 +13,10 @@
   "common.save_failed_connection": "Could not save. Check your connection.",
   "common.folder": "Folder",
   "common.deck": "Deck",
-
   "password.show": "Show password",
   "password.hide": "Hide password",
-
   "theme.light": "Switch to light theme",
   "theme.dark": "Switch to dark theme",
-
   "home.theme": "Toggle theme",
   "home.folders": "Folders",
   "home.folder.empty": "Empty",
@@ -79,7 +75,6 @@
   "home.api_token_hint": "Copy this token now. You won’t be able to view it again.",
   "home.copy": "Copy",
   "home.ok": "OK",
-
   "practice.again": "1 Again",
   "practice.hard": "2 Hard",
   "practice.good": "3 Good",
@@ -101,18 +96,14 @@
   "practice.recall": "Recall",
   "practice.duration_seconds": "{seconds}s",
   "practice.duration_minutes": "{minutes}m {seconds}s",
-
   "cards.no_matches": "No matches.",
   "cards.range": "{shown} of {total}",
   "cards.delete": "Delete card",
   "cards.edit_title": "Edit card",
   "cards.add_to": "Add card to {deck}",
-
   "deck.resume": "Resume",
   "deck.order_failed": "Could not save deck order.",
-
   "folder.order_failed": "Could not save folder order.",
-
   "account.password_changed": "Password changed ✓",
   "account.choose_folder_export": "Choose a folder to export",
   "account.choose_deck_export": "Choose a deck to export",
@@ -128,21 +119,18 @@
   "account.deck_count.other": "{count} decks",
   "account.folder_count.one": "{count} folder",
   "account.folder_count.other": "{count} folders",
-
   "quick_add.enter_value": "Enter a value",
   "quick_add.exists": "Already exists",
   "quick_add.folder_exists": "Folder “{name}” already exists",
   "quick_add.deck_exists": "Deck “{name}” already exists in folder “{folder}”",
   "quick_add.card_exists": "This card already exists in {path}",
   "quick_add.path": "“{folder} / {deck}”",
-
   "login.email": "Email",
   "login.password": "Password",
   "login.repeat_password": "Repeat password",
   "login.sign_in": "Sign in",
   "login.create_account": "Create account",
   "login.have_account": "I already have an account",
-
   "dialogs.deck.title": "Delete deck?",
   "dialogs.deck.text": "Delete “{name}” and all cards in it? This cannot be undone.",
   "dialogs.folder.title": "Delete folder?",
@@ -155,7 +143,6 @@
   "dialogs.deck_count.other": "{count} decks",
   "dialogs.card_count.one": "{count} card",
   "dialogs.card_count.other": "{count} cards",
-
   "field.front": "Front",
   "field.back": "Back",
   "field.note": "Note",
@@ -164,7 +151,6 @@
   "field.folder": "Folder",
   "field.deck": "Deck",
   "field.name": "Name",
-
   "error.deck_not_found": "Deck not found",
   "error.card_not_found": "Card not found",
   "error.folder_not_found": "Folder not found",
@@ -210,5 +196,6 @@
   "error.field_reserved": "{field} cannot contain / or ,",
   "error.field_required_line": "{field} on line {line} is required",
   "error.field_too_long_line": "{field} on line {line} is too long (max {limit})",
-  "error.field_reserved_line": "{field} on line {line} cannot contain / or ,"
+  "error.field_reserved_line": "{field} on line {line} cannot contain / or ,",
+  "practice.undo": "Undo"
 }

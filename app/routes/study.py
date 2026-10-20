@@ -60,6 +60,7 @@ def next_active_card(user=Depends(auth.current_user)):
                 eligible_new_decks.append(deck['id'])
 
         if due_candidates:
+            row = c.execute('SELECT state, due FROM cards WHERE id=?', (due_candidates['id'],)).fetchone()
             return {
                 'id': due_candidates['id'],
                 'deck_id': due_candidates['deck_id'],
@@ -67,6 +68,8 @@ def next_active_card(user=Depends(auth.current_user)):
                 'back': due_candidates['back'],
                 'note': due_candidates['note'],
                 'kind': 'review',
+                'state': row['state'],
+                'due': row['due'],
                 'left': due_left + actual_new_left,
             }
 
@@ -84,6 +87,7 @@ def next_active_card(user=Depends(auth.current_user)):
         ).fetchone()
         if not new_row:
             return None
+        row = c.execute('SELECT state, due FROM cards WHERE id=?', (new_row['id'],)).fetchone()
         return {
             'id': new_row['id'],
             'deck_id': new_row['deck_id'],
@@ -91,6 +95,8 @@ def next_active_card(user=Depends(auth.current_user)):
             'back': new_row['back'],
             'note': new_row['note'],
             'kind': 'new',
+            'state': row['state'],
+            'due': row['due'],
             'left': actual_new_left,
         }
 
@@ -127,6 +133,7 @@ def next_card(deck_id: int, user=Depends(auth.current_user)):
                 'SELECT COUNT(*) FROM cards WHERE deck_id=? AND state IS NOT NULL AND due<=?',
                 (deck_id, now),
             ).fetchone()[0]
+            state_row = c.execute('SELECT state, due FROM cards WHERE id=?', (due_row['id'],)).fetchone()
             return {
                 'id': due_row['id'],
                 'deck_id': deck_id,
@@ -134,6 +141,8 @@ def next_card(deck_id: int, user=Depends(auth.current_user)):
                 'back': due_row['back'],
                 'note': due_row['note'],
                 'kind': 'review',
+                'state': state_row['state'],
+                'due': state_row['due'],
                 'left': due_left + actual_new_left,
             }
         if actual_new_left <= 0:
@@ -148,6 +157,7 @@ def next_card(deck_id: int, user=Depends(auth.current_user)):
         ).fetchone()
         if not new_row:
             return None
+        state_row = c.execute('SELECT state, due FROM cards WHERE id=?', (new_row['id'],)).fetchone()
     return {
         'id': new_row['id'],
         'deck_id': deck_id,
@@ -155,6 +165,8 @@ def next_card(deck_id: int, user=Depends(auth.current_user)):
         'back': new_row['back'],
         'note': new_row['note'],
         'kind': 'new',
+        'state': state_row['state'],
+        'due': state_row['due'],
         'left': actual_new_left,
     }
 
@@ -171,4 +183,23 @@ def rate_card(card_id: int, rating: int = Form(...), user=Depends(auth.current_u
         state_json, due = srs.review(row['state'], rating)
         c.execute('UPDATE cards SET state=?, due=? WHERE id=?', (state_json, due, card_id))
         c.execute('INSERT INTO reviews(card_id, rating, ts) VALUES(?,?,?)', (card_id, rating, ts))
+    return {'ok': True}
+
+
+@router.post('/api/undo/{card_id}')
+def undo_card(card_id: int, prev_state: str = Form(''), prev_due: str = Form(''), user=Depends(auth.current_user)):
+    uid = user['id']
+    with db.conn() as c:
+        own_card(c, uid, card_id)
+        last = c.execute(
+            'SELECT id FROM reviews WHERE card_id=? ORDER BY ts DESC, id DESC LIMIT 1',
+            (card_id,),
+        ).fetchone()
+        if not last:
+            raise error(400, 'error.nothing_to_undo')
+        c.execute('DELETE FROM reviews WHERE id=?', (last['id'],))
+        c.execute(
+            'UPDATE cards SET state=?, due=? WHERE id=?',
+            (prev_state if prev_state else None, prev_due if prev_due else None, card_id),
+        )
     return {'ok': True}
