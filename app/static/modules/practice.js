@@ -350,6 +350,7 @@ export function initPractice() {
         else session.reviews = Math.max(0, session.reviews - 1);
       }
 
+      undoButton.disabled = true;
       let response;
       try {
         response = await fetch('/api/undo/' + entry.card.id, {
@@ -359,11 +360,13 @@ export function initPractice() {
       } catch {
         undoStack.push(entry);
         showError(t('practice.save_failed_connection'));
+        undoButton.disabled = undoStack.length === 0;
         return;
       }
       if (!response.ok) {
         undoStack.push(entry);
         showError(t('practice.save_failed'));
+        undoButton.disabled = undoStack.length === 0;
         return;
       }
 
