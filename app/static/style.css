@@ -119,7 +119,7 @@ button.danger:hover,button.danger:active{background:var(--danger-bg);color:var(-
 #add,#deck-edit,#folder-sheet{z-index:11}
 #confirm{z-index:30}
 .close{position:fixed;top:calc(.75rem + env(safe-area-inset-top));right:max(max(1rem,env(safe-area-inset-right)),calc(50% - (var(--panel-max) / 2) + 1rem));z-index:2}
-.undo{position:fixed;top:calc(.75rem + env(safe-area-inset-top));left:max(1rem,env(safe-area-inset-left));z-index:2;min-width:44px;height:44px;padding:0 .6rem;display:grid;place-items:center;font-size:.85rem;opacity:.35;pointer-events:none}
+.undo{position:fixed;top:calc(.75rem + env(safe-area-inset-top));left:max(max(1rem,env(safe-area-inset-left)),calc(50% - (var(--form-max) / 2) + 1rem));z-index:2;min-width:44px;height:44px;padding:0 .6rem;display:grid;place-items:center;font-size:.85rem;opacity:.35;pointer-events:none}
 .undo:not(:disabled){opacity:1;pointer-events:auto}
 .panel{width:100%;max-width:var(--panel-max);margin:0 auto}
 .panel h2{margin:0 0 1rem}
