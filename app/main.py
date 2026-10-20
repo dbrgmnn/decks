@@ -80,8 +80,13 @@ async def http_headers(request, call_next):
     if auth.HTTPS_ONLY:
         resp.headers.setdefault("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
     # Pages and API answers must never come from the browser cache (settings
-    # would look "reset"); static assets may.
-    if not request.url.path.startswith("/static/"):
+    # would look "reset"). Static assets are cache-busted by ?v= only at their
+    # entry point, so internal ES-module imports keep the bare URL. Tell the
+    # browser to revalidate them instead of guessing a heuristic lifetime:
+    # otherwise a phone can keep an old module (and its old UI) for days.
+    if request.url.path.startswith("/static/"):
+        resp.headers.setdefault("Cache-Control", "no-cache")
+    else:
         resp.headers["Content-Security-Policy"] = CSP.format(nonce)
         resp.headers["Cache-Control"] = "no-store"
     return resp

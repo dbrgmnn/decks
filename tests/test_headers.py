@@ -31,3 +31,21 @@ def test_static_assets_are_excluded_from_csp(client):
 
     assert "content-security-policy" not in response.headers
     assert response.headers["x-content-type-options"] == "nosniff"
+
+
+def test_pages_version_internal_es_module_imports(client):
+    # Modules import each other with bare ./foo.js specifiers. The import map
+    # gives those URLs the same ?v= cache-buster as the entry script.
+    html = client.get("/login").text
+
+    assert 'type="importmap"' in html
+    assert '"/static/modules/i18n.js": "/static/modules/i18n.js?v=' in html
+
+
+def test_static_assets_must_be_revalidated(client):
+    # Entry points use ?v=mtime, but their internal ES-module imports do not.
+    # Without this header browsers (especially mobile Safari) may keep an old
+    # module and its old UI for hours.
+    response = client.get("/static/modules/account.js")
+
+    assert response.headers["cache-control"] == "no-cache"

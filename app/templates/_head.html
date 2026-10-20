@@ -4,6 +4,7 @@
 <title>decks</title>
 <script nonce="{{ request.state.csp_nonce }}">try{document.documentElement.dataset.theme=localStorage.theme||"light"}catch{document.documentElement.dataset.theme="light"}</script>
 <script nonce="{{ request.state.csp_nonce }}" type="application/json" id="i18n">{{ i18n_json | safe }}</script>
+<script nonce="{{ request.state.csp_nonce }}" type="importmap">{{ importmap_json | safe }}</script>
 <link rel="manifest" href="{{ asset('icons/site.webmanifest') }}">
 <link rel="icon" href="{{ asset('icons/favicon.ico') }}" sizes="any">
 <link rel="icon" type="image/svg+xml" href="{{ asset('icons/favicon.svg') }}">
