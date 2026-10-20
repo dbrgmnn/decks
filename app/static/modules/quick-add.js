@@ -1,23 +1,24 @@
 import {$} from './dom.js';
+import {t} from './i18n.js';
 
 function quickAddDuplicateMessage(data) {
-  const folderName = data.folder?.name || 'Folder';
-  const deckName = data.deck?.name || 'Deck';
-  const cardPath = `“${folderName} / ${deckName}”`;
+  const folderName = data.folder?.name || t('common.folder');
+  const deckName = data.deck?.name || t('common.deck');
+  const cardPath = t('quick_add.path', {folder: folderName, deck: deckName});
 
   if (data.kind === 'folder') {
-    return `Folder “${folderName}” already exists`;
+    return t('quick_add.folder_exists', {name: folderName});
   }
 
   if (data.kind === 'deck') {
-    return `Deck “${deckName}” already exists in folder “${folderName}”`;
+    return t('quick_add.deck_exists', {name: deckName, folder: folderName});
   }
 
   if (data.kind === 'card') {
-    return `This card already exists in ${cardPath}`;
+    return t('quick_add.card_exists', {path: cardPath});
   }
 
-  return 'Already exists';
+  return t('quick_add.exists');
 }
 
 function wasCreated(data) {
@@ -38,7 +39,7 @@ export function initQuickAdd({errText, onCreated}) {
     event.preventDefault();
     const text = nameField.value.trim();
     if (!text) {
-      msg.textContent = 'Enter a value';
+      msg.textContent = t('quick_add.enter_value');
       return;
     }
 

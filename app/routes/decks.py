@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Depends, Form, HTTPException, Request
+from fastapi import APIRouter, Depends, Form, Request
 
 from .. import auth, db
+from ..i18n import error
 from ..services.decks import check_deck_name
 from ..services.ownership import need_folder, own_deck
 from ..services.validators import clean_quick_add_name
@@ -10,7 +11,7 @@ router = APIRouter()
 
 @router.post('/api/decks')
 def create_deck(name: str = Form(...), folder_id: int = Form(...), user=Depends(auth.current_user)):
-    name = clean_quick_add_name(name, 'Deck name', 60)
+    name = clean_quick_add_name(name, 'field.deck_name', 60)
     uid = user['id']
     with db.conn() as c:
         # A deck must belong to a folder owned by the same user.
@@ -33,13 +34,13 @@ def update_deck(
     paused: int = Form(0),
     user=Depends(auth.current_user),
 ):
-    name = clean_quick_add_name(name, 'Deck name', 60)
+    name = clean_quick_add_name(name, 'field.deck_name', 60)
     try:
         new_per_day = int(new_per_day)
     except (TypeError, ValueError):
-        raise HTTPException(400, 'Choose a valid daily limit')
+        raise error(400, 'error.daily_limit_invalid')
     if new_per_day not in (1, 5, 10, 15, 20, 30):
-        raise HTTPException(400, 'Choose one of the allowed daily limits')
+        raise error(400, 'error.daily_limit_not_allowed')
     uid = user['id']
     with db.conn() as c:
         own_deck(c, uid, deck_id)
@@ -80,12 +81,12 @@ async def order_decks(request: Request, user=Depends(auth.current_user)):
     try:
         ids = [int(x) for x in form.getlist('ids')]
     except (TypeError, ValueError):
-        raise HTTPException(400, 'Invalid deck order')
+        raise error(400, 'error.deck_order_invalid')
     uid = user['id']
     if not ids:
         return {'ok': True}
     if len(ids) != len(set(ids)):
-        raise HTTPException(400, 'Invalid deck order')
+        raise error(400, 'error.deck_order_invalid')
     with db.conn() as c:
         all_ids = [r[0] for r in c.execute(
             'SELECT id FROM decks WHERE user_id=? ORDER BY pos, id',
@@ -94,7 +95,7 @@ async def order_decks(request: Request, user=Depends(auth.current_user)):
         owned = set(all_ids)
         subset = set(ids)
         if subset - owned:
-            raise HTTPException(400, 'Invalid deck order')
+            raise error(400, 'error.deck_order_invalid')
         # Keep decks outside this view in place; only reshuffle the submitted subset.
         it = iter(ids)
         ordered = [next(it) if deck_id in subset else deck_id for deck_id in all_ids]

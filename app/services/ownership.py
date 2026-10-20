@@ -1,4 +1,4 @@
-from fastapi import HTTPException
+from ..i18n import error
 
 
 def own_deck(c, uid, deck_id):
@@ -7,7 +7,7 @@ def own_deck(c, uid, deck_id):
         (deck_id, uid),
     ).fetchone()
     if not row:
-        raise HTTPException(404, "Deck not found")
+        raise error(404, 'error.deck_not_found')
     return row
 
 
@@ -17,7 +17,7 @@ def own_card(c, uid, card_id):
         (card_id, uid),
     ).fetchone()
     if not row:
-        raise HTTPException(404, "Card not found")
+        raise error(404, 'error.card_not_found')
     return row
 
 
@@ -25,11 +25,11 @@ def own_folder(c, uid, folder_id):
     if not folder_id:
         return None
     if not c.execute("SELECT 1 FROM folders WHERE id=? AND user_id=?", (folder_id, uid)).fetchone():
-        raise HTTPException(404, "Folder not found")
+        raise error(404, 'error.folder_not_found')
     return folder_id
 
 
 def need_folder(c, uid, folder_id):
     if not folder_id:
-        raise HTTPException(400, "Choose a folder for the deck")
+        raise error(400, 'error.folder_required')
     return own_folder(c, uid, folder_id)

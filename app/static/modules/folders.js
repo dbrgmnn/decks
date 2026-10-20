@@ -1,4 +1,5 @@
 import {$, arrowSvg} from './dom.js';
+import {t} from './i18n.js';
 
 export function initFolders({confirmDelete, errText}) {
   const folderButtons = [...document.querySelectorAll('.fold[data-folder]')];
@@ -67,7 +68,7 @@ export function initFolders({confirmDelete, errText}) {
         body: new URLSearchParams(new FormData(folderForm)),
       });
     } catch {
-      folderMsg.textContent = 'Could not save. Check your connection.';
+      folderMsg.textContent = t('common.save_failed_connection');
       return;
     }
 
@@ -97,12 +98,12 @@ export function initFolders({confirmDelete, errText}) {
     try {
       response = await fetch('/api/folders/order', {method: 'POST', body});
     } catch {
-      alert('Could not save folder order.');
+      alert(t('folder.order_failed'));
       location.reload();
       return;
     }
     if (!response.ok) {
-      alert('Could not save folder order.');
+      alert(t('folder.order_failed'));
       location.reload();
     }
   };
@@ -115,8 +116,8 @@ export function initFolders({confirmDelete, errText}) {
     const [prev, next] = movingFolder.querySelectorAll('.folder-arrow');
     prev.innerHTML = arrowSvg(vertical ? 'up' : 'left');
     next.innerHTML = arrowSvg(vertical ? 'down' : 'right');
-    prev.setAttribute('aria-label', vertical ? 'Move up' : 'Move left');
-    next.setAttribute('aria-label', vertical ? 'Move down' : 'Move right');
+    prev.setAttribute('aria-label', vertical ? t('common.move_up') : t('common.move_left'));
+    next.setAttribute('aria-label', vertical ? t('common.move_down') : t('common.move_right'));
     prev.disabled = index === 0;
     next.disabled = index === all.length - 1;
   };

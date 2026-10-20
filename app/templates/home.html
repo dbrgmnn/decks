@@ -1,23 +1,23 @@
 <!doctype html>
-<html lang="en">
+<html lang="{{ lang }}">
 <head>
 {% include "_head.html" %}
 </head>
 <body>
 <header class="wrap bar">
   <button type="button" id="account">{{ user.name }}</button>
-  <button type="button" id="theme" aria-label="Toggle theme">◐</button>
+  <button type="button" id="theme" aria-label="{{ t('home.theme') }}">◐</button>
 </header>
 <main class="wrap" data-study-due="{{ stats.due }}" data-study-new="{{ stats.new }}">
   <form id="quick-add-form" class="quick-add quick-add-main">
     <div class="row">
-      <input id="quick-add-name" name="name" placeholder="folder/deck/front/back/note" maxlength="300" required autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="done">
-      <button type="submit">Quick add</button>
+      <input id="quick-add-name" name="name" placeholder="{{ t('home.quick_add_placeholder') }}" maxlength="300" required autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="done">
+      <button type="submit">{{ t('home.quick_add') }}</button>
     </div>
     <small id="quick-add-msg"></small>
   </form>
   {% if folders %}
-  <nav class="folders" aria-label="Folders">
+  <nav class="folders" aria-label="{{ t('home.folders') }}">
     {% for f in folders %}
     {% set open = folder and folder.id == f.id %}
     <div role="button" tabindex="0" class="fold{% if open %} on{% endif %}{% if f.paused %} paused{% endif %}" data-folder="{{ f.id }}"{% if open %} aria-current="true"{% endif %}>
@@ -27,7 +27,7 @@
       <svg class="ficon" viewBox="0 0 28 24" aria-hidden="true"><path class="sh" transform="translate(1.5 1.5)" d="M2 3H10L12.5 6H24V20H2Z"/><path d="M2 3H10L12.5 6H24V20H2Z"/><path class="hi" d="M3.2 19V4.2H9.6L12.1 7.2H23"/><path class="lo" d="M22.8 7.2V18.8H3.2"/></svg>
       {% endif %}
       <span class="fname">{{ f.name }}</span>
-      <small>{% if not f.count %}Empty{% elif f.paused %}Paused{% else %}{{ f.due }} due · {{ f.new }} new{% endif %}</small>
+      <small>{% if not f.count %}{{ t('home.folder.empty') }}{% elif f.paused %}{{ t('home.folder.paused') }}{% else %}{{ t('home.folder.stats', due=f.due, new=f.new) }}{% endif %}</small>
     </div>
     {% endfor %}
   </nav>
@@ -35,27 +35,27 @@
   {% if folder %}
   <div class="crumb">
     <button id="folder-back" type="button">← {{ folder.name }}</button>
-    <button id="folder-edit" type="button" aria-label="Edit folder" data-id="{{ folder.id }}" data-name="{{ folder.name }}" data-decks="{{ folder.count }}" data-cards="{{ folder.cards }}">✎</button>
+    <button id="folder-edit" type="button" aria-label="{{ t('home.folder.edit') }}" data-id="{{ folder.id }}" data-name="{{ folder.name }}" data-decks="{{ folder.count }}" data-cards="{{ folder.cards }}">✎</button>
   </div>
   {% endif %}
   <section class="decks">
     {% for d in decks %}
     <article class="deck{% if d.paused %} paused{% endif %}" data-id="{{ d.id }}" data-name="{{ d.name }}" data-new-per-day="{{ d.new_per_day }}" data-paused="{{ 1 if d.paused else 0 }}" data-due="{{ d.due }}" data-new="{{ d.new }}" data-folder="{{ d.folder_id or 0 }}">
-      <button type="button" class="edit" aria-label="Edit deck">✎</button>
-      <button type="button" class="plus" aria-label="Add card">+</button>
+      <button type="button" class="edit" aria-label="{{ t('home.deck.edit') }}">✎</button>
+      <button type="button" class="plus" aria-label="{{ t('home.deck.add_card') }}">+</button>
       <h3>{{ d.path }}</h3>
-      <p class="meta">{{ d.total }} card{{ "" if d.total == 1 else "s" }}<small>{% if d.paused %}Paused{% else %}{{ d.due }} due · {{ d.new }} new{% endif %}</small></p>
+      <p class="meta">{{ n('home.cards', d.total) }}<small>{% if d.paused %}{{ t('home.folder.paused') }}{% else %}{{ t('home.folder.stats', due=d.due, new=d.new) }}{% endif %}</small></p>
       <div class="actions">
-        <button class="learn" type="button" data-id="{{ d.id }}"{% if d.paused or (not d.due and not d.new) %} disabled{% endif %}>Study</button>
-        <button type="button" class="star{% if d.pinned %} on{% endif %}" aria-pressed="{{ 'true' if d.pinned else 'false' }}" aria-label="Show on main screen" title="Show on main screen"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6.1 6.6.9-4.8 4.6 1.2 6.6L12 17.6 6.1 20.7l1.2-6.6L2.5 9.5l6.6-.9z"/></svg></button>
+        <button class="learn" type="button" data-id="{{ d.id }}"{% if d.paused or (not d.due and not d.new) %} disabled{% endif %}>{{ t('home.study') }}</button>
+        <button type="button" class="star{% if d.pinned %} on{% endif %}" aria-pressed="{{ 'true' if d.pinned else 'false' }}" aria-label="{{ t('home.pin') }}" title="{{ t('home.pin') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6.1 6.6.9-4.8 4.6 1.2 6.6L12 17.6 6.1 20.7l1.2-6.6L2.5 9.5l6.6-.9z"/></svg></button>
       </div>
     </article>
     {% endfor %}
     {% if folder %}
     <form class="deck" id="new-deck" method="post" action="/api/decks">
       <input type="hidden" name="folder_id" value="{{ folder.id }}">
-      <input name="name" placeholder="New deck" maxlength="60" required>
-      <button type="submit">Create</button>
+      <input name="name" placeholder="{{ t('home.new_deck') }}" maxlength="60" required>
+      <button type="submit">{{ t('home.create') }}</button>
       <small id="new-msg"></small>
     </form>
     {% endif %}
@@ -63,183 +63,190 @@
 </main>
 
 <button type="button" id="study-enabled" class="study-bar" aria-live="polite">
-  <span class="study-bar-title">Study</span>
-  <span class="study-bar-meta">{{ stats.due }} due · {{ stats.new }} new</span>
+  <span class="study-bar-title">{{ t('home.study') }}</span>
+  <span class="study-bar-meta">{{ t('home.study_bar_meta', due=stats.due, new=stats.new) }}</span>
 </button>
 
 <div id="list" class="sheet" hidden>
-  <button class="close" aria-label="Close">✕</button>
+  <button class="close" aria-label="{{ t('common.close') }}">✕</button>
   <div class="panel">
     <h2 id="list-title"></h2>
-    <input id="search" type="search" placeholder="Search" maxlength="100" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="search">
+    <input id="search" type="search" placeholder="{{ t('home.search') }}" maxlength="100" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="search">
     <ul id="words"></ul>
   </div>
 </div>
 
 <div id="add" class="sheet" hidden>
-  <button class="close" aria-label="Close">✕</button>
+  <button class="close" aria-label="{{ t('common.close') }}">✕</button>
   <form class="panel" id="add-form">
     <h2 id="add-title"></h2>
-    <input name="front" placeholder="Front" maxlength="200" required autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="next">
-    <input name="back" placeholder="Back" maxlength="200" required autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="next">
-    <textarea name="note" placeholder="Note (optional)" maxlength="300" rows="2" enterkeyhint="done"></textarea>
-    <button type="submit" id="add-btn">Save</button>
+    <input name="front" placeholder="{{ t('home.field.front') }}" maxlength="200" required autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="next">
+    <input name="back" placeholder="{{ t('home.field.back') }}" maxlength="200" required autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="next">
+    <textarea name="note" placeholder="{{ t('home.field.note') }}" maxlength="300" rows="2" enterkeyhint="done"></textarea>
+    <button type="submit" id="add-btn">{{ t('common.save') }}</button>
     <small id="add-msg"></small>
   </form>
 </div>
 
 <div id="deck-edit" class="sheet" hidden>
-  <button class="close" aria-label="Close">✕</button>
+  <button class="close" aria-label="{{ t('common.close') }}">✕</button>
   <form class="panel" id="deck-form">
-    <h2>Edit deck</h2>
-    <input name="name" placeholder="Deck name" maxlength="60" required autocomplete="off">
+    <h2>{{ t('home.deck.edit') }}</h2>
+    <input name="name" placeholder="{{ t('home.deck.name') }}" maxlength="60" required autocomplete="off">
     {% if folders %}
-    <label class="opt-label" for="deck-folder">Folder</label>
-    <select name="folder_id" id="deck-folder" required><option value="" disabled hidden>Choose a folder</option>{% for f in folders %}<option value="{{ f.id }}">{{ f.name }}</option>{% endfor %}</select>
+    <label class="opt-label" for="deck-folder">{{ t('common.folder') }}</label>
+    <select name="folder_id" id="deck-folder" required><option value="" disabled hidden>{{ t('home.choose_folder') }}</option>{% for f in folders %}<option value="{{ f.id }}">{{ f.name }}</option>{% endfor %}</select>
     {% endif %}
-    <p class="opt-label">New cards per day</p>
+    <p class="opt-label">{{ t('home.new_cards_per_day') }}</p>
     <div class="steps" id="steps">
       <button type="button" data-v="1">1</button><button type="button" data-v="5">5</button><button type="button" data-v="10">10</button><button type="button" data-v="15">15</button><button type="button" data-v="20">20</button><button type="button" data-v="30">30</button>
     </div>
     <input type="hidden" name="new_per_day" value="10">
     <input type="hidden" name="paused" value="0">
-    <button type="button" id="pause-toggle" class="toggle" aria-pressed="false">Pause</button>
+    <button type="button" id="pause-toggle" class="toggle" aria-pressed="false">{{ t('home.pause') }}</button>
     <div class="form-actions">
-      <button type="submit">Save changes</button>
-      <button type="button" id="delete-deck" class="danger">Delete deck</button>
+      <button type="submit">{{ t('common.save_changes') }}</button>
+      <button type="button" id="delete-deck" class="danger">{{ t('home.delete_deck') }}</button>
     </div>
     <small id="deck-msg"></small>
   </form>
 </div>
 
 <div id="folder-sheet" class="sheet" hidden>
-  <button class="close" aria-label="Close">✕</button>
+  <button class="close" aria-label="{{ t('common.close') }}">✕</button>
   <form class="panel" id="folder-form">
-    <h2 id="folder-title">Edit folder</h2>
-    <input name="name" placeholder="Folder name" maxlength="60" required autocomplete="off">
+    <h2 id="folder-title">{{ t('home.folder.edit') }}</h2>
+    <input name="name" placeholder="{{ t('home.folder.name') }}" maxlength="60" required autocomplete="off">
     <div class="form-actions">
-      <button type="submit">Save changes</button>
-      <button type="button" id="delete-folder" class="danger">Delete folder</button>
+      <button type="submit">{{ t('common.save_changes') }}</button>
+      <button type="button" id="delete-folder" class="danger">{{ t('home.delete_folder') }}</button>
     </div>
     <small id="fe-msg"></small>
   </form>
 </div>
 
 <div id="account-sheet" class="sheet" hidden>
-  <button class="close" aria-label="Close">✕</button>
+  <button class="close" aria-label="{{ t('common.close') }}">✕</button>
   <div class="panel">
-    <h2>Account</h2>
+    <h2>{{ t('home.account') }}</h2>
     <p class="muted">{{ user.email }}</p>
-    <h3 class="section">Data</h3>
+    <h3 class="section">{{ t('home.data') }}</h3>
     <div class="data-actions">
-      <button type="button" id="show-export">Export</button>
-      <button type="button" id="show-import">Import</button>
+      <button type="button" id="show-export">{{ t('home.export') }}</button>
+      <button type="button" id="show-import">{{ t('home.import') }}</button>
     </div>
     <div id="export-box" class="data-box" hidden>
       <form id="export-csv-form" class="panel-block">
         <select id="export-scope" name="scope">
-          <option value="all">All cards</option>
-          <option value="folder">Folder</option>
-          <option value="deck">Deck</option>
+          <option value="all">{{ t('home.export.all') }}</option>
+          <option value="folder">{{ t('home.export.folder') }}</option>
+          <option value="deck">{{ t('home.export.deck') }}</option>
         </select>
         <select id="export-folder" name="folder_id" hidden>
-          <option value="0" disabled selected>Choose folder</option>{% for f in folders %}<option value="{{ f.id }}">{{ f.name }}</option>{% endfor %}
+          <option value="0" disabled selected>{{ t('home.choose_export_folder') }}</option>{% for f in folders %}<option value="{{ f.id }}">{{ f.name }}</option>{% endfor %}
         </select>
         <select id="export-deck" name="deck_id" hidden>
-          <option value="0" disabled selected>Choose deck</option>{% for d in all_decks %}<option value="{{ d.id }}">{{ d.path }}</option>{% endfor %}
+          <option value="0" disabled selected>{{ t('home.choose_export_deck') }}</option>{% for d in all_decks %}<option value="{{ d.id }}">{{ d.path }}</option>{% endfor %}
         </select>
-        <button type="submit">Download CSV</button>
+        <button type="submit">{{ t('home.download_csv') }}</button>
         <small id="export-csv-msg"></small>
       </form>
     </div>
     <div id="import-box" class="data-box" hidden>
       <form id="import-csv-form" class="panel-block">
         <input id="import-csv-file" name="file" type="file" accept=".csv,text/csv" required>
-        <button type="submit">Import CSV</button>
+        <button type="submit">{{ t('home.import_csv') }}</button>
         <small id="import-csv-msg"></small>
       </form>
     </div>
-    <h3 class="section">Time zone</h3>
+    <h3 class="section">{{ t('home.timezone') }}</h3>
     <select id="tz" autocomplete="off">{% for z, label in timezones %}<option value="{{ z }}"{% if z == user.tz %} selected{% endif %}>{{ label }}</option>{% endfor %}</select>
     <small id="tz-msg"></small>
-    <h3 class="section">API token</h3>
-    <button type="button" id="api-token">Generate token</button>
+    <h3 class="section">{{ t('home.language') }}</h3>
+    <select id="lang" autocomplete="off">
+      <option value=""{% if not user.lang %} selected{% endif %}>{{ t('home.language_auto') }}</option>
+      <option value="en"{% if user.lang == 'en' %} selected{% endif %}>English</option>
+      <option value="de"{% if user.lang == 'de' %} selected{% endif %}>Deutsch</option>
+    </select>
+    <small id="lang-msg"></small>
+    <h3 class="section">{{ t('home.api_token') }}</h3>
+    <button type="button" id="api-token">{{ t('home.generate_token') }}</button>
     <small id="api-token-msg"></small>
-    <h3 class="section">Change password</h3>
+    <h3 class="section">{{ t('home.change_password') }}</h3>
     <form id="pw-form">
       <div class="password-field">
-        <input name="current" type="password" placeholder="Current password" maxlength="128" autocomplete="current-password" required>
-        <button type="button" class="password-toggle" aria-label="Show password" aria-pressed="false">
+        <input name="current" type="password" placeholder="{{ t('home.current_password') }}" maxlength="128" autocomplete="current-password" required>
+        <button type="button" class="password-toggle" aria-label="{{ t('password.show') }}" aria-pressed="false">
           <svg class="eye-open" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="2.5"/></svg>
           <svg class="eye-closed" viewBox="0 0 24 24" aria-hidden="true" hidden><path d="m3 3 18 18M10.6 6.2A10.9 10.9 0 0 1 12 6c6.5 0 10 6 10 6a18.4 18.4 0 0 1-3.1 3.6M6.3 6.4C3.5 8.1 2 12 2 12s3.5 6 10 6a10.8 10.8 0 0 0 4.2-.9"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>
         </button>
       </div>
       <div class="password-field">
-        <input name="password" type="password" placeholder="New password" maxlength="128" autocomplete="new-password" required>
-        <button type="button" class="password-toggle" aria-label="Show password" aria-pressed="false">
+        <input name="password" type="password" placeholder="{{ t('home.new_password') }}" maxlength="128" autocomplete="new-password" required>
+        <button type="button" class="password-toggle" aria-label="{{ t('password.show') }}" aria-pressed="false">
           <svg class="eye-open" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="2.5"/></svg>
           <svg class="eye-closed" viewBox="0 0 24 24" aria-hidden="true" hidden><path d="m3 3 18 18M10.6 6.2A10.9 10.9 0 0 1 12 6c6.5 0 10 6 10 6a18.4 18.4 0 0 1-3.1 3.6M6.3 6.4C3.5 8.1 2 12 2 12s3.5 6 10 6a10.8 10.8 0 0 0 4.2-.9"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>
         </button>
       </div>
       <div class="password-field">
-        <input name="password2" type="password" placeholder="Repeat new password" maxlength="128" autocomplete="new-password" required>
-        <button type="button" class="password-toggle" aria-label="Show password" aria-pressed="false">
+        <input name="password2" type="password" placeholder="{{ t('home.repeat_new_password') }}" maxlength="128" autocomplete="new-password" required>
+        <button type="button" class="password-toggle" aria-label="{{ t('password.show') }}" aria-pressed="false">
           <svg class="eye-open" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="2.5"/></svg>
           <svg class="eye-closed" viewBox="0 0 24 24" aria-hidden="true" hidden><path d="m3 3 18 18M10.6 6.2A10.9 10.9 0 0 1 12 6c6.5 0 10 6 10 6a18.4 18.4 0 0 1-3.1 3.6M6.3 6.4C3.5 8.1 2 12 2 12s3.5 6 10 6a10.8 10.8 0 0 0 4.2-.9"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>
         </button>
       </div>
-      <button type="submit">Change password</button>
+      <button type="submit">{{ t('home.change_password') }}</button>
       <small id="pw-msg"></small>
     </form>
     <div class="form-actions account-actions">
-      <button type="button" id="logout">Sign out</button>
-      <button type="button" id="delete-account" class="danger">Delete account</button>
+      <button type="button" id="logout">{{ t('home.sign_out') }}</button>
+      <button type="button" id="delete-account" class="danger">{{ t('home.delete_account') }}</button>
     </div>
   </div>
 </div>
 
 <div id="confirm" class="sheet" hidden>
   <div class="panel confirm-panel">
-    <h2 id="confirm-title">Delete?</h2>
+    <h2 id="confirm-title">{{ t('home.confirm_title') }}</h2>
     <p id="confirm-text"></p>
     <div class="password-field" id="confirm-password" hidden>
-      <input id="confirm-pw" type="password" placeholder="Password" maxlength="128" autocomplete="current-password">
-      <button type="button" class="password-toggle" aria-label="Show password" aria-pressed="false">
+      <input id="confirm-pw" type="password" placeholder="{{ t('home.password') }}" maxlength="128" autocomplete="current-password">
+      <button type="button" class="password-toggle" aria-label="{{ t('password.show') }}" aria-pressed="false">
         <svg class="eye-open" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="2.5"/></svg>
         <svg class="eye-closed" viewBox="0 0 24 24" aria-hidden="true" hidden><path d="m3 3 18 18M10.6 6.2A10.9 10.9 0 0 1 12 6c6.5 0 10 6 10 6a18.4 18.4 0 0 1-3.1 3.6M6.3 6.4C3.5 8.1 2 12 2 12s3.5 6 10 6a10.8 10.8 0 0 0 4.2-.9"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>
       </button>
     </div>
     <small id="confirm-msg"></small>
     <div class="confirm-actions">
-      <button type="button" id="confirm-cancel">Cancel</button>
-      <button type="button" id="confirm-delete" class="danger">Delete</button>
+      <button type="button" id="confirm-cancel">{{ t('common.cancel') }}</button>
+      <button type="button" id="confirm-delete" class="danger">{{ t('common.delete') }}</button>
     </div>
   </div>
 </div>
 
 <div id="token-sheet" class="sheet" hidden>
   <div class="panel confirm-panel">
-    <h2>Your API token</h2>
-    <p>Copy this token now. You won’t be able to view it again.</p>
+    <h2>{{ t('home.api_token_title') }}</h2>
+    <p>{{ t('home.api_token_hint') }}</p>
     <textarea id="api-token-value" rows="3" readonly></textarea>
     <small id="api-token-copy-msg"></small>
     <div class="confirm-actions">
-      <button type="button" id="api-token-copy">Copy</button>
-      <button type="button" id="api-token-ok">OK</button>
+      <button type="button" id="api-token-copy">{{ t('home.copy') }}</button>
+      <button type="button" id="api-token-ok">{{ t('home.ok') }}</button>
     </div>
   </div>
 </div>
 
 <div id="practice" hidden>
-  <button type="button" id="close" class="close" aria-label="Close">✕</button>
+  <button type="button" id="close" class="close" aria-label="{{ t('common.close') }}">✕</button>
   <div class="count"><b id="n">0</b><span>/</span><span id="m">0</span></div>
   <small id="practice-msg" role="status" hidden></small>
-  <div id="card" class="card"><span id="card-kind" class="card-kind" hidden></span><div id="front"><span id="front-text"></span><button type="button" id="speak" aria-label="Pronounce word" title="Pronounce word" hidden><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 9h4l5-4v14l-5-4H4Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button></div><div id="back" hidden></div><small id="note" hidden></small><div id="summary" hidden></div></div>
+  <div id="card" class="card"><span id="card-kind" class="card-kind" hidden></span><div id="front"><span id="front-text"></span><button type="button" id="speak" aria-label="{{ t('practice.pronounce_word') }}" title="{{ t('practice.pronounce_word') }}" hidden><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 9h4l5-4v14l-5-4H4Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button></div><div id="back" hidden></div><small id="note" hidden></small><div id="summary" hidden></div></div>
   <nav class="rate">
-    <button type="button" data-r="1">1 Again<br><small>←</small></button>
-    <button type="button" data-r="2">2 Hard<br><small>↓</small></button>
-    <button type="button" data-r="3">3 Good<br><small>→</small></button>
-    <button type="button" data-r="4">4 Easy<br><small>↑</small></button>
+    <button type="button" data-r="1">{{ t('practice.again') }}<br><small>←</small></button>
+    <button type="button" data-r="2">{{ t('practice.hard') }}<br><small>↓</small></button>
+    <button type="button" data-r="3">{{ t('practice.good') }}<br><small>→</small></button>
+    <button type="button" data-r="4">{{ t('practice.easy') }}<br><small>↑</small></button>
   </nav>
 </div>
 <script type="module" src="{{ asset('app.js') }}"></script>

@@ -1,4 +1,5 @@
 import {$, errText, syncThemeColor} from './modules/dom.js';
+import {t} from './modules/i18n.js';
 import {initServiceWorker} from './modules/pwa.js';
 import {initTouchFeedback} from './modules/touch.js';
 import {initPasswordToggles, resetPassword} from './modules/password.js';
@@ -27,8 +28,8 @@ const setMode = on => {
   form.password2.disabled = !on;
   form.password.autocomplete = on ? 'new-password' : 'current-password';
   form.password2.autocomplete = 'new-password';
-  submitButton.textContent = on ? 'Create account' : 'Sign in';
-  switchButton.textContent = on ? 'I already have an account' : 'Create account';
+  submitButton.textContent = on ? t('login.create_account') : t('login.sign_in');
+  switchButton.textContent = on ? t('login.have_account') : t('login.create_account');
   message.textContent = '';
 };
 
@@ -39,7 +40,7 @@ form.onsubmit = async event => {
   event.preventDefault();
 
   if (signup && form.password.value !== form.password2.value) {
-    message.textContent = 'Passwords do not match';
+    message.textContent = t('common.passwords_mismatch');
     return;
   }
 

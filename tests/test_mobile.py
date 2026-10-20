@@ -84,7 +84,7 @@ def test_import_refreshes_home_and_shows_progress(client):
 
     # A successful import must refresh the folder/deck lists, not just print a sum.
     assert "location.reload()" in source
-    assert "Importing…" in source
+    assert "t('account.importing')" in source
     assert "classList.add('busy')" in source
 
     css = client.get("/static/style.css").text

@@ -12,7 +12,8 @@ CREATE TABLE IF NOT EXISTS users(
   name TEXT NOT NULL DEFAULT '',
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   tz TEXT NOT NULL DEFAULT 'UTC',
-  token_version INTEGER NOT NULL DEFAULT 0
+  token_version INTEGER NOT NULL DEFAULT 0,
+  lang TEXT NOT NULL DEFAULT ''
 )
 """
 
@@ -87,7 +88,7 @@ ORDER = ["users", "folders", "decks", "cards", "reviews"]
 
 # Bump SCHEMA_VERSION and add a step to MIGRATIONS when the schema changes.
 # Existing databases are upgraded in order; fresh ones run every step.
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 
 
 def _migrate_1(c):
@@ -104,10 +105,18 @@ def _migrate_2(c):
         c.execute("ALTER TABLE users ADD COLUMN token_version INTEGER NOT NULL DEFAULT 0")
 
 
+def _migrate_3(c):
+    # Empty lang means "follow the browser"; en/de are explicit choices.
+    columns = {row[1] for row in c.execute("PRAGMA table_info(users)")}
+    if "lang" not in columns:
+        c.execute("ALTER TABLE users ADD COLUMN lang TEXT NOT NULL DEFAULT ''")
+
+
 # version -> callable applying the change that brings the database to it.
 MIGRATIONS = {
     1: _migrate_1,
     2: _migrate_2,
+    3: _migrate_3,
 }
 
 

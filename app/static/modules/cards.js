@@ -1,4 +1,5 @@
 import {$, TRASH_SVG, el} from './dom.js';
+import {t} from './i18n.js';
 
 export function initCards({confirmDelete, errText}) {
   const searchInput = $('#search');
@@ -39,9 +40,9 @@ export function initCards({confirmDelete, errText}) {
     wordsList.replaceChildren();
 
     if (!filteredCards.length) {
-      const title = allCards.length ? `${curDeck.name} (0 of ${allCards.length})` : `${curDeck.name} (0)`;
-      listTitle.textContent = title;
-      if (allCards.length && query.length >= 2) wordsList.append(el('li', 'No matches.', 'empty'));
+      const count = allCards.length ? t('cards.range', {shown: 0, total: allCards.length}) : '0';
+      listTitle.textContent = `${curDeck.name} (${count})`;
+      if (allCards.length && query.length >= 2) wordsList.append(el('li', t('cards.no_matches'), 'empty'));
       return;
     }
 
@@ -53,7 +54,7 @@ export function initCards({confirmDelete, errText}) {
       const del = el('button', '', 'delete-card');
       del.type = 'button';
       del.innerHTML = TRASH_SVG;
-      del.setAttribute('aria-label', 'Delete card');
+      del.setAttribute('aria-label', t('cards.delete'));
       del.onclick = event => {
         event.stopPropagation();
         confirmDelete('card', card);
@@ -65,7 +66,9 @@ export function initCards({confirmDelete, errText}) {
     }
 
     wordsList.append(fragment);
-    const count = filteredCards.length === allCards.length ? filteredCards.length : `${filteredCards.length} of ${allCards.length}`;
+    const count = filteredCards.length === allCards.length
+      ? String(filteredCards.length)
+      : t('cards.range', {shown: filteredCards.length, total: allCards.length});
     listTitle.textContent = `${curDeck.name} (${count})`;
   };
 
@@ -114,8 +117,8 @@ export function initCards({confirmDelete, errText}) {
     addForm.front.value = card.front;
     addForm.back.value = card.back;
     addForm.note.value = card.note || '';
-    addTitle.textContent = 'Edit card';
-    addButton.textContent = 'Save changes';
+    addTitle.textContent = t('cards.edit_title');
+    addButton.textContent = t('common.save_changes');
     addMsg.textContent = '';
     addSheet.hidden = false;
     addForm.front.focus();
@@ -130,8 +133,8 @@ export function initCards({confirmDelete, errText}) {
       setCurrentDeck({id: deck.dataset.id, name: deck.dataset.name});
       editing = null;
       addForm.reset();
-      addButton.textContent = 'Save';
-      addTitle.textContent = 'Add card to ' + curDeck.name;
+      addButton.textContent = t('common.save');
+      addTitle.textContent = t('cards.add_to', {deck: curDeck.name});
       addMsg.textContent = '';
       addSheet.hidden = false;
       addForm.front.focus();
@@ -158,7 +161,7 @@ export function initCards({confirmDelete, errText}) {
       return;
     }
 
-    addMsg.textContent = 'Saved ✓';
+    addMsg.textContent = t('common.saved');
     addForm.reset();
     cardsByDeck.delete(String(curDeck.id));
     document.dispatchEvent(new CustomEvent('dex:home-refresh'));

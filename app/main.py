@@ -1,10 +1,12 @@
 import secrets
 
 from fastapi import FastAPI
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.sessions import SessionMiddleware
 
-from . import auth, db
+from . import auth, db, i18n
 from .routes import (
     auth as auth_routes,
     cards as card_routes,
@@ -46,6 +48,23 @@ CSP = (
     "form-action 'self'; img-src 'self' data:; style-src 'self'; connect-src 'self'; "
     "manifest-src 'self'; worker-src 'self'; script-src 'self' 'nonce-{}'"
 )
+
+
+@app.exception_handler(StarletteHTTPException)
+async def localized_errors(request, exc):
+    """Translate API and page errors in the language of the request."""
+    lang = i18n.lang_for(request)
+    if isinstance(exc, i18n.LocalizedHTTPException):
+        detail = i18n.render(exc.code, lang, **exc.params)
+    else:
+        detail = exc.detail
+    response = JSONResponse(
+        {"detail": detail},
+        status_code=exc.status_code,
+        headers=getattr(exc, "headers", None),
+    )
+    response.headers["Content-Language"] = lang
+    return response
 
 
 @app.middleware("http")

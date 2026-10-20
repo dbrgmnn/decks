@@ -1,4 +1,5 @@
 import {$, arrowSvg} from './dom.js';
+import {t} from './i18n.js';
 
 export function initDecks({confirmDelete, errText, openDeckCards}) {
   const deckEditSheet = $('#deck-edit');
@@ -31,7 +32,7 @@ export function initDecks({confirmDelete, errText, openDeckCards}) {
       button.classList.toggle('on', button.dataset.v === String(newPerDay));
     });
     pauseToggle.setAttribute('aria-pressed', paused ? 'true' : 'false');
-    pauseToggle.textContent = paused ? 'Paused' : 'Pause';
+    pauseToggle.textContent = paused ? t('deck.paused') : t('deck.pause');
   };
 
   const openDeckEdit = deck => {
@@ -142,12 +143,12 @@ export function initDecks({confirmDelete, errText, openDeckCards}) {
     try {
       response = await fetch('/api/decks/order', {method: 'POST', body});
     } catch {
-      alert('Could not save deck order.');
+      alert(t('deck.order_failed'));
       location.reload();
       return;
     }
     if (!response.ok) {
-      alert('Could not save deck order.');
+      alert(t('deck.order_failed'));
       location.reload();
     }
   };
@@ -161,8 +162,8 @@ export function initDecks({confirmDelete, errText, openDeckCards}) {
     const [prev, next] = moving.querySelectorAll('.arrow');
     prev.innerHTML = arrowSvg('left');
     next.innerHTML = arrowSvg('right');
-    prev.setAttribute('aria-label', 'Move left');
-    next.setAttribute('aria-label', 'Move right');
+    prev.setAttribute('aria-label', t('common.move_left'));
+    next.setAttribute('aria-label', t('common.move_right'));
     prev.disabled = index === 0;
     next.disabled = index === all.length - 1;
   };

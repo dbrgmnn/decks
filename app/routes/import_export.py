@@ -1,10 +1,11 @@
 import csv
 import io
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, Form, UploadFile
 from fastapi.responses import StreamingResponse
 
 from .. import auth, db
+from ..i18n import error
 from ..services.decks import check_deck_name, check_folder_name
 from ..services.ownership import own_deck, own_folder
 from ..services.validators import clean
@@ -34,18 +35,18 @@ def export_cards_csv(
     with db.conn() as c:
         if scope == 'folder':
             if not folder_id:
-                raise HTTPException(400, 'Choose a folder to export')
+                raise error(400, 'error.export_folder_required')
             folder_id = own_folder(c, uid, folder_id)
             sql += ' AND d.folder_id = ?'
             params.append(folder_id)
         elif scope == 'deck':
             if not deck_id:
-                raise HTTPException(400, 'Choose a deck to export')
+                raise error(400, 'error.export_deck_required')
             deck = own_deck(c, uid, deck_id)
             sql += ' AND d.id = ?'
             params.append(deck['id'])
         elif scope != 'all':
-            raise HTTPException(400, 'Choose all cards, one folder, or one deck')
+            raise error(400, 'error.export_scope_invalid')
         sql += ' ORDER BY f.pos, f.id, d.pos, d.id, c.id DESC'
         rows = c.execute(sql, params).fetchall()
 
@@ -65,22 +66,22 @@ def export_cards_csv(
 @router.post('/api/import/cards.csv')
 def import_cards_csv(file: UploadFile = File(...), user=Depends(auth.current_user)):
     if not file.filename or not file.filename.lower().endswith('.csv'):
-        raise HTTPException(400, 'Upload a CSV file')
+        raise error(400, 'error.csv_file_required')
     raw = file.file.read(MAX_CSV_BYTES + 1)
     if len(raw) > MAX_CSV_BYTES:
-        raise HTTPException(413, 'CSV file is too large (max 5 MB)')
+        raise error(413, 'error.csv_too_large')
     try:
         text = raw.decode('utf-8-sig')
     except UnicodeDecodeError:
-        raise HTTPException(400, 'CSV must be UTF-8 encoded')
+        raise error(400, 'error.csv_not_utf8')
     try:
         reader = csv.DictReader(io.StringIO(text))
         if reader.fieldnames != CSV_FIELDS:
-            raise HTTPException(400, 'CSV columns must be exactly: folder, deck, front, back, note')
+            raise error(400, 'error.csv_columns')
         rows = list(reader)
     except csv.Error:
         # A malformed file or a single field past csv's size limit.
-        raise HTTPException(400, 'CSV could not be parsed')
+        raise error(400, 'error.csv_unparseable')
 
     if not rows:
         return {'ok': True, 'folders': 0, 'decks': 0, 'cards': 0}
@@ -98,11 +99,11 @@ def import_cards_csv(file: UploadFile = File(...), user=Depends(auth.current_use
         }
 
         for i, row in enumerate(rows, 2):
-            folder = clean(row.get('folder', ''), f'Folder on line {i}', 60)
-            deck = clean(row.get('deck', ''), f'Deck on line {i}', 60)
-            front = clean(row.get('front', ''), f'Front on line {i}', 200)
-            back = clean(row.get('back', ''), f'Back on line {i}', 200)
-            note = clean(row.get('note', ''), f'Note on line {i}', 300, required=False)
+            folder = clean(row.get('folder', ''), 'field.folder', 60, line=i)
+            deck = clean(row.get('deck', ''), 'field.deck', 60, line=i)
+            front = clean(row.get('front', ''), 'field.front', 200, line=i)
+            back = clean(row.get('back', ''), 'field.back', 200, line=i)
+            note = clean(row.get('note', ''), 'field.note', 300, required=False, line=i)
 
             folder_key = folder.casefold()
             folder_id = folder_cache.get(folder_key)

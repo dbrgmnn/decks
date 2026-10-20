@@ -1,4 +1,4 @@
-from fastapi import HTTPException
+from ..i18n import error
 
 from .validators import normalize_name_key
 
@@ -10,7 +10,7 @@ def check_deck_name(c, folder_id, name, skip_id=0):
         (folder_id, skip_id),
     ).fetchall()
     if any(normalize_name_key(row['name']) == key for row in rows):
-        raise HTTPException(400, "A deck with this name already exists in this folder")
+        raise error(400, "error.deck_name_exists")
 
 
 def check_folder_name(c, uid, name, skip_id=0):
@@ -20,7 +20,7 @@ def check_folder_name(c, uid, name, skip_id=0):
         (uid, skip_id),
     ).fetchall()
     if any(normalize_name_key(row['name']) == key for row in rows):
-        raise HTTPException(400, "A folder with this name already exists")
+        raise error(400, "error.folder_name_exists")
 
 
 def introduced_counts(c, uid, since):

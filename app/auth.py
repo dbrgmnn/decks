@@ -12,6 +12,7 @@ from argon2.exceptions import InvalidHashError, VerificationError
 from fastapi import HTTPException, Request
 
 from . import db
+from .i18n import error
 
 
 POPULAR_TZ = [
@@ -111,7 +112,14 @@ def verify_api_token(hashed, token):
 def _user_dict(row):
     if row is None:
         return None
-    return {"id": row["id"], "email": row["email"], "name": row["name"], "tz": row["tz"]}
+    return {"id": row["id"], "email": row["email"], "name": row["name"], "tz": row["tz"], "lang": row["lang"]}
+
+
+def _remember_lang(request, user):
+    """Let error handlers answer in the account language without another query."""
+    if user and user.get("lang"):
+        request.state.lang = user["lang"]
+    return user
 
 
 def verify(hashed, pw):
@@ -126,17 +134,17 @@ def verify(hashed, pw):
 def clean_email(email):
     email = email.strip().lower()
     if len(email) > 254 or not EMAIL_RE.match(email):
-        raise HTTPException(400, "Enter a valid email address")
+        raise error(400, "error.invalid_email")
     return email
 
 
 def check_password(pw):
     if len(pw) < 8:
-        raise HTTPException(400, "Password must be at least 8 characters")
+        raise error(400, "error.password_short")
     if len(pw) > 128:
-        raise HTTPException(400, "Password is too long (max 128)")
+        raise error(400, "error.password_long")
     if pw.lower() in COMMON or len(set(pw)) < 4:
-        raise HTTPException(400, "Password is too easy to guess")
+        raise error(400, "error.password_weak")
 
 
 def blocked(key, limit=5, window=600):
@@ -164,17 +172,17 @@ def current_user(request: Request):
     if uid:
         with db.conn() as c:
             row = c.execute(
-                "SELECT id, email, name, tz, token_version FROM users WHERE id=?", (uid,)
+                "SELECT id, email, name, tz, lang, token_version FROM users WHERE id=?", (uid,)
             ).fetchone()
         # A stale cookie (after sign-out or a password change) carries an older
         # token_version than the database and is treated as no session at all.
         if row and row["token_version"] != request.session.get("tv"):
             row = None
     if row:
-        return _user_dict(row)
+        return _remember_lang(request, _user_dict(row))
     request.session.clear()
     if request.url.path.startswith("/api/"):
-        raise HTTPException(401, "Please sign in")
+        raise error(401, "error.sign_in_required")
     raise HTTPException(303, headers={"Location": "/login"})
 
 
@@ -183,10 +191,10 @@ def current_user_or_token(request: Request):
     if uid:
         with db.conn() as c:
             row = c.execute(
-                "SELECT id, email, name, tz, token_version FROM users WHERE id=?", (uid,)
+                "SELECT id, email, name, tz, lang, token_version FROM users WHERE id=?", (uid,)
             ).fetchone()
         if row and row["token_version"] == request.session.get("tv"):
-            return _user_dict(row)
+            return _remember_lang(request, _user_dict(row))
         request.session.clear()
 
     auth_header = request.headers.get('Authorization', '')
@@ -200,20 +208,20 @@ def current_user_or_token(request: Request):
         digest = hash_api_token(token)
         with db.conn() as c:
             row = c.execute(
-                'SELECT id, email, name, tz, api_token_hash FROM users WHERE api_token_hash=?',
+                'SELECT id, email, name, tz, lang, api_token_hash FROM users WHERE api_token_hash=?',
                 (digest,),
             ).fetchone()
             if row:
-                return _user_dict(row)
+                return _remember_lang(request, _user_dict(row))
             legacy = c.execute(
-                'SELECT id, email, name, tz, api_token_hash FROM users WHERE api_token_hash LIKE "$argon2%"',
+                'SELECT id, email, name, tz, lang, api_token_hash FROM users WHERE api_token_hash LIKE "$argon2%"',
             ).fetchall()
             for candidate in legacy:
                 if not verify_api_token(candidate['api_token_hash'], token):
                     continue
                 c.execute('UPDATE users SET api_token_hash=? WHERE id=?', (digest, candidate['id']))
-                return _user_dict(candidate)
+                return _remember_lang(request, _user_dict(candidate))
 
     if request.url.path.startswith('/api/'):
-        raise HTTPException(401, 'Please sign in')
+        raise error(401, 'error.sign_in_required')
     raise HTTPException(303, headers={'Location': '/login'})

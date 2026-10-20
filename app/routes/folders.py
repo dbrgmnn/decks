@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Depends, Form, HTTPException, Request
+from fastapi import APIRouter, Depends, Form, Request
 
 from .. import auth, db
+from ..i18n import error
 from ..services.decks import check_deck_name, check_folder_name
 from ..services.ownership import own_folder
 from ..services.validators import clean, clean_quick_add_name, normalize_name_key
@@ -47,42 +48,42 @@ def _parse_quick_add(raw_text: str):
     has_comma = ',' in raw_text
     has_slash = '/' in raw_text
     if has_comma and has_slash:
-        raise HTTPException(400, 'Use only / or ,')
+        raise error(400, 'error.separator_conflict')
 
     separator = ',' if has_comma else '/'
     parts = [part.strip() for part in raw_text.split(separator)] if (has_comma or has_slash) else [raw_text.strip()]
 
     if any(not part for part in parts):
-        raise HTTPException(400, 'Empty part')
+        raise error(400, 'error.empty_part')
     if len(parts) == 3:
-        raise HTTPException(400, 'Need front and back')
+        raise error(400, 'error.need_front_back')
     if len(parts) > 5:
-        raise HTTPException(400, 'Too many parts')
+        raise error(400, 'error.too_many_parts')
     if len(parts) not in (1, 2, 4, 5):
-        raise HTTPException(400, 'Wrong format')
+        raise error(400, 'error.wrong_format')
     return parts
 
 
 def _apply_quick_add(c, uid: int, raw_text: str):
     parts = _parse_quick_add(raw_text)
 
-    folder_name = clean_quick_add_name(parts[0], 'Folder name', 60)
+    folder_name = clean_quick_add_name(parts[0], 'field.folder_name', 60)
     folder = _get_or_create_folder(c, uid, folder_name)
     result = {'ok': True, 'kind': 'folder', 'folder': folder}
 
     if len(parts) == 1:
         return result
 
-    deck_name = clean_quick_add_name(parts[1], 'Deck name', 60)
+    deck_name = clean_quick_add_name(parts[1], 'field.deck_name', 60)
     deck = _get_or_create_deck(c, uid, folder['id'], deck_name)
     result.update({'kind': 'deck', 'deck': deck})
 
     if len(parts) == 2:
         return result
 
-    front = clean(parts[2], 'Front', 200)
-    back = clean(parts[3], 'Back', 200)
-    note = clean(parts[4] if len(parts) == 5 else '', 'Note', 300, required=False)
+    front = clean(parts[2], 'field.front', 200)
+    back = clean(parts[3], 'field.back', 200)
+    note = clean(parts[4] if len(parts) == 5 else '', 'field.note', 300, required=False)
     exists = c.execute(
         'SELECT id FROM cards WHERE deck_id=? AND lower(front)=lower(?) AND lower(back)=lower(?)',
         (deck['id'], front, back),
@@ -119,7 +120,7 @@ def quick_add(
 
 @router.put('/api/folders/{folder_id}')
 def update_folder(folder_id: int, name: str = Form(...), user=Depends(auth.current_user)):
-    name = clean_quick_add_name(name, 'Folder name', 60)
+    name = clean_quick_add_name(name, 'field.folder_name', 60)
     uid = user['id']
     with db.conn() as c:
         own_folder(c, uid, folder_id)
@@ -143,12 +144,12 @@ async def order_folders(request: Request, user=Depends(auth.current_user)):
     try:
         ids = [int(x) for x in form.getlist('ids')]
     except (TypeError, ValueError):
-        raise HTTPException(400, 'Invalid folder order')
+        raise error(400, 'error.folder_order_invalid')
     uid = user['id']
     if not ids:
         return {'ok': True}
     if len(ids) != len(set(ids)):
-        raise HTTPException(400, 'Invalid folder order')
+        raise error(400, 'error.folder_order_invalid')
     with db.conn() as c:
         all_ids = [r[0] for r in c.execute(
             'SELECT id FROM folders WHERE user_id=? ORDER BY pos, id',
@@ -156,7 +157,7 @@ async def order_folders(request: Request, user=Depends(auth.current_user)):
         ).fetchall()]
         subset = set(ids)
         if subset - set(all_ids):
-            raise HTTPException(400, 'Invalid folder order')
+            raise error(400, 'error.folder_order_invalid')
         # Keep folders outside this view in place; only reshuffle the submitted subset.
         it = iter(ids)
         ordered = [next(it) if folder_id in subset else folder_id for folder_id in all_ids]

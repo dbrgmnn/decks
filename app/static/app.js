@@ -1,4 +1,5 @@
 import {$, errText} from './modules/dom.js';
+import {t} from './modules/i18n.js';
 import {initSessionGuard} from './modules/session.js';
 import {initTheme} from './modules/theme.js';
 import {initKeyboardHints} from './modules/keyboard.js';
@@ -108,7 +109,7 @@ addEventListener('keydown', event => {
       main.dataset.studyNew = String(fresh);
     }
 
-    meta.textContent = due || fresh ? `${due} due · ${fresh} new` : 'No cards to study';
+    meta.textContent = due || fresh ? t('home.study_bar_meta', {due, new: fresh}) : t('home.no_cards');
     study.disabled = !(due || fresh);
   };
 

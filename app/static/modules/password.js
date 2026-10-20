@@ -1,5 +1,7 @@
 // Show/hide control shared by every password field.
 
+import {t} from './i18n.js';
+
 export const togglePassword = button => {
   const field = button.closest('.password-field');
   const input = field?.querySelector('input');
@@ -8,7 +10,7 @@ export const togglePassword = button => {
   const visible = input.type === 'text';
   input.type = visible ? 'password' : 'text';
   button.setAttribute('aria-pressed', String(!visible));
-  button.setAttribute('aria-label', visible ? 'Show password' : 'Hide password');
+  button.setAttribute('aria-label', visible ? t('password.show') : t('password.hide'));
   field.querySelector('.eye-open')?.toggleAttribute('hidden', !visible);
   field.querySelector('.eye-closed')?.toggleAttribute('hidden', visible);
 };
@@ -20,7 +22,7 @@ export const resetPassword = field => {
 
   input.type = 'password';
   button.setAttribute('aria-pressed', 'false');
-  button.setAttribute('aria-label', 'Show password');
+  button.setAttribute('aria-label', t('password.show'));
   field.querySelector('.eye-open')?.removeAttribute('hidden');
   field.querySelector('.eye-closed')?.setAttribute('hidden', '');
 };

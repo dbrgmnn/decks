@@ -1,4 +1,5 @@
 import {$, el} from './dom.js';
+import {t} from './i18n.js';
 import {
   canSpeak,
   detectSpeechLanguage,
@@ -27,7 +28,7 @@ export function initPractice() {
   const studyEnabledButton = $('#study-enabled');
   const main = document.querySelector('main.wrap');
 
-  const RATING_LABELS = {1: 'Again', 2: 'Hard', 3: 'Good', 4: 'Easy'};
+  const ratingLabel = rating => t(`practice.rating.${rating}`);
 
   if (speakButton && !canSpeak()) speakButton.hidden = true;
 
@@ -71,8 +72,11 @@ export function initPractice() {
 
   const formatDuration = ms => {
     const secs = Math.max(1, Math.round(ms / 1000));
-    if (secs < 60) return `${secs}s`;
-    return `${Math.floor(secs / 60)}m ${String(secs % 60).padStart(2, '0')}s`;
+    if (secs < 60) return t('practice.duration_seconds', {seconds: secs});
+    return t('practice.duration_minutes', {
+      minutes: Math.floor(secs / 60),
+      seconds: String(secs % 60).padStart(2, '0'),
+    });
   };
 
   const renderSummary = () => {
@@ -82,10 +86,10 @@ export function initPractice() {
 
     const grid = el('dl', '', 'summary-grid');
     for (const [label, value] of [
-      ['Due', String(stats.reviews)],
-      ['New', String(stats.fresh)],
-      ['Time', formatDuration(Date.now() - stats.start)],
-      ['Recall', `${recall}%`],
+      [t('practice.due'), String(stats.reviews)],
+      [t('practice.new_cards'), String(stats.fresh)],
+      [t('practice.time'), formatDuration(Date.now() - stats.start)],
+      [t('practice.recall'), `${recall}%`],
     ]) {
       const cell = el('div');
       cell.append(el('dt', label), el('dd', value));
@@ -100,9 +104,9 @@ export function initPractice() {
       const segment = el('span', '', 'summary-segment');
       segment.dataset.r = String(rating);
       segment.style.flexGrow = String(count);
-      segment.title = `${RATING_LABELS[rating]}: ${count}`;
+      segment.title = `${ratingLabel(rating)}: ${count}`;
       bars.append(segment);
-      legend.append(el('span', `${RATING_LABELS[rating]} ${count}`));
+      legend.append(el('span', `${ratingLabel(rating)} ${count}`));
     }
 
     summary.replaceChildren(grid, ...(rated ? [bars, legend] : []));
@@ -191,10 +195,10 @@ export function initPractice() {
       if (speakButton) speakButton.hidden = true;
       const isNew = cardData.kind === 'new';
       badge.hidden = false;
-      badge.textContent = isNew ? 'NEW' : 'REVIEW';
+      badge.textContent = isNew ? t('practice.badge_new') : t('practice.badge_review');
       if (speakButton) {
-        speakButton.setAttribute('aria-label', `Pronounce ${cardData.front}`);
-        speakButton.title = `Pronounce ${cardData.front}`;
+        speakButton.setAttribute('aria-label', t('practice.pronounce', {front: cardData.front}));
+        speakButton.title = t('practice.pronounce', {front: cardData.front});
       }
     } else {
       front.hidden = true;
@@ -215,12 +219,12 @@ export function initPractice() {
     try {
       response = await fetch(path);
     } catch {
-      if (my === seq) showError('Could not load cards. Check your connection.');
+      if (my === seq) showError(t('practice.load_failed'));
       return;
     }
     if (my !== seq) return;
     if (!response.ok) {
-      showError('Could not load cards. Check your connection.');
+      showError(t('practice.load_failed'));
       return;
     }
     clearError();
@@ -259,7 +263,7 @@ export function initPractice() {
       if (my === seq) {
         shown = true;
         setRatingEnabled(true);
-        showError('Could not save. Check your connection.');
+        showError(t('practice.save_failed_connection'));
       }
       return;
     }
@@ -267,7 +271,7 @@ export function initPractice() {
     if (!response.ok) {
       shown = true;
       setRatingEnabled(true);
-      showError('Could not save. Try again.');
+      showError(t('practice.save_failed'));
       return;
     }
     recordRating(rating, kind);

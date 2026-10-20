@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Depends, Form, HTTPException
+from fastapi import APIRouter, Depends, Form
 
 from .. import auth, db
+from ..i18n import error
 from ..services.ownership import own_card, own_deck
 from ..services.validators import clean
 
@@ -15,9 +16,9 @@ def create_card(
     note: str = Form(''),
     user=Depends(auth.current_user),
 ):
-    front = clean(front, 'Front', 200)
-    back = clean(back, 'Back', 200)
-    note = clean(note, 'Note', 300, required=False)
+    front = clean(front, 'field.front', 200)
+    back = clean(back, 'field.back', 200)
+    note = clean(note, 'field.note', 300, required=False)
     uid = user['id']
     with db.conn() as c:
         # A card can be created only inside a deck owned by the current user.
@@ -28,7 +29,7 @@ def create_card(
             (deck_id, front, back),
         ).fetchone()
         if exists:
-            raise HTTPException(400, 'This card already exists in the deck')
+            raise error(400, 'error.card_exists')
         card_id = c.execute(
             'INSERT INTO cards(deck_id, front, back, note) VALUES(?,?,?,?)',
             (deck_id, front, back, note),
@@ -44,9 +45,9 @@ def update_card(
     note: str = Form(''),
     user=Depends(auth.current_user),
 ):
-    front = clean(front, 'Front', 200)
-    back = clean(back, 'Back', 200)
-    note = clean(note, 'Note', 300, required=False)
+    front = clean(front, 'field.front', 200)
+    back = clean(back, 'field.back', 200)
+    note = clean(note, 'field.note', 300, required=False)
     uid = user['id']
     with db.conn() as c:
         row = own_card(c, uid, card_id)
@@ -56,7 +57,7 @@ def update_card(
             (row['deck_id'], front, back, card_id),
         ).fetchone()
         if exists:
-            raise HTTPException(400, 'This card already exists in the deck')
+            raise error(400, 'error.card_exists')
         c.execute(
             'UPDATE cards SET front=?, back=?, note=? WHERE id=?',
             (front, back, note, card_id),

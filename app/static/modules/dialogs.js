@@ -1,4 +1,5 @@
 import {$} from './dom.js';
+import {n, t} from './i18n.js';
 
 export function createDialogs({errText, loadWords}) {
   const confirmSheet = $('#confirm');
@@ -13,10 +14,17 @@ export function createDialogs({errText, loadWords}) {
   let pendingDelete = null;
 
   const deleteTexts = {
-    deck: item => ['Delete deck?', `Delete “${item?.name}” and all cards in it? This cannot be undone.`],
-    folder: item => ['Delete folder?', `Delete folder “${item?.name}” with ${item?.decks} deck${item?.decks == 1 ? '' : 's'} and ${item?.cards} card${item?.cards == 1 ? '' : 's'}? This cannot be undone.`],
-    card: item => ['Delete card?', `Delete “${item?.front}”? This cannot be undone.`],
-    account: () => ['Delete account?', 'This permanently deletes your account, all decks and all cards. Enter your password to confirm.'],
+    deck: item => [t('dialogs.deck.title'), t('dialogs.deck.text', {name: item?.name})],
+    folder: item => [
+      t('dialogs.folder.title'),
+      t('dialogs.folder.text', {
+        name: item?.name,
+        decks: n('dialogs.deck_count', item?.decks ?? 0),
+        cards: n('dialogs.card_count', item?.cards ?? 0),
+      }),
+    ],
+    card: item => [t('dialogs.card.title'), t('dialogs.card.text', {front: item?.front})],
+    account: () => [t('dialogs.account.title'), t('dialogs.account.text')],
   };
 
   const closeConfirm = () => {

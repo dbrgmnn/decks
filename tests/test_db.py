@@ -26,6 +26,7 @@ def test_init_creates_current_schema(tmp_path, monkeypatch):
     with db.conn() as c:
         columns = {row[1] for row in c.execute("PRAGMA table_info(users)")}
         assert "token_version" in columns
+        assert "lang" in columns
         assert c.execute("PRAGMA user_version").fetchone()[0] == db.SCHEMA_VERSION
 
 
@@ -47,9 +48,11 @@ def test_init_upgrades_a_version_one_database(tmp_path, monkeypatch):
     with db.conn() as c:
         columns = {row[1] for row in c.execute("PRAGMA table_info(users)")}
         assert "token_version" in columns
-        row = c.execute("SELECT email, token_version FROM users").fetchone()
+        assert "lang" in columns
+        row = c.execute("SELECT email, token_version, lang FROM users").fetchone()
         assert row["email"] == "old@example.com"
         assert row["token_version"] == 0
+        assert row["lang"] == ""
         assert c.execute("PRAGMA user_version").fetchone()[0] == db.SCHEMA_VERSION
 
 

@@ -1,3 +1,5 @@
+import {t} from './i18n.js';
+
 export const $ = selector => document.querySelector(selector);
 export const root = document.documentElement;
 
@@ -10,7 +12,7 @@ export const el = (tag, text = '', cls = '') => {
 
 export const errText = async response => {
   const data = await response.json().catch(() => ({}));
-  return typeof data.detail === 'string' ? data.detail : 'Invalid input';
+  return typeof data.detail === 'string' ? data.detail : t('common.invalid_input');
 };
 
 // Keep the browser/status-bar chrome in step with the chosen theme.

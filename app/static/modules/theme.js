@@ -1,4 +1,5 @@
 import {$, root, syncThemeColor} from './dom.js';
+import {t} from './i18n.js';
 
 export function initTheme() {
   const button = $('#theme');
@@ -9,7 +10,7 @@ export function initTheme() {
   const syncThemeButton = () => {
     const dark = root.dataset.theme === 'dark';
     button.setAttribute('aria-pressed', String(dark));
-    button.setAttribute('aria-label', dark ? 'Switch to light theme' : 'Switch to dark theme');
+    button.setAttribute('aria-label', dark ? t('theme.light') : t('theme.dark'));
     button.textContent = dark ? '◑' : '◐';
     syncThemeColor();
   };

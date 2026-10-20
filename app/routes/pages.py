@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import FileResponse, RedirectResponse
-from .. import auth, db, srs
+from .. import auth, db, i18n, srs
 from ..services.decks import introduced_counts
-from ..web import BASE, tpl
+from ..web import BASE, page
 
 router = APIRouter()
 
@@ -10,7 +10,7 @@ router = APIRouter()
 def login_page(request: Request):
     if request.session.get('uid'):
         return RedirectResponse('/', 303)
-    return tpl.TemplateResponse(request, 'login.html', {})
+    return page(request, 'login.html')
 
 @router.get('/sw.js', include_in_schema=False)
 def service_worker():
@@ -80,7 +80,7 @@ def home(request: Request, folder: int = 0, user=Depends(auth.current_user)):
         'due': sum(x['due'] for x in items if not x['paused']),
         'new': sum(x['new'] for x in items if not x['paused']),
     }
-    return tpl.TemplateResponse(request, 'home.html', {
+    return page(request, 'home.html', {
         'folders': folders,
         'folder': selected_folder,
         'user': user,
@@ -90,4 +90,4 @@ def home(request: Request, folder: int = 0, user=Depends(auth.current_user)):
         'today': today,
         'timezones': auth.tz_options(user['tz']),
         'all_decks': items,
-    })
+    }, lang=i18n.resolve(request, user))

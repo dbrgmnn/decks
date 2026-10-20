@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Depends, Form, HTTPException
+from fastapi import APIRouter, Depends, Form
 
 from .. import auth, db, srs
+from ..i18n import error
 from ..services.decks import introduced_counts, introduced_today
 from ..services.ownership import own_card, own_deck
 
@@ -161,7 +162,7 @@ def next_card(deck_id: int, user=Depends(auth.current_user)):
 @router.post('/api/rate/{card_id}')
 def rate_card(card_id: int, rating: int = Form(...), user=Depends(auth.current_user)):
     if rating not in (1, 2, 3, 4):
-        raise HTTPException(400, 'Rating must be between 1 and 4')
+        raise error(400, 'error.rating_range')
     uid = user['id']
     ts = srs.now()
     with db.conn() as c:

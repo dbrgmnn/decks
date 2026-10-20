@@ -178,7 +178,7 @@ button.danger:hover,button.danger:active{background:var(--danger-bg);color:var(-
 .link:hover,.link:active,.link:focus-visible{background:none !important;color:var(--fg) !important;border:0 !important;box-shadow:none !important;transform:none;text-decoration:underline}
 
 /* --- Forms and messages -------------------------------------------------- */
-.form-actions{display:flex;justify-content:space-between;gap:.5rem}
+.form-actions{display:flex;justify-content:space-between;gap:.5rem;flex-wrap:wrap}
 .form-actions button{flex:0 1 auto}
 /* Indeterminate "working..." bar inside a button while a request is in flight. */
 .busy{position:relative;overflow:hidden;cursor:progress}

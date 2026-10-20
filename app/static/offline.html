@@ -11,9 +11,31 @@
 <body>
 <main class="offline">
   <h1>decks</h1>
-  <p>You’re offline.</p>
-  <p class="muted">Your decks live on the server, so reconnect to keep studying.</p>
-  <a class="retry" href="/">Try again</a>
+  <p data-i18n="title">You’re offline.</p>
+  <p class="muted" data-i18n="hint">Your decks live on the server, so reconnect to keep studying.</p>
+  <a class="retry" href="/" data-i18n="retry">Try again</a>
 </main>
+<script>
+(function () {
+  var text = {
+    en: {
+      title: 'You’re offline.',
+      hint: 'Your decks live on the server, so reconnect to keep studying.',
+      retry: 'Try again'
+    },
+    de: {
+      title: 'Du bist offline.',
+      hint: 'Deine Decks liegen auf dem Server. Stelle die Verbindung wieder her, um weiterzulernen.',
+      retry: 'Erneut versuchen'
+    }
+  };
+  var match = document.cookie.match(/(?:^|;\s*)decks_lang=(en|de)/);
+  var lang = match ? match[1] : ((navigator.language || 'en').toLowerCase().indexOf('de') === 0 ? 'de' : 'en');
+  document.documentElement.lang = lang;
+  document.querySelectorAll('[data-i18n]').forEach(function (node) {
+    node.textContent = text[lang][node.dataset.i18n];
+  });
+})();
+</script>
 </body>
 </html>
