@@ -98,9 +98,9 @@
 
   /* --- Layout ------------------------------------------------------------- */
   --top-gap: calc(1.25rem + env(safe-area-inset-top));
-  --content-max: 960px;
+  --content-max: 720px;
   --panel-max: 720px;
-  --form-max: 640px;
+  --form-max: 720px;
 
   color-scheme: light;
 }

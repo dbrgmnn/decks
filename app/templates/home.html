@@ -48,12 +48,12 @@
       </div>
       <p class="meta"><span class="count">{{ n('home.cards', d.total) }}</span><small>{% if d.paused %}{{ t('home.folder.paused') }}{% else %}{{ t('home.folder.stats', due=d.due, new=d.new) }}{% endif %}</small></p>
       <div class="deck-settings">
+        <button class="learn" type="button" data-id="{{ d.id }}"{% if d.paused or (not d.due and not d.new) %} disabled{% endif %}>{{ t('home.study') }}</button>
+      </div>
+      <div class="actions">
         <select class="daily-limit" autocomplete="off" aria-label="{{ t('home.new_cards_per_day') }}: {{ d.name }}">
           {% for value in new_per_day_values %}<option value="{{ value }}"{% if value == d.new_per_day %} selected{% endif %}>{{ value }}/{{ t('home.day_short') }}</option>{% endfor %}
         </select>
-      </div>
-      <div class="actions">
-        <button class="learn" type="button" data-id="{{ d.id }}"{% if d.paused or (not d.due and not d.new) %} disabled{% endif %}>{{ t('home.study') }}</button>
         <button type="button" class="plus" aria-label="{{ t('home.deck.add_card') }}">+</button>
         <button type="button" class="edit" aria-label="{{ t('home.deck.edit') }}">✎</button>
         <button type="button" class="pause" aria-pressed="{{ 'true' if d.paused else 'false' }}" aria-label="{% if d.paused %}{{ t('deck.resume') }}{% else %}{{ t('home.pause') }}{% endif %}: {{ d.name }}">{% if d.paused %}{{ t('deck.resume') }}{% else %}{{ t('home.pause') }}{% endif %}</button>
