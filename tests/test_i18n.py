@@ -13,12 +13,7 @@ def _catalog(lang):
     return json.loads((CATALOG_DIR / f"{lang}.json").read_text("utf-8"))
 
 
-def _signup(client, email="i18n@example.com"):
-    response = client.post(
-        "/api/signup",
-        data={"email": email, "password": "GoodPass123", "password2": "GoodPass123", "tz": "UTC"},
-    )
-    assert response.status_code == 200, response.text
+from tests.conftest import signup_user
 
 
 def test_catalogs_have_the_same_keys_and_placeholders():
@@ -57,7 +52,7 @@ def test_login_page_follows_accept_language(client):
 
 def test_signup_stores_the_language_cookie(client):
     client.cookies.set("decks_lang", "de")
-    _signup(client)
+    signup_user(client)
 
     with db.conn() as c:
         assert c.execute("SELECT lang FROM users").fetchone()["lang"] == "de"
@@ -69,7 +64,7 @@ def test_signup_stores_the_language_cookie(client):
 
 
 def test_account_language_setting_persists_and_changes_the_ui(client):
-    _signup(client)
+    signup_user(client)
     assert "New cards per day" in client.get("/").text
 
     response = client.post("/api/settings/language", data={"lang": "de"})
@@ -93,13 +88,13 @@ def test_account_language_setting_persists_and_changes_the_ui(client):
 
 def test_login_restores_the_users_saved_language(client):
     client.cookies.set("decks_lang", "de")
-    _signup(client)
+    signup_user(client)
     client.post("/api/logout")
     client.cookies.delete("decks_lang")
 
     response = client.post(
         "/api/login",
-        data={"email": "i18n@example.com", "password": "GoodPass123"},
+        data={"email": "test@example.com", "password": "GoodPass123"},
     )
 
     assert response.status_code == 200
@@ -107,13 +102,13 @@ def test_login_restores_the_users_saved_language(client):
 
 
 def test_login_saves_the_language_cookie_when_the_account_has_none(client):
-    _signup(client)
+    signup_user(client)
     client.post("/api/logout")
     client.cookies.set("decks_lang", "de")
 
     response = client.post(
         "/api/login",
-        data={"email": "i18n@example.com", "password": "GoodPass123"},
+        data={"email": "test@example.com", "password": "GoodPass123"},
     )
 
     assert response.status_code == 200
@@ -123,7 +118,7 @@ def test_login_saves_the_language_cookie_when_the_account_has_none(client):
 
 def test_api_errors_are_translated(client):
     client.cookies.set("decks_lang", "de")
-    _signup(client)
+    signup_user(client)
 
     response = client.delete("/api/cards/999")
 
@@ -134,7 +129,7 @@ def test_api_errors_are_translated(client):
 
 def test_api_token_errors_use_the_account_language(client):
     client.cookies.set("decks_lang", "de")
-    _signup(client)
+    signup_user(client)
     token = client.post("/api/account/token").json()["token"]
     client.post("/api/logout")
     client.cookies.delete("decks_lang")
@@ -151,7 +146,7 @@ def test_api_token_errors_use_the_account_language(client):
 
 def test_user_setting_wins_over_the_cookie(client):
     client.cookies.set("decks_lang", "de")
-    _signup(client)
+    signup_user(client)
     client.post("/api/settings/language", data={"lang": "en"})
 
     # A stale cookie must not override the account preference.

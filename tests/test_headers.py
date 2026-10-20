@@ -49,3 +49,10 @@ def test_static_assets_must_be_revalidated(client):
     response = client.get("/static/modules/account.js")
 
     assert response.headers["cache-control"] == "no-cache"
+
+
+def test_service_worker_route_is_served(client):
+    response = client.get("/sw.js")
+    assert response.status_code == 200
+    assert "javascript" in response.headers["content-type"]
+
