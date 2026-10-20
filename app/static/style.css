@@ -85,7 +85,7 @@ button.danger:hover,button.danger:active{background:var(--danger-bg);color:var(-
 .deck-settings{display:flex;align-items:center;gap:.5rem}
 .deck-settings select{flex:1;min-width:0;margin:0}
 .daily-limit{padding-right:1.9rem;padding-left:.5rem;text-align:left}
-.pause{width:44px;height:44px;min-height:44px;padding:0;display:grid;place-items:center;font-size:1rem;line-height:1}
+.pause{width:auto;min-width:44px;height:44px;min-height:44px;padding:0 .5rem;display:grid;place-items:center;font-size:.85rem;line-height:1}
 .actions{display:flex;align-items:center;gap:.4rem}
 .actions .learn{flex:1;min-width:0;padding:.6rem .5rem}
 .actions .plus,.actions .edit,.actions .pause{flex:none;position:static;line-height:1}

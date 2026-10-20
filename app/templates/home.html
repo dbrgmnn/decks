@@ -56,7 +56,7 @@
         <button class="learn" type="button" data-id="{{ d.id }}"{% if d.paused or (not d.due and not d.new) %} disabled{% endif %}>{{ t('home.study') }}</button>
         <button type="button" class="plus" aria-label="{{ t('home.deck.add_card') }}">+</button>
         <button type="button" class="edit" aria-label="{{ t('home.deck.edit') }}">✎</button>
-        <button type="button" class="pause" aria-pressed="{{ 'true' if d.paused else 'false' }}" aria-label="{% if d.paused %}{{ t('deck.resume') }}{% else %}{{ t('home.pause') }}{% endif %}: {{ d.name }}">{{ '▶' if d.paused else '⏸' }}</button>
+        <button type="button" class="pause" aria-pressed="{{ 'true' if d.paused else 'false' }}" aria-label="{% if d.paused %}{{ t('deck.resume') }}{% else %}{{ t('home.pause') }}{% endif %}: {{ d.name }}">{% if d.paused %}{{ t('deck.resume') }}{% else %}{{ t('home.pause') }}{% endif %}</button>
       </div>
     </article>
     {% endfor %}

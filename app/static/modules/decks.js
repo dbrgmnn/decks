@@ -123,7 +123,7 @@ export function initDecks({confirmDelete, errText, openDeckCards}) {
     if (pause) {
       pause.setAttribute('aria-pressed', paused ? 'true' : 'false');
       pause.setAttribute('aria-label', `${paused ? t('deck.resume') : t('home.pause')}: ${deck.dataset.name}`);
-      pause.textContent = paused ? '▶' : '⏸';
+      pause.textContent = paused ? t('deck.resume') : t('home.pause');
     }
 
     const learn = deck.querySelector('.learn');
