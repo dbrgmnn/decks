@@ -60,6 +60,8 @@ initPasswordToggles();
 const accountSheet = $('#account-sheet');
 const confirmSheet = $('#confirm');
 const confirmCancel = $('#confirm-cancel');
+const tokenConfirmSheet = $('#token-confirm');
+const tokenConfirmCancel = $('#api-token-confirm-cancel');
 const deckEditSheet = $('#deck-edit');
 const deckEditClose = $('#deck-edit .close');
 const folderSheet = $('#folder-sheet');
@@ -97,6 +99,7 @@ initQuickAdd({
 });
 
 const escapeActions = [
+  [tokenConfirmSheet, () => tokenConfirmCancel?.click()],
   [accountSheet, () => $('#account-sheet .close')?.click()],
   [confirmSheet, () => confirmCancel?.click()],
   [deckEditSheet, () => deckEditClose?.click()],

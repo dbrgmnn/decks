@@ -42,3 +42,11 @@ def test_home_page_filtered_by_folder(auth_client, make_folder, make_deck):
     response = auth_client.get(f"/?folder={f1}")
     assert response.status_code == 200
     assert "Deck In Folder 1" in response.text
+
+
+def test_home_page_shows_a_token_confirmation_before_the_token_sheet(auth_client):
+    response = auth_client.get("/", headers={"accept-language": "en"})
+
+    assert response.status_code == 200
+    assert "Generate a new API token?" in response.text
+    assert response.text.index('id="token-confirm"') < response.text.index('id="token-sheet"')

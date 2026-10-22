@@ -19,6 +19,10 @@ export function initAccount({confirmDelete, errText}) {
   const apiTokenButton = $('#api-token');
   const apiTokenMsg = $('#api-token-msg');
   const tokenSheet = $('#token-sheet');
+  const tokenConfirmSheet = $('#token-confirm');
+  const tokenConfirmButton = $('#api-token-confirm');
+  const tokenConfirmCancel = $('#api-token-confirm-cancel');
+  const tokenConfirmMsg = $('#api-token-confirm-msg');
   const apiTokenValue = $('#api-token-value');
   const apiTokenCopyButton = $('#api-token-copy');
   const apiTokenCopyMsg = $('#api-token-copy-msg');
@@ -43,6 +47,29 @@ export function initAccount({confirmDelete, errText}) {
     tokenSheet.hidden = true;
     apiTokenValue.value = '';
     apiTokenCopyMsg.textContent = '';
+  };
+
+  const setTokenConfirmBusy = busy => {
+    tokenConfirmButton.disabled = busy;
+    tokenConfirmCancel.disabled = busy;
+    if (busy) tokenConfirmSheet.setAttribute('aria-busy', 'true');
+    else tokenConfirmSheet.removeAttribute('aria-busy');
+  };
+
+  const closeTokenConfirm = () => {
+    tokenConfirmSheet.hidden = true;
+    tokenConfirmMsg.textContent = '';
+    setTokenConfirmBusy(false);
+  };
+
+  const openTokenConfirm = () => {
+    apiTokenMsg.textContent = '';
+    tokenConfirmMsg.textContent = '';
+    apiTokenValue.value = '';
+    apiTokenCopyMsg.textContent = '';
+    setTokenConfirmBusy(false);
+    tokenConfirmSheet.hidden = false;
+    tokenConfirmCancel.focus();
   };
 
   const openAccountSheet = () => {
@@ -145,17 +172,46 @@ export function initAccount({confirmDelete, errText}) {
   showExportButton.onclick = () => toggleDataBox('export');
   showImportButton.onclick = () => toggleDataBox('import');
 
-  apiTokenButton.onclick = async () => {
-    apiTokenMsg.textContent = '';
-    const response = await fetch('/api/account/token', {method: 'POST'});
-    if (!response.ok) {
-      apiTokenMsg.textContent = await errText(response);
+  apiTokenButton.onclick = openTokenConfirm;
+  tokenConfirmCancel.onclick = () => {
+    closeTokenConfirm();
+    apiTokenButton.focus();
+  };
+  tokenConfirmButton.onclick = async () => {
+    if (tokenConfirmButton.disabled) return;
+
+    setTokenConfirmBusy(true);
+    tokenConfirmMsg.textContent = '';
+
+    let response;
+    try {
+      response = await fetch('/api/account/token', {method: 'POST'});
+    } catch {
+      tokenConfirmMsg.textContent = t('home.api_token_confirm_error');
+      setTokenConfirmBusy(false);
       return;
     }
-    const data = await response.json();
+
+    if (!response.ok) {
+      tokenConfirmMsg.textContent = await errText(response);
+      setTokenConfirmBusy(false);
+      return;
+    }
+
+    let data;
+    try {
+      data = await response.json();
+    } catch {
+      tokenConfirmMsg.textContent = t('home.api_token_confirm_error');
+      setTokenConfirmBusy(false);
+      return;
+    }
+
     apiTokenValue.value = data.token || '';
     apiTokenCopyMsg.textContent = '';
+    closeTokenConfirm();
     tokenSheet.hidden = false;
+    apiTokenCopyButton.focus();
   };
 
   apiTokenCopyButton.onclick = async () => {

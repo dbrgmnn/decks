@@ -228,6 +228,18 @@
   </div>
 </div>
 
+<div id="token-confirm" class="sheet" hidden>
+  <div class="panel confirm-panel">
+    <h2>{{ t('home.api_token_confirm_title') }}</h2>
+    <p>{{ t('home.api_token_confirm_text') }}</p>
+    <small id="api-token-confirm-msg" role="status"></small>
+    <div class="confirm-actions">
+      <button type="button" id="api-token-confirm-cancel">{{ t('common.cancel') }}</button>
+      <button type="button" id="api-token-confirm" class="danger">{{ t('home.api_token_confirm_action') }}</button>
+    </div>
+  </div>
+</div>
+
 <div id="token-sheet" class="sheet" hidden>
   <div class="panel confirm-panel">
     <h2>{{ t('home.api_token_title') }}</h2>
