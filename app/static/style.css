@@ -145,6 +145,9 @@ button.danger:hover,button.danger:active{background:var(--danger-bg);color:var(-
 .count span:last-child{opacity:.7}
 #practice-msg{display:block;text-align:center;overflow-wrap:anywhere}
 .rate{display:grid;grid-template-columns:repeat(4,1fr);gap:.5rem;width:100%;max-width:var(--form-max)}
+.rate button{width:100%;aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:.5rem}
+.rate button br{display:none}
+.rate small{margin-top:.15rem}
 .rate button[data-r="1"]{--rate:var(--danger);--rate-bg:var(--danger-bg);--rate-fg:var(--danger-fg)}
 .rate button[data-r="2"]{--rate:var(--rating-hard);--rate-bg:var(--rating-hard-bg);--rate-fg:var(--rating-hard-fg)}
 .rate button[data-r="3"]{--rate:var(--rating-good);--rate-bg:var(--rating-good-bg);--rate-fg:var(--rating-good-fg)}
@@ -270,6 +273,7 @@ a,button,summary,input,select,textarea{touch-action:manipulation}
 @media (max-height:520px){
   .card{min-height:30dvh;padding:1rem}
   .count b{font-size:1.6rem}
+  .rate{max-width:min(var(--form-max),32rem)}
 }
 
 /* --- Native-select replacement ------------------------------------------- */
