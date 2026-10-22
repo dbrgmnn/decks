@@ -136,7 +136,7 @@ button.danger:hover,button.danger:active{background:var(--danger-bg);color:var(-
 
 /* --- Practice ------------------------------------------------------------ */
 #practice{position:fixed;inset:0;height:100dvh;background:var(--bg);z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:safe center;gap:1rem;padding:1rem;padding-top:var(--top-gap);padding-bottom:calc(1rem + env(safe-area-inset-bottom));overscroll-behavior:contain;overflow-y:auto}
-.card{position:relative;z-index:2;isolation:isolate;width:100%;max-width:var(--form-max);min-height:40vh;min-height:40dvh;border:var(--hair) solid var(--fg);background:var(--bg);box-shadow:var(--bevel-panel);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.3rem;padding:clamp(1rem,3vw,1.6rem);text-align:center;touch-action:none;user-select:none;font-size:var(--text-card)}
+.card{position:relative;z-index:2;isolation:isolate;width:100%;max-width:var(--form-max);min-height:44vh;min-height:44dvh;border:var(--hair) solid var(--fg);background:var(--bg);box-shadow:var(--bevel-panel);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.3rem;padding:clamp(1rem,3vw,1.6rem);text-align:center;touch-action:none;user-select:none;font-size:var(--text-card)}
 .card > *{width:100%;max-width:100%}
 .card small{font-size:var(--text-base)}
 .card-kind{position:absolute;top:.95rem;left:1rem;width:auto;max-width:none;padding:0;border:0;background:transparent;box-shadow:none;font-size:var(--text-2xs);font-weight:700;line-height:1;letter-spacing:.05em;text-transform:uppercase;opacity:.7;pointer-events:none}
