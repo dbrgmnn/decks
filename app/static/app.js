@@ -10,9 +10,7 @@ import {createDialogs} from './modules/dialogs.js';
 import {initPractice} from './modules/practice.js';
 import {initCards} from './modules/cards.js';
 import {initDecks} from './modules/decks.js';
-import {initFolders} from './modules/folders.js';
 import {initAccount} from './modules/account.js';
-import {initQuickAdd} from './modules/quick-add.js';
 
 initSessionGuard();
 initTheme();
@@ -64,8 +62,6 @@ const tokenConfirmSheet = $('#token-confirm');
 const tokenConfirmCancel = $('#api-token-confirm-cancel');
 const deckEditSheet = $('#deck-edit');
 const deckEditClose = $('#deck-edit .close');
-const folderSheet = $('#folder-sheet');
-const folderSheetClose = $('#folder-sheet .close');
 const addSheet = $('#add');
 const addSheetClose = $('#add .close');
 const listSheet = $('#list');
@@ -89,21 +85,13 @@ initDecks({
   openDeckCards: cards.openDeckCards,
 });
 
-initFolders({confirmDelete: dialogs.confirmDelete, errText});
 initAccount({confirmDelete: dialogs.confirmDelete, errText});
-initQuickAdd({
-  errText,
-  onCreated: async () => {
-    document.dispatchEvent(new CustomEvent('dex:home-refresh'));
-  },
-});
 
 const escapeActions = [
   [tokenConfirmSheet, () => tokenConfirmCancel?.click()],
   [accountSheet, () => $('#account-sheet .close')?.click()],
   [confirmSheet, () => confirmCancel?.click()],
   [deckEditSheet, () => deckEditClose?.click()],
-  [folderSheet, () => folderSheetClose?.click()],
   [addSheet, () => addSheetClose?.click()],
   [listSheet, () => listSheetClose?.click()],
 ];
@@ -166,9 +154,7 @@ addEventListener('keydown', event => {
 
       const currentDeckCount = document.querySelectorAll('.deck[data-id]').length;
       const nextDeckCount = nextMain.querySelectorAll('.deck[data-id]').length;
-      const currentFolderCount = document.querySelectorAll('.fold[data-folder]').length;
-      const nextFolderCount = nextMain.querySelectorAll('.fold[data-folder]').length;
-      if (allowStructuralReload && (currentDeckCount !== nextDeckCount || currentFolderCount !== nextFolderCount)) {
+      if (allowStructuralReload && currentDeckCount !== nextDeckCount) {
         location.reload();
         return;
       }
@@ -205,16 +191,6 @@ addEventListener('keydown', event => {
         const nextLearn = nextDeck.querySelector('.learn');
         const currentLearn = currentDeck.querySelector('.learn');
         if (nextLearn && currentLearn) currentLearn.disabled = nextLearn.disabled;
-      });
-
-      const nextFolders = [...nextMain.querySelectorAll('.fold[data-folder]')];
-      nextFolders.forEach(nextFolder => {
-        const currentFolder = document.querySelector(`.fold[data-folder="${nextFolder.dataset.folder}"]`);
-        if (!currentFolder) return;
-        currentFolder.classList.toggle('paused', nextFolder.classList.contains('paused'));
-        const nextSmall = nextFolder.querySelector('small');
-        const currentSmall = currentFolder.querySelector('small');
-        if (nextSmall && currentSmall) currentSmall.textContent = nextSmall.textContent;
       });
 
       updateStudyBar();

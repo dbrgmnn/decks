@@ -5,7 +5,6 @@ export function initDecks({confirmDelete, errText, openDeckCards}) {
   const deckEditSheet = $('#deck-edit');
   const deckForm = $('#deck-form');
   const deckNameField = $('#deck-form [name=name]');
-  const deckFolderField = $('#deck-folder');
   const deckMsg = $('#deck-msg');
   const deckListMsg = $('#deck-list-msg');
   const deleteDeckButton = $('#delete-deck');
@@ -14,14 +13,12 @@ export function initDecks({confirmDelete, errText, openDeckCards}) {
   const newDeckMsg = $('#new-msg');
   const deckGrid = $('.decks');
   const deckNodes = [...document.querySelectorAll('.deck[data-id]')];
-  const starButtons = [...document.querySelectorAll('.star')];
 
   const deckData = deck => ({
     id: deck.dataset.id,
     name: deck.dataset.name,
     newPerDay: deck.dataset.newPerDay,
     paused: deck.dataset.paused === '1',
-    folder: deck.dataset.folder,
   });
 
   const openDeckEdit = deck => {
@@ -30,9 +27,6 @@ export function initDecks({confirmDelete, errText, openDeckCards}) {
     deckMsg.textContent = '';
     deckForm.new_per_day.value = currentDeck.newPerDay;
     deckForm.paused.value = currentDeck.paused ? '1' : '0';
-    if (deckFolderField) {
-      deckFolderField.value = currentDeck.folder && currentDeck.folder !== '0' ? currentDeck.folder : '';
-    }
     deckEditSheet.dataset.deckId = currentDeck.id;
     deckEditSheet.dataset.deckName = currentDeck.name;
     deckEditSheet.hidden = false;
@@ -89,24 +83,9 @@ export function initDecks({confirmDelete, errText, openDeckCards}) {
         openDeckEdit(deck);
         return;
       }
-      if (event.target.closest('.plus, .star, .learn, select, .pause')) return;
+      if (event.target.closest('.plus, .learn, select, .pause')) return;
       await openDeckCards({id: deck.dataset.id, name: deck.dataset.name});
     });
-  });
-
-  starButtons.forEach(button => {
-    button.onclick = async event => {
-      event.stopPropagation();
-      const deck = button.closest('.deck');
-      const on = button.getAttribute('aria-pressed') !== 'true';
-      const response = await fetch('/api/decks/' + deck.dataset.id + '/pin', {
-        method: 'POST',
-        body: new URLSearchParams({pinned: on ? 1 : 0}),
-      });
-      if (!response.ok) return;
-
-      location.reload();
-    };
   });
 
   if (!deckGrid) return;
@@ -132,8 +111,8 @@ export function initDecks({confirmDelete, errText, openDeckCards}) {
     const metaSmall = deck.querySelector('.meta small');
     if (metaSmall) {
       metaSmall.textContent = paused
-        ? t('home.folder.paused')
-        : t('home.folder.stats', {due: deck.dataset.due, new: deck.dataset.new});
+        ? t('home.deck.paused')
+        : t('home.deck.stats', {due: deck.dataset.due, new: deck.dataset.new});
     }
   };
 
@@ -199,8 +178,6 @@ export function initDecks({confirmDelete, errText, openDeckCards}) {
     event.stopPropagation();
     saveDeckSettings(deck, deck.dataset.newPerDay, deck.dataset.paused !== '1');
   });
-
-  if (!deckGrid.classList.contains('decks-list')) return;
 
   const HOLD_MS = 400;
   let holdTimer = null;

@@ -1,5 +1,5 @@
 import {$} from './dom.js';
-import {n, t} from './i18n.js';
+import {t} from './i18n.js';
 
 export function createDialogs({errText, loadWords}) {
   const confirmSheet = $('#confirm');
@@ -15,14 +15,6 @@ export function createDialogs({errText, loadWords}) {
 
   const deleteTexts = {
     deck: item => [t('dialogs.deck.title'), t('dialogs.deck.text', {name: item?.name})],
-    folder: item => [
-      t('dialogs.folder.title'),
-      t('dialogs.folder.text', {
-        name: item?.name,
-        decks: n('dialogs.deck_count', item?.decks ?? 0),
-        cards: n('dialogs.card_count', item?.cards ?? 0),
-      }),
-    ],
     card: item => [t('dialogs.card.title'), t('dialogs.card.text', {front: item?.front})],
     account: () => [t('dialogs.account.title'), t('dialogs.account.text')],
   };
@@ -56,7 +48,7 @@ export function createDialogs({errText, loadWords}) {
       });
     }
 
-    const basePath = kind === 'deck' ? '/api/decks/' : kind === 'folder' ? '/api/folders/' : '/api/cards/';
+    const basePath = kind === 'deck' ? '/api/decks/' : '/api/cards/';
     return fetch(basePath + item.id, {method: 'DELETE'});
   };
 
@@ -74,7 +66,6 @@ export function createDialogs({errText, loadWords}) {
     closeConfirm();
 
     if (kind === 'account') location.href = '/login';
-    else if (kind === 'folder') location.href = '/';
     else if (kind === 'deck') location.reload();
     else if (kind === 'card') {
       await loadWords?.({force: true});

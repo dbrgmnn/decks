@@ -28,7 +28,6 @@ export function initAccount({confirmDelete, errText}) {
   const apiTokenCopyMsg = $('#api-token-copy-msg');
   const apiTokenOk = $('#api-token-ok');
   const exportScope = $('#export-scope');
-  const exportFolder = $('#export-folder');
   const exportDeck = $('#export-deck');
   const exportCsvForm = $('#export-csv-form');
   const exportCsvMsg = $('#export-csv-msg');
@@ -107,9 +106,7 @@ export function initAccount({confirmDelete, errText}) {
   };
 
   const syncExportScope = () => {
-    const scope = exportScope.value;
-    exportFolder.hidden = scope !== 'folder';
-    exportDeck.hidden = scope !== 'deck';
+    exportDeck.hidden = exportScope.value !== 'deck';
   };
 
   accountButton.onclick = openAccountSheet;
@@ -233,7 +230,6 @@ export function initAccount({confirmDelete, errText}) {
     const form = event.target;
     const scope = form.scope.value;
     const chosen = value => value && value !== '0';
-    if (scope === 'folder' && !chosen(form.folder_id.value)) return exportCsvMsg.textContent = t('account.choose_folder_export');
     if (scope === 'deck' && !chosen(form.deck_id.value)) return exportCsvMsg.textContent = t('account.choose_deck_export');
     exportCsvMsg.textContent = '';
     let response;
@@ -277,7 +273,6 @@ export function initAccount({confirmDelete, errText}) {
         importCsvMsg.textContent = t('account.imported', {
           cards: n('account.card_count', data.cards),
           decks: n('account.deck_count', data.decks),
-          folders: n('account.folder_count', data.folders),
         });
         form.reset();
         imported = data;
@@ -292,8 +287,8 @@ export function initAccount({confirmDelete, errText}) {
     importCsvForm.removeAttribute('aria-busy');
 
     if (imported) {
-      // New folders/decks change the home layout, so a reload is the reliable
-      // way to show them — give the summary a beat to be read first.
+      // New decks change the home layout, so a reload is the reliable way to
+      // show them — give the summary a beat to be read first.
       importSubmit.textContent = t('account.imported_done');
       setTimeout(() => location.reload(), 1200);
       return;

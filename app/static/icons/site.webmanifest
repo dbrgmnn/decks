@@ -2,7 +2,7 @@
   "id": "/",
   "name": "decks",
   "short_name": "decks",
-  "description": "Minimal flashcards app with folders, decks and FSRS-based study.",
+  "description": "Minimal flashcards app with decks, tags and FSRS-based study.",
   "lang": "en",
   "dir": "ltr",
   "start_url": "/",

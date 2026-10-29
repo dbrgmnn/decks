@@ -8,10 +8,8 @@ import app.db as db
 
 
 def _create_schema(conn):
-    for name in db.ORDER:
-        conn.execute(db.TABLES[name])
-    for sql in db.INDEXES:
-        conn.execute(sql)
+    db.create_schema(conn)
+    conn.execute(f"PRAGMA user_version={db.SCHEMA_VERSION}")
     conn.commit()
 
 
@@ -74,40 +72,38 @@ def auth_client(client):
 
 
 @pytest.fixture
-def make_folder(auth_client):
-    """Factory fixture to create a folder for the authenticated user."""
-    def _make(name="Folder"):
-        response = auth_client.post("/api/quick-add", data={"text": name})
-        assert response.status_code == 200, response.text
-        return response.json()["folder"]["id"]
-    return _make
-
-
-@pytest.fixture
-def make_deck(auth_client, make_folder):
+def make_deck(auth_client):
     """Factory fixture to create a deck for the authenticated user."""
-    def _make(folder_id=None, name="Deck", new_per_day="10"):
-        if folder_id is None:
-            folder_id = make_folder()
-        response = auth_client.post(
-            "/api/decks",
-            data={"name": name, "folder_id": folder_id},
-        )
+    def _make(name="Deck", new_per_day="10"):
+        response = auth_client.post("/api/decks", data={"name": name})
         assert response.status_code == 200, response.text
-        return response.json()["id"]
+        deck_id = response.json()["id"]
+        if new_per_day != "10":
+            settings = auth_client.post(
+                f"/api/decks/{deck_id}/settings",
+                data={"new_per_day": new_per_day, "paused": 0},
+            )
+            assert settings.status_code == 200, settings.text
+        return deck_id
     return _make
 
 
 @pytest.fixture
 def make_card(auth_client, make_deck):
     """Factory fixture to create a card for the authenticated user."""
-    def _make(deck_id=None, front="front", back="back", note=""):
+    def _make(deck_id=None, front="front", back="back", note="", tags=None):
         if deck_id is None:
             deck_id = make_deck()
         response = auth_client.post(
             "/api/cards",
-            data={"deck_id": deck_id, "front": front, "back": back, "note": note},
+            json={
+                "deck_id": deck_id,
+                "front": front,
+                "back": back,
+                "note": note,
+                "tags": tags or [],
+            },
         )
-        assert response.status_code == 200, response.text
-        return response.json()["id"]
+        assert response.status_code == 201, response.text
+        return response.json()["card"]["id"]
     return _make

@@ -6,13 +6,15 @@ from fastapi.responses import StreamingResponse
 
 from .. import auth, db
 from ..i18n import error
-from ..services.decks import check_deck_name, check_folder_name
-from ..services.ownership import own_deck, own_folder
-from ..services.validators import clean
+from ..services.cards import card_key
+from ..services.decks import check_deck_name, next_deck_pos
+from ..services.ownership import own_deck
+from ..services.tags import join_tags, parse_tags
+from ..services.validators import clean, clean_deck_name, normalize_name_key
 
 router = APIRouter()
 
-CSV_FIELDS = ['folder', 'deck', 'front', 'back', 'note']
+CSV_FIELDS = ['deck', 'front', 'back', 'note', 'tags']
 
 # A reasonable upper bound for a text CSV of flashcards.
 MAX_CSV_BYTES = 5 * 1024 * 1024
@@ -46,25 +48,17 @@ def read_csv_rows(text):
 @router.post('/api/export/cards.csv')
 def export_cards_csv(
     scope: str = Form('all'),
-    folder_id: int = Form(0),
     deck_id: int = Form(0),
     user=Depends(auth.current_user),
 ):
     uid = user['id']
-    sql = '''SELECT f.name AS folder, d.name AS deck, c.front, c.back, c.note
+    sql = '''SELECT d.name AS deck, c.front, c.back, c.note, c.tags
              FROM cards c
              JOIN decks d ON d.id = c.deck_id
-             JOIN folders f ON f.id = d.folder_id AND f.user_id = d.user_id
              WHERE d.user_id = ?'''
     params = [uid]
     with db.conn() as c:
-        if scope == 'folder':
-            if not folder_id:
-                raise error(400, 'error.export_folder_required')
-            folder_id = own_folder(c, uid, folder_id)
-            sql += ' AND d.folder_id = ?'
-            params.append(folder_id)
-        elif scope == 'deck':
+        if scope == 'deck':
             if not deck_id:
                 raise error(400, 'error.export_deck_required')
             deck = own_deck(c, uid, deck_id)
@@ -72,7 +66,7 @@ def export_cards_csv(
             params.append(deck['id'])
         elif scope != 'all':
             raise error(400, 'error.export_scope_invalid')
-        sql += ' ORDER BY f.pos, f.id, d.pos, d.id, c.id DESC'
+        sql += ' ORDER BY d.pos, d.id, c.id DESC'
         rows = c.execute(sql, params).fetchall()
 
     buf = io.StringIO()
@@ -106,61 +100,55 @@ def import_cards_csv(file: UploadFile = File(...), user=Depends(auth.current_use
         raise error(400, 'error.csv_unparseable')
 
     if not rows:
-        return {'ok': True, 'folders': 0, 'decks': 0, 'cards': 0}
+        return {'ok': True, 'decks': 0, 'cards': 0}
 
     uid = user['id']
-    created_folders = 0
     created_decks = 0
     created_cards = 0
 
     with db.conn() as c:
-        folder_cache = {r['name'].casefold(): r['id'] for r in c.execute('SELECT id, name FROM folders WHERE user_id=?', (uid,))}
         deck_cache = {
-            (r['folder_id'], r['name'].casefold()): r['id']
-            for r in c.execute('SELECT id, folder_id, name FROM decks WHERE user_id=?', (uid,))
+            normalize_name_key(r['name']): r['id']
+            for r in c.execute('SELECT id, name FROM decks WHERE user_id=?', (uid,))
         }
+        card_cache = {}
 
         for i, row in enumerate(rows, 2):
-            folder = clean(row.get('folder', ''), 'field.folder', 60, line=i)
-            deck = clean(row.get('deck', ''), 'field.deck', 60, line=i)
+            deck = clean_deck_name(row.get('deck', ''), 'field.deck', 60, line=i)
             front = clean(row.get('front', ''), 'field.front', 200, line=i)
             back = clean(row.get('back', ''), 'field.back', 200, line=i)
             note = clean(row.get('note', ''), 'field.note', 300, required=False, line=i)
+            tags = parse_tags(row.get('tags', ''), line=i)
 
-            folder_key = folder.casefold()
-            folder_id = folder_cache.get(folder_key)
-            if not folder_id:
-                check_folder_name(c, uid, folder)
-                pos = c.execute('SELECT COALESCE(MAX(pos), 0) + 1 FROM folders WHERE user_id=?', (uid,)).fetchone()[0]
-                folder_id = c.execute(
-                    'INSERT INTO folders(user_id, name, pos) VALUES(?,?,?)',
-                    (uid, folder, pos),
-                ).lastrowid
-                folder_cache[folder_key] = folder_id
-                created_folders += 1
-
-            deck_key = (folder_id, deck.casefold())
+            deck_key = normalize_name_key(deck)
             deck_id = deck_cache.get(deck_key)
             if not deck_id:
-                check_deck_name(c, folder_id, deck)
-                pos = c.execute('SELECT COALESCE(MAX(pos), 0) + 1 FROM decks WHERE user_id=?', (uid,)).fetchone()[0]
+                check_deck_name(c, uid, deck)
                 deck_id = c.execute(
-                    'INSERT INTO decks(user_id, folder_id, name, pos) VALUES(?,?,?,?)',
-                    (uid, folder_id, deck, pos),
+                    'INSERT INTO decks(user_id, name, pos) VALUES(?,?,?)',
+                    (uid, deck, next_deck_pos(c, uid)),
                 ).lastrowid
                 deck_cache[deck_key] = deck_id
                 created_decks += 1
 
-            exists = c.execute(
-                'SELECT 1 FROM cards WHERE deck_id=? AND lower(front)=lower(?) AND lower(back)=lower(?)',
-                (deck_id, front, back),
-            ).fetchone()
-            if exists:
+            keys = card_cache.get(deck_id)
+            if keys is None:
+                keys = {
+                    card_key(r['front'], r['back'])
+                    for r in c.execute(
+                        'SELECT front, back FROM cards WHERE deck_id=?', (deck_id,)
+                    )
+                }
+                card_cache[deck_id] = keys
+
+            key = card_key(front, back)
+            if key in keys:
                 continue
             c.execute(
-                'INSERT INTO cards(deck_id, front, back, note) VALUES(?,?,?,?)',
-                (deck_id, front, back, note),
+                'INSERT INTO cards(deck_id, front, back, note, tags) VALUES(?,?,?,?,?)',
+                (deck_id, front, back, note, join_tags(tags)),
             )
+            keys.add(key)
             created_cards += 1
 
-    return {'ok': True, 'folders': created_folders, 'decks': created_decks, 'cards': created_cards}
+    return {'ok': True, 'decks': created_decks, 'cards': created_cards}

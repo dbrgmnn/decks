@@ -135,13 +135,14 @@ def test_api_token_errors_use_the_account_language(client):
     client.cookies.delete("decks_lang")
 
     response = client.post(
-        "/api/quick-add",
-        data={"text": "a/b,c"},
+        "/api/cards",
+        json={"deck": "Deck", "front": "", "back": "Back"},
         headers={"Authorization": f"Bearer {token}"},
     )
 
     assert response.status_code == 400
-    assert response.json()["detail"] == "Verwende entweder / oder , – nicht beides"
+    assert response.json()["detail"] == "Vorderseite ist erforderlich"
+    assert response.json()["code"] == "field_required"
 
 
 def test_user_setting_wins_over_the_cookie(client):

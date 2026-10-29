@@ -1,6 +1,7 @@
 import secrets
 
 from fastapi import FastAPI
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
@@ -11,7 +12,6 @@ from .routes import (
     auth as auth_routes,
     cards as card_routes,
     decks as deck_routes,
-    folders as folder_routes,
     import_export as import_export_routes,
     pages as page_routes,
     study as study_routes,
@@ -36,7 +36,6 @@ app.mount("/static", StaticFiles(directory=BASE / "static"), name="static")
 db.init()
 app.include_router(auth_routes.router)
 app.include_router(page_routes.router)
-app.include_router(folder_routes.router)
 app.include_router(deck_routes.router)
 app.include_router(import_export_routes.router)
 app.include_router(card_routes.router)
@@ -56,12 +55,32 @@ async def localized_errors(request, exc):
     lang = i18n.lang_for(request)
     if isinstance(exc, i18n.LocalizedHTTPException):
         detail = i18n.render(exc.code, lang, **exc.params)
+        body = {"detail": detail, "code": exc.code.removeprefix("error.")}
+        field = exc.params.get("field")
+        if field:
+            body["field"] = str(field).removeprefix("field.")
     else:
         detail = exc.detail
+        body = {"detail": detail, "code": "http_error"}
     response = JSONResponse(
-        {"detail": detail},
+        body,
         status_code=exc.status_code,
         headers=getattr(exc, "headers", None),
+    )
+    response.headers["Content-Language"] = lang
+    return response
+
+
+@app.exception_handler(RequestValidationError)
+async def invalid_request(request, exc):
+    """Keep malformed JSON and wrong field types on the same error contract."""
+    lang = i18n.lang_for(request)
+    response = JSONResponse(
+        {
+            "detail": i18n.render("error.invalid_request", lang),
+            "code": "invalid_request",
+        },
+        status_code=422,
     )
     response.headers["Content-Language"] = lang
     return response

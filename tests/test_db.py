@@ -5,64 +5,91 @@ import pytest
 import app.db as db
 
 
-OLD_USERS_SQL = """
-CREATE TABLE users(
-  id INTEGER PRIMARY KEY,
-  email TEXT NOT NULL,
-  password_hash TEXT NOT NULL,
-  api_token_hash TEXT NOT NULL DEFAULT '',
-  name TEXT NOT NULL DEFAULT '',
-  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  tz TEXT NOT NULL DEFAULT 'UTC'
-)
-"""
-
-
-def test_init_creates_current_schema(tmp_path, monkeypatch):
+def test_init_creates_the_current_schema(tmp_path, monkeypatch):
     monkeypatch.setattr(db, "DATA_DIR", tmp_path)
 
     db.init()
 
     with db.conn() as c:
-        columns = {row[1] for row in c.execute("PRAGMA table_info(users)")}
-        assert "token_version" in columns
-        assert "lang" in columns
+        tables = {
+            row[0]
+            for row in c.execute("SELECT name FROM sqlite_master WHERE type='table'")
+        }
+        assert tables == {"users", "decks", "cards", "reviews"}
+
+        user_columns = {row[1] for row in c.execute("PRAGMA table_info(users)")}
+        assert user_columns == {
+            "id",
+            "email",
+            "password_hash",
+            "api_token_hash",
+            "name",
+            "created_at",
+            "tz",
+            "token_version",
+            "lang",
+        }
+
+        deck_columns = {row[1] for row in c.execute("PRAGMA table_info(decks)")}
+        assert deck_columns == {"id", "user_id", "name", "pos", "new_per_day", "paused"}
+
+        card_columns = {row[1] for row in c.execute("PRAGMA table_info(cards)")}
+        assert card_columns == {
+            "id",
+            "deck_id",
+            "front",
+            "back",
+            "note",
+            "state",
+            "due",
+            "tags",
+        }
+
+        review_columns = {row[1] for row in c.execute("PRAGMA table_info(reviews)")}
+        assert review_columns == {"id", "card_id", "rating", "ts"}
+
+        indexes = {
+            row[0]
+            for row in c.execute("SELECT name FROM sqlite_master WHERE type='index'")
+        }
+        assert {
+            "i_user_email",
+            "i_deck_name",
+            "i_card_due",
+            "i_card_new",
+            "i_review_card",
+            "i_review_ts",
+        } <= indexes
+        assert "i_deck_user" not in indexes
+
         assert c.execute("PRAGMA user_version").fetchone()[0] == db.SCHEMA_VERSION
 
 
-def test_init_upgrades_a_version_one_database(tmp_path, monkeypatch):
-    database = tmp_path / "decks.db"
-    connection = sqlite3.connect(database)
-    connection.execute(OLD_USERS_SQL)
-    connection.execute(
-        "INSERT INTO users(email,password_hash,name,tz) VALUES(?,?,?,?)",
-        ("old@example.com", "hash", "old", "UTC"),
-    )
-    connection.execute("PRAGMA user_version=1")
-    connection.commit()
-    connection.close()
-
+def test_init_keeps_an_existing_current_database(tmp_path, monkeypatch):
     monkeypatch.setattr(db, "DATA_DIR", tmp_path)
     db.init()
 
     with db.conn() as c:
-        columns = {row[1] for row in c.execute("PRAGMA table_info(users)")}
-        assert "token_version" in columns
-        assert "lang" in columns
-        row = c.execute("SELECT email, token_version, lang FROM users").fetchone()
-        assert row["email"] == "old@example.com"
-        assert row["token_version"] == 0
-        assert row["lang"] == ""
-        assert c.execute("PRAGMA user_version").fetchone()[0] == db.SCHEMA_VERSION
+        c.execute(
+            "INSERT INTO users(email, password_hash) VALUES(?, ?)",
+            ("user@example.com", "hash"),
+        )
+
+    db.init()
+
+    with db.conn() as c:
+        assert c.execute("SELECT COUNT(*) FROM users").fetchone()[0] == 1
 
 
-def test_init_refuses_a_newer_database(tmp_path, monkeypatch):
+@pytest.mark.parametrize("version", [0, 2, 3, 4, 5, 99])
+def test_init_rejects_an_unsupported_schema(tmp_path, monkeypatch, version):
     database = tmp_path / "decks.db"
     connection = sqlite3.connect(database)
-    connection.execute("PRAGMA user_version=99")
+    connection.execute("CREATE TABLE unsupported(id INTEGER PRIMARY KEY)")
+    connection.execute(f"PRAGMA user_version={version}")
     connection.commit()
     connection.close()
 
     monkeypatch.setattr(db, "DATA_DIR", tmp_path)
-    with pytest.raises(RuntimeError):
+    with pytest.raises(RuntimeError, match="is not supported"):
         db.init()

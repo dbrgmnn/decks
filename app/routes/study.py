@@ -4,6 +4,7 @@ from .. import auth, db, srs
 from ..i18n import error
 from ..services.decks import introduced_counts, introduced_today
 from ..services.ownership import own_card, own_deck
+from ..services.tags import tags_from_db
 
 router = APIRouter()
 
@@ -25,7 +26,7 @@ def next_active_card(user=Depends(auth.current_user)):
         introduced = introduced_counts(c, uid, today)
 
         due_candidates = c.execute(
-            """SELECT id, deck_id, front, back, note
+            """SELECT id, deck_id, front, back, note, tags
             FROM cards
             WHERE deck_id IN (SELECT id FROM decks WHERE user_id=? AND paused=0)
               AND state IS NOT NULL AND due<=?
@@ -67,6 +68,7 @@ def next_active_card(user=Depends(auth.current_user)):
                 'front': due_candidates['front'],
                 'back': due_candidates['back'],
                 'note': due_candidates['note'],
+                'tags': tags_from_db(due_candidates['tags']),
                 'kind': 'review',
                 'state': row['state'],
                 'due': row['due'],
@@ -78,7 +80,7 @@ def next_active_card(user=Depends(auth.current_user)):
 
         placeholders = ','.join('?' * len(eligible_new_decks))
         new_row = c.execute(
-            f"""SELECT id, deck_id, front, back, note
+            f"""SELECT id, deck_id, front, back, note, tags
             FROM cards
             WHERE deck_id IN ({placeholders}) AND state IS NULL
             ORDER BY RANDOM()
@@ -94,6 +96,7 @@ def next_active_card(user=Depends(auth.current_user)):
             'front': new_row['front'],
             'back': new_row['back'],
             'note': new_row['note'],
+            'tags': tags_from_db(new_row['tags']),
             'kind': 'new',
             'state': row['state'],
             'due': row['due'],
@@ -121,7 +124,7 @@ def next_card(deck_id: int, user=Depends(auth.current_user)):
         actual_new_left = min(unseen, new_left)
         # Due review cards always come before unseen cards.
         due_row = c.execute(
-            """SELECT id, front, back, note
+            """SELECT id, front, back, note, tags
             FROM cards
             WHERE deck_id=? AND state IS NOT NULL AND due<=?
             ORDER BY RANDOM()
@@ -140,6 +143,7 @@ def next_card(deck_id: int, user=Depends(auth.current_user)):
                 'front': due_row['front'],
                 'back': due_row['back'],
                 'note': due_row['note'],
+                'tags': tags_from_db(due_row['tags']),
                 'kind': 'review',
                 'state': state_row['state'],
                 'due': state_row['due'],
@@ -148,7 +152,7 @@ def next_card(deck_id: int, user=Depends(auth.current_user)):
         if actual_new_left <= 0:
             return None
         new_row = c.execute(
-            """SELECT id, front, back, note
+            """SELECT id, front, back, note, tags
             FROM cards
             WHERE deck_id=? AND state IS NULL
             ORDER BY RANDOM()
@@ -164,6 +168,7 @@ def next_card(deck_id: int, user=Depends(auth.current_user)):
         'front': new_row['front'],
         'back': new_row['back'],
         'note': new_row['note'],
+        'tags': tags_from_db(new_row['tags']),
         'kind': 'new',
         'state': state_row['state'],
         'due': state_row['due'],

@@ -189,24 +189,24 @@ def test_api_token_generation_and_bearer_authentication(auth_client, client):
 
     # Use Bearer token from another unauthenticated client
     bearer_resp = auth_client.post(
-        "/api/quick-add",
-        data={"text": "TokenFolder"},
+        "/api/cards",
+        json={"deck": "TokenDeck", "front": "Front", "back": "Back"},
         headers={"Authorization": f"Bearer {token}"},
     )
-    assert bearer_resp.status_code == 200
+    assert bearer_resp.status_code == 201
 
     # Use X-API-Token header
     x_header_resp = auth_client.post(
-        "/api/quick-add",
-        data={"text": "TokenFolder2"},
+        "/api/cards",
+        json={"deck": "TokenDeck2", "front": "Front", "back": "Back"},
         headers={"X-API-Token": token},
     )
-    assert x_header_resp.status_code == 200
+    assert x_header_resp.status_code == 201
 
     # Invalid token fails
     invalid_resp = auth_client.post(
-        "/api/quick-add",
-        data={"text": "Fail"},
+        "/api/cards",
+        json={"deck": "Fail", "front": "Front", "back": "Back"},
         headers={"Authorization": "Bearer dlk_invalid"},
     )
     assert invalid_resp.status_code == 401
@@ -231,6 +231,5 @@ def test_delete_account_removes_user_and_cascades_data(auth_client, make_deck, m
     # User, decks and cards are gone from the database
     with db.conn() as c:
         assert c.execute("SELECT COUNT(*) FROM users").fetchone()[0] == 0
-        assert c.execute("SELECT COUNT(*) FROM folders").fetchone()[0] == 0
         assert c.execute("SELECT COUNT(*) FROM decks").fetchone()[0] == 0
         assert c.execute("SELECT COUNT(*) FROM cards").fetchone()[0] == 0

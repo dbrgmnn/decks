@@ -1,7 +1,7 @@
 import pytest
 from fastapi import HTTPException
 
-from app.services.validators import clean, clean_quick_add_name, normalize_name_key
+from app.services.validators import clean, clean_deck_name, normalize_name_key
 
 
 def test_clean_trims_and_validates_length():
@@ -30,20 +30,20 @@ def test_clean_accepts_exact_limit():
     assert clean("x" * 10, "Label", 10) == "x" * 10
 
 
-def test_clean_quick_add_name_returns_valid_name():
-    assert clean_quick_add_name("  Deck Name  ", "Deck name", 60) == "Deck Name"
+def test_clean_deck_name_returns_valid_name():
+    assert clean_deck_name("  Deck Name  ", "Deck name", 60) == "Deck Name"
 
 
-def test_clean_quick_add_name_rejects_slash():
+def test_clean_deck_name_rejects_slash():
     with pytest.raises(HTTPException) as exc:
-        clean_quick_add_name("a/b", "Deck name", 60)
+        clean_deck_name("a/b", "Deck name", 60)
     assert exc.value.status_code == 400
     assert "cannot contain" in str(exc.value.detail).lower()
 
 
-def test_clean_quick_add_name_rejects_comma():
+def test_clean_deck_name_rejects_comma():
     with pytest.raises(HTTPException) as exc:
-        clean_quick_add_name("a,b", "Deck name", 60)
+        clean_deck_name("a,b", "Deck name", 60)
     assert exc.value.status_code == 400
 
 

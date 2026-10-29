@@ -1,7 +1,9 @@
+import unicodedata
+
 from ..i18n import error
 
 
-RESERVED_QUICK_ADD_CHARS = ',/'
+RESERVED_DECK_CHARS = ',/'
 
 
 def clean(value, label, limit, required=True, line=None):
@@ -15,9 +17,9 @@ def clean(value, label, limit, required=True, line=None):
     return value
 
 
-def clean_quick_add_name(value, label, limit, line=None):
+def clean_deck_name(value, label, limit, line=None):
     value = clean(value, label, limit, line=line)
-    bad = [ch for ch in RESERVED_QUICK_ADD_CHARS if ch in value]
+    bad = [ch for ch in RESERVED_DECK_CHARS if ch in value]
     if bad:
         suffix = '_line' if line is not None else ''
         raise error(400, f'error.field_reserved{suffix}', field=label, line=line)
@@ -25,4 +27,4 @@ def clean_quick_add_name(value, label, limit, line=None):
 
 
 def normalize_name_key(value):
-    return clean(value, 'field.name', 300).casefold()
+    return unicodedata.normalize('NFC', clean(value, 'field.name', 300)).casefold()

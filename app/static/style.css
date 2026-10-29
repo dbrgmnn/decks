@@ -9,9 +9,9 @@
 
    Sections:
      base . controls . bevels . header . decks . deck actions . reorder .
-     sheets . word list . practice . summary . auth . forms . deck settings .
-     folder nav . folder icons . account . touch . effects . responsive .
-     select . study bar
+     sheets . word list . tags . practice . summary . auth . forms .
+     deck settings . account . touch . effects . responsive . select .
+     study bar
    ============================================================================ */
 
 /* --- Base ---------------------------------------------------------------- */
@@ -25,7 +25,7 @@ small{opacity:.7}
 .wrap{max-width:var(--content-max);margin:0 auto;padding:0 1rem;padding-inline:max(1rem,env(safe-area-inset-left),env(safe-area-inset-right))}
 
 /* --- Typography and overflow safety -------------------------------------- */
-#new-msg,#fe-msg,#deck-list-msg,#quick-add-msg,#add-msg,#deck-msg,#pw-msg,#tz-msg,#confirm-msg,#msg{display:block;margin-top:.5rem;overflow-wrap:anywhere}
+#new-msg,#deck-list-msg,#add-msg,#deck-msg,#pw-msg,#tz-msg,#confirm-msg,#msg{display:block;margin-top:.5rem;overflow-wrap:anywhere}
 #msg{text-align:center}
 .panel h2,#words li,#words b,.card div,.card small{overflow-wrap:anywhere;min-width:0;max-width:100%}
 
@@ -35,13 +35,12 @@ button,input,select,textarea,summary{font:inherit;color:inherit;background:trans
    still visibly presses the button on iOS. */
 button{transition:background-color var(--dur) linear,color var(--dur) linear}
 button,summary,a,[role=button]{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
-/* One press contract for every beveled control. Folder tiles are ink, not
-   chrome: they stay transparent and only shove their icon (see .fold). */
+/* One press contract for every beveled control. */
 button:active:not(:disabled),.rate button.active-swipe{background:var(--fg);color:var(--bg);box-shadow:var(--bevel-pressed);transform:translate(var(--shove),var(--shove))}
 /* One disabled contract: sunken and faded, never animating. */
 button:disabled{cursor:not-allowed;opacity:.35;background:transparent;color:inherit;box-shadow:var(--bevel-pressed);transform:none}
-button,summary,a,.deck,.fold,#words li{-webkit-tap-highlight-color:transparent}
-#theme,.close,.edit,.plus,.star,#folder-edit,.delete-card{width:44px;height:44px;min-height:44px;padding:0;display:grid;place-items:center}
+button,summary,a,.deck,#words li{-webkit-tap-highlight-color:transparent}
+#theme,.close,.edit,.plus,.delete-card{width:44px;height:44px;min-height:44px;padding:0;display:grid;place-items:center}
 input,select,textarea{cursor:text;width:100%;margin-bottom:.5rem;box-shadow:var(--bevel-pressed)}
 textarea{display:block;box-sizing:border-box;min-height:5.5rem;line-height:1.35;resize:vertical}
 select{display:block}
@@ -78,7 +77,7 @@ button.danger:hover,button.danger:active{background:var(--danger-bg);color:var(-
 .deck-head{display:flex;align-items:center;gap:.5rem;min-width:0}
 .deck-head h3{flex:1;min-width:0;margin:0;padding:0;min-height:44px;display:flex;align-items:center;line-height:1.25}
 .deck-head h3 span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.deck-head .star{flex:none}
+.deck-head .plus{flex:none;font-size:1.2rem}
 .deck p{margin:0}
 .meta{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 .meta small{display:block;margin-top:.1rem;font-size:var(--text-sm);overflow:hidden;text-overflow:ellipsis}
@@ -89,34 +88,28 @@ button.danger:hover,button.danger:active{background:var(--danger-bg);color:var(-
 .pause{width:auto;min-width:44px;height:44px;min-height:44px;padding:0 .5rem;display:grid;place-items:center;font-size:var(--text-sm);line-height:1}
 .actions{display:flex;align-items:center;gap:.5rem}
 .actions .daily-limit{flex:1;min-width:0;margin:0}
-.actions .plus,.actions .edit,.actions .pause{flex:none;position:static;line-height:1}
+.actions .edit,.actions .pause{flex:none;position:static;line-height:1}
 .actions .edit{font-size:1.2rem}
-.actions .plus{font-size:1.2rem}
-.star svg{width:1.3rem;height:1.3rem;fill:none;stroke:currentColor;stroke-width:2;stroke-linejoin:round}
-.star.on svg{fill:currentColor}
 
-/* The folder uses the same deck cards as the main screen. The new-deck form
-   spans the full row so it never becomes a narrow tile. */
-.decks-list #new-deck{grid-column:1/-1;flex-direction:row;flex-wrap:wrap;gap:.5rem}
-.decks-list #new-deck input{flex:1;min-width:0;margin:0}
-.decks-list #new-deck button{flex:none}
-.decks-list #new-deck small{flex-basis:100%;margin:0}
+/* The new-deck form spans the full row so it never becomes a narrow tile. */
+#new-deck{grid-column:1/-1;flex-direction:row;flex-wrap:wrap;gap:.5rem}
+#new-deck input{flex:1;min-width:0;margin:0}
+#new-deck button{flex:none}
+#new-deck small{flex-basis:100%;margin:0}
 
-/* --- Deck + folder reorder ----------------------------------------------- */
-.deck,.fold{transition:transform var(--dur-reorder) var(--ease-steps),box-shadow var(--dur-reorder) var(--ease-steps)}
+/* --- Deck reorder -------------------------------------------------------- */
+.deck{transition:transform var(--dur-reorder) var(--ease-steps),box-shadow var(--dur-reorder) var(--ease-steps)}
 .deck.holding{animation:hold .4s steps(8,end) forwards}
-.fold.holding{animation:hold-folder .4s steps(8,end) forwards}
 @keyframes hold{to{transform:scale(1.03)}}
-@keyframes hold-folder{to{transform:scale(1.06)}}
-.deck.moving,.fold.moving-folder{scroll-margin-top:5rem;scroll-margin-bottom:6rem}
+.deck.moving{scroll-margin-top:5rem;scroll-margin-bottom:6rem}
 .deck.moving{z-index:3;transform:scale(1.06);box-shadow:var(--bevel-float),10px 12px 0 var(--drop);touch-action:none}
 .deck.moving.dragging{pointer-events:none}
-.deck.moving .deck-head .star,.deck.moving .deck-settings,.deck.moving .actions{opacity:.25;pointer-events:none}
+.deck.moving .deck-settings,.deck.moving .actions,.deck.moving .deck-head .plus{opacity:.25;pointer-events:none}
 
 /* --- Sheets and panels --------------------------------------------------- */
 .sheet{position:fixed;inset:0;height:100dvh;background:var(--bg);z-index:10;overflow-y:auto;overscroll-behavior:contain;padding:1rem;padding-top:var(--top-gap);padding-bottom:calc(1rem + env(safe-area-inset-bottom));padding-left:max(1rem,env(safe-area-inset-left));padding-right:max(1rem,env(safe-area-inset-right))}
 .sheet[hidden],#practice[hidden]{display:none}
-#add,#deck-edit,#folder-sheet{z-index:11}
+#add,#deck-edit{z-index:11}
 #confirm{z-index:30}
 .close{position:fixed;top:calc(.75rem + env(safe-area-inset-top));right:max(max(1rem,env(safe-area-inset-right)),calc(50% - (var(--form-max) / 2) + 1rem));z-index:2;background:var(--bg)}
 .undo{position:fixed;top:calc(.75rem + env(safe-area-inset-top));left:max(max(1rem,env(safe-area-inset-left)),calc(50% - (var(--form-max) / 2) + 1rem));z-index:2;min-width:44px;height:44px;padding:0 .6rem;display:grid;place-items:center;font-size:.85rem;opacity:.35;pointer-events:none}
@@ -133,6 +126,9 @@ button.danger:hover,button.danger:active{background:var(--danger-bg);color:var(-
 .delete-card{position:absolute;right:.55rem;top:50%;margin-top:-22px;font-size:1.15rem}
 .delete-card svg{width:1.2rem;height:1.2rem;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 #words li:active{box-shadow:var(--bevel-pressed);transform:translate(var(--shove),var(--shove))}
+
+/* --- Tags ---------------------------------------------------------------- */
+.tag-filter{margin:0 0 1rem}
 
 /* --- Practice ------------------------------------------------------------ */
 #practice{position:fixed;inset:0;height:100dvh;background:var(--bg);z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:safe center;gap:1rem;padding:1rem;padding-top:var(--top-gap);padding-bottom:calc(1rem + env(safe-area-inset-bottom));overscroll-behavior:contain;overflow-y:auto}
@@ -183,9 +179,6 @@ button.danger:hover,button.danger:active{background:var(--danger-bg);color:var(-
 .auth{min-height:100dvh;display:grid;place-items:center;padding:1rem}
 .auth-card{width:100%;max-width:720px;display:flex;flex-direction:column}
 .auth-card h1{margin:0 0 2rem;line-height:1.1;font-size:2.5rem;text-align:center;font-weight:700}
-.wordmark{display:block;margin:0 auto;width:min(15rem,75%);height:auto;overflow:visible}
-.wordmark .fg{fill:var(--fg)}
-.wordmark .sh{fill:var(--drop)}
 .primary{width:100%}
 .link{display:inline-block;padding:0;border:0 !important;min-height:auto;width:auto;box-shadow:none !important;background:none !important;color:var(--fg);text-decoration:underline;text-align:center;margin:.75rem auto 0;cursor:pointer}
 .link:hover,.link:active,.link:focus-visible{background:none !important;color:var(--fg) !important;border:0 !important;box-shadow:none !important;transform:none;text-decoration:underline}
@@ -203,47 +196,16 @@ button.danger:hover,button.danger:active{background:var(--danger-bg);color:var(-
 .confirm-actions{display:flex;gap:.5rem;justify-content:flex-end;margin-top:1rem}
 
 /* --- Deck settings ------------------------------------------------------- */
-.opt-label,.panel h3.section{display:block;margin:1rem 0 .5rem;font-size:var(--text-md);font-weight:400;opacity:.8}
+.panel h3.section{display:block;margin:1rem 0 .5rem;font-size:var(--text-md);font-weight:400;opacity:.8}
 .data-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.5rem}
 .data-actions button,.account-actions button{width:100%}
 .data-box{margin-top:.5rem}
 .data-box .panel-block{display:flex;flex-direction:column}
 .data-box .panel-block button,.data-box .panel-block small{margin-top:auto}
 
-/* --- Folder navigation --------------------------------------------------- */
-.crumb{display:flex;gap:.5rem;margin:1rem 0}
-#folder-back{flex:1 1 auto;min-width:0;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-#folder-edit{flex:none}
-.folders{display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-start;gap:.5rem 1rem;margin:1rem 0}
-.fold{display:flex;flex-direction:column;align-items:center;gap:.15rem;width:6.5rem;min-height:0;padding:.25rem;border:0;box-shadow:none;background:transparent;color:inherit;text-align:center;-webkit-touch-callout:none;position:relative;-webkit-user-select:none;user-select:none;touch-action:manipulation;cursor:pointer}
-.fold:hover,.fold:active{background:transparent;color:inherit;box-shadow:none;transform:none}
-.fold.on .fname{background:var(--fg);color:var(--bg);padding:0 .4rem}
-.fname,.fold small{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.fold small{font-size:var(--text-xs)}
-.fold.paused .ficon,.fold.paused .fname,.fold.paused small{opacity:.45}
-.fold:active .ficon{transform:translate(var(--shove),var(--shove))}
-.fold:active .ficon .sh{display:none}
-
-/* --- Folder icons -------------------------------------------------------- */
-.ficon{display:block;width:3.6rem;height:auto;overflow:visible}
-.ficon path{fill:var(--bg);stroke:var(--fg);stroke-width:1.5px;stroke-linejoin:miter;stroke-linecap:butt;vector-effect:non-scaling-stroke}
-.ficon .sh{fill:var(--drop);stroke:none}
-.ficon .hi,.ficon .lo{fill:none;stroke-width:2px}
-.ficon .hi{stroke:var(--hi)}
-.ficon .lo{stroke:var(--lo)}
-.fold.moving-folder{z-index:3;background:var(--bg);outline:var(--hair) solid var(--fg);box-shadow:var(--bevel-float),8px 10px 0 var(--drop);transform:scale(1.1);touch-action:none}
-.fold.moving-folder.dragging{pointer-events:none}
-.fold.moving-folder .fname{font-weight:700}
-
 /* --- Account sheet ------------------------------------------------------- */
 .account-actions{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
-.quick-add .opt-label,#account-sheet .panel h3.section,#account-sheet .panel .opt-label{margin-top:0}
-.quick-add .row{display:flex;gap:.5rem;align-items:stretch}
-.quick-add input{flex:1;min-width:0;width:auto;margin-bottom:0}
-.quick-add button{flex:0 0 auto}
-.quick-add #quick-add-msg:empty,#deck-list-msg:empty,#account-sheet small:empty{margin:0}
-.quick-add-main{margin:1rem 0 1rem}
-.quick-add-main .opt-label{margin:.25rem 0 .5rem}
+#deck-list-msg:empty,#account-sheet small:empty{margin:0}
 #account-sheet .panel .muted{margin:.25rem 0 1.3rem}
 #account-sheet #pw-form button{margin-top:.25rem}
 #account-sheet .data-actions,#account-sheet .data-box,#account-sheet #tz,#account-sheet #pw-form,#account-sheet .account-actions{margin-top:1rem}
@@ -254,8 +216,8 @@ button.danger:hover,button.danger:active{background:var(--danger-bg);color:var(-
 
 /* --- Touch safety -------------------------------------------------------- */
 a,button,summary,input,select,textarea{touch-action:manipulation}
-.deck[data-id],.deck[data-id] *,.fold,.fold *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
-.deck[data-id],.fold{touch-action:manipulation}
+.deck[data-id],.deck[data-id] *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.deck[data-id]{touch-action:manipulation}
 
 /* --- Effects ------------------------------------------------------------- */
 .flash{position:fixed;inset:0;z-index:99;pointer-events:none;animation:eink .45s steps(1,end)}
@@ -290,4 +252,4 @@ select::-ms-expand{display:none}
 /* While an on-screen keyboard is up the visual viewport shrinks, so a fixed
    bottom bar would float mid-screen; hide it while the shrink lasts. */
 html.typing .study-bar{display:none}
-main.wrap{padding-bottom:1rem}
+main.wrap{padding-top:1rem;padding-bottom:1rem}

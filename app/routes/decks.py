@@ -2,25 +2,24 @@ from fastapi import APIRouter, Depends, Form, Request
 
 from .. import auth, db
 from ..i18n import error
-from ..services.decks import check_deck_name, parse_new_per_day
-from ..services.ownership import need_folder, own_deck
-from ..services.validators import clean_quick_add_name
+from ..services.decks import check_deck_name, next_deck_pos, parse_new_per_day
+from ..services.ownership import own_deck
+from ..services.tags import tags_from_db
+from ..services.validators import clean_deck_name
 
 router = APIRouter()
 
 
 @router.post('/api/decks')
-def create_deck(name: str = Form(...), folder_id: int = Form(...), user=Depends(auth.current_user)):
-    name = clean_quick_add_name(name, 'field.deck_name', 60)
+def create_deck(name: str = Form(...), user=Depends(auth.current_user)):
+    name = clean_deck_name(name, 'field.deck_name', 60)
     uid = user['id']
     with db.conn() as c:
-        # A deck must belong to a folder owned by the same user.
-        folder_id = need_folder(c, uid, folder_id)
-        check_deck_name(c, folder_id, name)
-        pos = c.execute('SELECT COALESCE(MAX(pos), 0) + 1 FROM decks WHERE user_id=?', (uid,)).fetchone()[0]
+        check_deck_name(c, uid, name)
+        pos = next_deck_pos(c, uid)
         deck_id = c.execute(
-            'INSERT INTO decks(user_id, folder_id, name, pos) VALUES(?,?,?,?)',
-            (uid, folder_id, name, pos),
+            'INSERT INTO decks(user_id, name, pos) VALUES(?,?,?)',
+            (uid, name, pos),
         ).lastrowid
     return {'ok': True, 'id': deck_id}
 
@@ -29,22 +28,19 @@ def create_deck(name: str = Form(...), folder_id: int = Form(...), user=Depends(
 def update_deck(
     deck_id: int,
     name: str = Form(...),
-    folder_id: int = Form(...),
     new_per_day: str = Form(...),
     paused: int = Form(0),
     user=Depends(auth.current_user),
 ):
-    name = clean_quick_add_name(name, 'field.deck_name', 60)
+    name = clean_deck_name(name, 'field.deck_name', 60)
     new_per_day = parse_new_per_day(new_per_day)
     uid = user['id']
     with db.conn() as c:
         own_deck(c, uid, deck_id)
-        # Moving a deck is allowed only inside the current user's folders.
-        folder_id = need_folder(c, uid, folder_id)
-        check_deck_name(c, folder_id, name, deck_id)
+        check_deck_name(c, uid, name, deck_id)
         c.execute(
-            'UPDATE decks SET name=?, folder_id=?, new_per_day=?, paused=? WHERE id=? AND user_id=?',
-            (name, folder_id, new_per_day, 1 if paused else 0, deck_id, uid),
+            'UPDATE decks SET name=?, new_per_day=?, paused=? WHERE id=? AND user_id=?',
+            (name, new_per_day, 1 if paused else 0, deck_id, uid),
         )
     return {'ok': True}
 
@@ -83,10 +79,19 @@ def deck_cards(deck_id: int, user=Depends(auth.current_user)):
     with db.conn() as c:
         own_deck(c, uid, deck_id)
         rows = c.execute(
-            'SELECT id, front, back, note FROM cards WHERE deck_id=? ORDER BY id DESC',
+            'SELECT id, front, back, note, tags FROM cards WHERE deck_id=? ORDER BY id DESC',
             (deck_id,),
         ).fetchall()
-    return [dict(r) for r in rows]
+    return [
+        {
+            'id': row['id'],
+            'front': row['front'],
+            'back': row['back'],
+            'note': row['note'],
+            'tags': tags_from_db(row['tags']),
+        }
+        for row in rows
+    ]
 
 
 @router.post('/api/decks/order')
@@ -117,13 +122,4 @@ async def order_decks(request: Request, user=Depends(auth.current_user)):
             c.execute('UPDATE decks SET pos=? WHERE id=? AND user_id=?', (-temp_pos, deck_id, uid))
         for pos, deck_id in enumerate(ordered, 1):
             c.execute('UPDATE decks SET pos=? WHERE id=? AND user_id=?', (pos, deck_id, uid))
-    return {'ok': True}
-
-
-@router.post('/api/decks/{deck_id}/pin')
-def pin_deck(deck_id: int, pinned: int = Form(...), user=Depends(auth.current_user)):
-    uid = user['id']
-    with db.conn() as c:
-        own_deck(c, uid, deck_id)
-        c.execute('UPDATE decks SET pinned=? WHERE id=? AND user_id=?', (1 if pinned else 0, deck_id, uid))
     return {'ok': True}

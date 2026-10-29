@@ -6,6 +6,7 @@ export function initCards({confirmDelete, errText}) {
   const listSheet = $('#list');
   const listClose = $('#list .close');
   const listTitle = $('#list-title');
+  const tagFilter = $('#tag-filter');
   const wordsList = $('#words');
   const addSheet = $('#add');
   const addClose = $('#add .close');
@@ -17,6 +18,7 @@ export function initCards({confirmDelete, errText}) {
 
   let curDeck = null;
   let editing = null;
+  let activeTag = '';
   const cardsByDeck = new Map();
 
   const getDeckCards = deckId => {
@@ -28,21 +30,73 @@ export function initCards({confirmDelete, errText}) {
     curDeck = deck;
   };
 
+  const cardTags = card => (Array.isArray(card.tags) ? card.tags : []);
+
+  const splitTags = value => {
+    const tags = [];
+    const seen = new Set();
+    for (const part of value.split(/[,;]/)) {
+      const tag = part.trim();
+      const key = tag.toLocaleLowerCase();
+      if (!tag || seen.has(key)) continue;
+      seen.add(key);
+      tags.push(tag);
+    }
+    return tags;
+  };
+
+  const renderTagFilter = allCards => {
+    if (!tagFilter) return;
+
+    const tags = [];
+    const seen = new Set();
+    for (const card of allCards) {
+      for (const tag of cardTags(card)) {
+        const key = tag.toLocaleLowerCase();
+        if (seen.has(key)) continue;
+        seen.add(key);
+        tags.push(tag);
+      }
+    }
+    tags.sort((a, b) => a.localeCompare(b));
+
+    if (activeTag && !seen.has(activeTag.toLocaleLowerCase())) activeTag = '';
+    tagFilter.hidden = tags.length === 0;
+
+    // Rebuild only when the tag set changes, so an open menu is not replaced
+    // while the search field is being typed into.
+    const signature = tags.join('\u0000');
+    if (tagFilter.dataset.tags !== signature) {
+      tagFilter.dataset.tags = signature;
+      const options = [new Option(t('home.all_tags'), '')];
+      for (const tag of tags) options.push(new Option(tag, tag));
+      tagFilter.replaceChildren(...options);
+    }
+    tagFilter.value = activeTag;
+  };
+
   const renderWords = () => {
     if (!curDeck) return;
 
     const allCards = getDeckCards(curDeck.id);
+    renderTagFilter(allCards);
+
     const query = searchInput.value.trim().toLowerCase();
-    const filteredCards = query.length >= 2
-      ? allCards.filter(card => [card.front, card.back].some(text => (text || '').toLowerCase().includes(query)))
-      : allCards;
+    const tagKey = activeTag.toLocaleLowerCase();
+    const filteredCards = allCards.filter(card => {
+      if (tagKey && !cardTags(card).some(tag => tag.toLocaleLowerCase() === tagKey)) return false;
+      if (query.length < 2) return true;
+      return [card.front, card.back].some(text => (text || '').toLowerCase().includes(query));
+    });
 
     wordsList.replaceChildren();
 
     if (!filteredCards.length) {
       const count = allCards.length ? t('cards.range', {shown: 0, total: allCards.length}) : '0';
       listTitle.textContent = `${curDeck.name} (${count})`;
-      if (allCards.length && query.length >= 2) wordsList.append(el('li', t('cards.no_matches'), 'empty'));
+      if (allCards.length && (query.length >= 2 || activeTag)) {
+        wordsList.append(el('li', t('cards.no_matches'), 'empty'));
+      }
       return;
     }
 
@@ -107,6 +161,7 @@ export function initCards({confirmDelete, errText}) {
 
   const openDeckCards = async deck => {
     setCurrentDeck(deck);
+    activeTag = '';
     searchInput.value = '';
     listSheet.hidden = false;
     await loadWords();
@@ -116,6 +171,7 @@ export function initCards({confirmDelete, errText}) {
     editing = card.id;
     addForm.front.value = card.front;
     addForm.back.value = card.back;
+    addForm.tags.value = cardTags(card).join(', ');
     addForm.note.value = card.note || '';
     addTitle.textContent = t('cards.edit_title');
     addButton.textContent = t('common.save_changes');
@@ -125,6 +181,12 @@ export function initCards({confirmDelete, errText}) {
   };
 
   searchInput.oninput = renderWords;
+  if (tagFilter) {
+    tagFilter.onchange = () => {
+      activeTag = tagFilter.value;
+      renderWords();
+    };
+  }
 
   plusButtons.forEach(button => {
     button.onclick = event => {
@@ -143,12 +205,19 @@ export function initCards({confirmDelete, errText}) {
 
   addForm.onsubmit = async event => {
     event.preventDefault();
-    const body = new URLSearchParams(new FormData(addForm));
-    if (!editing) body.set('deck_id', curDeck.id);
+
+    const payload = {
+      front: addForm.front.value,
+      back: addForm.back.value,
+      note: addForm.note.value,
+      tags: splitTags(addForm.tags.value),
+    };
+    if (!editing) payload.deck_id = Number(curDeck.id);
 
     const response = await fetch(editing ? '/api/cards/' + editing : '/api/cards', {
       method: editing ? 'PUT' : 'POST',
-      body,
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(payload),
     });
 
     if (!response.ok) {
@@ -156,8 +225,16 @@ export function initCards({confirmDelete, errText}) {
       return;
     }
 
+    const data = await response.json();
+
     if (editing) {
       await closeAddSheet({refresh: true});
+      return;
+    }
+
+    if (!data.card?.created) {
+      addMsg.textContent = t('error.card_exists');
+      addForm.front.focus();
       return;
     }
 

@@ -9,65 +9,32 @@
   <button type="button" id="theme" aria-label="{{ t('home.theme') }}">◐</button>
 </header>
 <main class="wrap" data-study-due="{{ stats.due }}" data-study-new="{{ stats.new }}">
-  <form id="quick-add-form" class="quick-add quick-add-main" autocomplete="off">
-    <div class="row">
-      <input id="quick-add-name" name="name" placeholder="{{ t('home.quick_add_placeholder') }}" maxlength="300" required autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="done">
-      <button type="submit">{{ t('home.quick_add') }}</button>
-    </div>
-    <small id="quick-add-msg"></small>
-  </form>
-  {% if folders %}
-  <nav class="folders" aria-label="{{ t('home.folders') }}">
-    {% for f in folders %}
-    {% set open = folder and folder.id == f.id %}
-    <div role="button" tabindex="0" class="fold{% if open %} on{% endif %}{% if f.paused %} paused{% endif %}" data-folder="{{ f.id }}"{% if open %} aria-current="true"{% endif %}>
-      {% if open %}
-      <svg class="ficon" viewBox="0 0 28 24" aria-hidden="true"><path class="sh" transform="translate(1.5 1.5)" d="M2 3H10L12.5 6H22V20H2Z"/><path class="sh" transform="translate(1.5 1.5)" d="M5.5 10H26L22.5 20H2Z"/><path d="M2 3H10L12.5 6H22V20H2Z"/><path d="M5.5 10H26L22.5 20H2Z"/><path class="hi" d="M3.2 19L6.4 11.2H25"/><path class="lo" d="M24.7 11.2L21.8 19H3.2"/></svg>
-      {% else %}
-      <svg class="ficon" viewBox="0 0 28 24" aria-hidden="true"><path class="sh" transform="translate(1.5 1.5)" d="M2 3H10L12.5 6H24V20H2Z"/><path d="M2 3H10L12.5 6H24V20H2Z"/><path class="hi" d="M3.2 19V4.2H9.6L12.1 7.2H23"/><path class="lo" d="M22.8 7.2V18.8H3.2"/></svg>
-      {% endif %}
-      <span class="fname">{{ f.name }}</span>
-      <small>{% if not f.count %}{{ t('home.folder.empty') }}{% elif f.paused %}{{ t('home.folder.paused') }}{% else %}{{ t('home.folder.stats', due=f.due, new=f.new) }}{% endif %}</small>
-    </div>
-    {% endfor %}
-  </nav>
-  {% endif %}
-  {% if folder %}
-  <div class="crumb">
-    <button id="folder-back" type="button">← {{ folder.name }}</button>
-    <button id="folder-edit" type="button" aria-label="{{ t('home.folder.edit') }}" data-id="{{ folder.id }}" data-name="{{ folder.name }}" data-decks="{{ folder.count }}" data-cards="{{ folder.cards }}">✎</button>
-  </div>
-  {% endif %}
   <small id="deck-list-msg"></small>
-  <section class="decks{% if folder %} decks-list{% endif %}">
+  <section class="decks">
     {% for d in decks %}
-    <article class="deck{% if d.paused %} paused{% endif %}" data-id="{{ d.id }}" data-name="{{ d.name }}" data-new-per-day="{{ d.new_per_day }}" data-paused="{{ 1 if d.paused else 0 }}" data-due="{{ d.due }}" data-new="{{ d.new }}" data-folder="{{ d.folder_id or 0 }}">
+    <article class="deck{% if d.paused %} paused{% endif %}" data-id="{{ d.id }}" data-name="{{ d.name }}" data-new-per-day="{{ d.new_per_day }}" data-paused="{{ 1 if d.paused else 0 }}" data-due="{{ d.due }}" data-new="{{ d.new }}">
       <div class="deck-head">
-        <h3><span>{{ d.name if folder else d.path }}</span></h3>
-        <button type="button" class="star{% if d.pinned %} on{% endif %}" aria-pressed="{{ 'true' if d.pinned else 'false' }}" aria-label="{{ t('home.pin') }}" title="{{ t('home.pin') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6.1 6.6.9-4.8 4.6 1.2 6.6L12 17.6 6.1 20.7l1.2-6.6L2.5 9.5l6.6-.9z"/></svg></button>
+        <h3><span>{{ d.name }}</span></h3>
+        <button type="button" class="plus" aria-label="{{ t('home.deck.add_card') }}">+</button>
       </div>
-      <p class="meta"><span class="count">{{ n('home.cards', d.total) }}</span><small>{% if d.paused %}{{ t('home.folder.paused') }}{% else %}{{ t('home.folder.stats', due=d.due, new=d.new) }}{% endif %}</small></p>
-      <div class="deck-settings">
-        <button class="learn" type="button" data-id="{{ d.id }}"{% if d.paused or (not d.due and not d.new) %} disabled{% endif %}>{{ t('home.study') }}</button>
-      </div>
+      <p class="meta"><span class="count">{{ n('home.cards', d.total) }}</span><small>{% if d.paused %}{{ t('home.deck.paused') }}{% else %}{{ t('home.deck.stats', due=d.due, new=d.new) }}{% endif %}</small></p>
       <div class="actions">
         <select class="daily-limit" autocomplete="off" aria-label="{{ t('home.new_cards_per_day') }}: {{ d.name }}">
           {% for value in new_per_day_values %}<option value="{{ value }}"{% if value == d.new_per_day %} selected{% endif %}>{{ value }}/{{ t('home.day_short') }}</option>{% endfor %}
         </select>
-        <button type="button" class="plus" aria-label="{{ t('home.deck.add_card') }}">+</button>
         <button type="button" class="edit" aria-label="{{ t('home.deck.edit') }}">✎</button>
         <button type="button" class="pause" aria-pressed="{{ 'true' if d.paused else 'false' }}" aria-label="{% if d.paused %}{{ t('deck.resume') }}{% else %}{{ t('home.pause') }}{% endif %}: {{ d.name }}">{% if d.paused %}{{ t('deck.resume') }}{% else %}{{ t('home.pause') }}{% endif %}</button>
       </div>
+      <div class="deck-settings">
+        <button class="learn" type="button" data-id="{{ d.id }}"{% if d.paused or (not d.due and not d.new) %} disabled{% endif %}>{{ t('home.study') }}</button>
+      </div>
     </article>
     {% endfor %}
-    {% if folder %}
     <form class="deck" id="new-deck" method="post" action="/api/decks" autocomplete="off">
-      <input type="hidden" name="folder_id" value="{{ folder.id }}">
       <input name="name" placeholder="{{ t('home.new_deck') }}" maxlength="60" required autocomplete="off">
       <button type="submit">{{ t('home.create') }}</button>
       <small id="new-msg"></small>
     </form>
-    {% endif %}
   </section>
 </main>
 
@@ -81,6 +48,9 @@
   <div class="panel">
     <h2 id="list-title"></h2>
     <input id="search" type="search" placeholder="{{ t('home.search') }}" maxlength="100" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="search">
+    <select id="tag-filter" class="tag-filter" aria-label="{{ t('home.filter_tags') }}" hidden>
+      <option value="">{{ t('home.all_tags') }}</option>
+    </select>
     <ul id="words"></ul>
   </div>
 </div>
@@ -91,7 +61,8 @@
     <h2 id="add-title"></h2>
     <input name="front" placeholder="{{ t('home.field.front') }}" maxlength="200" required autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="next">
     <input name="back" placeholder="{{ t('home.field.back') }}" maxlength="200" required autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="next">
-    <textarea name="note" placeholder="{{ t('home.field.note') }}" maxlength="300" rows="2" autocomplete="off" enterkeyhint="done"></textarea>
+    <textarea name="note" placeholder="{{ t('home.field.note') }}" maxlength="300" rows="2" autocomplete="off" enterkeyhint="next"></textarea>
+    <input name="tags" placeholder="{{ t('home.field.tags') }}" maxlength="620" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="done">
     <button type="submit" id="add-btn">{{ t('common.save') }}</button>
     <small id="add-msg"></small>
   </form>
@@ -102,10 +73,6 @@
   <form class="panel" id="deck-form" autocomplete="off">
     <h2>{{ t('home.deck.edit') }}</h2>
     <input name="name" placeholder="{{ t('home.deck.name') }}" maxlength="60" required autocomplete="off">
-    {% if folders %}
-    <label class="opt-label" for="deck-folder">{{ t('common.folder') }}</label>
-    <select name="folder_id" id="deck-folder" autocomplete="off" required><option value="" disabled hidden>{{ t('home.choose_folder') }}</option>{% for f in folders %}<option value="{{ f.id }}">{{ f.name }}</option>{% endfor %}</select>
-    {% endif %}
     <input type="hidden" name="new_per_day" value="10">
     <input type="hidden" name="paused" value="0">
     <div class="form-actions">
@@ -113,19 +80,6 @@
       <button type="button" id="delete-deck" class="danger">{{ t('home.delete_deck') }}</button>
     </div>
     <small id="deck-msg"></small>
-  </form>
-</div>
-
-<div id="folder-sheet" class="sheet" hidden>
-  <button class="close" aria-label="{{ t('common.close') }}">✕</button>
-  <form class="panel" id="folder-form" autocomplete="off">
-    <h2 id="folder-title">{{ t('home.folder.edit') }}</h2>
-    <input name="name" placeholder="{{ t('home.folder.name') }}" maxlength="60" required autocomplete="off">
-    <div class="form-actions">
-      <button type="submit">{{ t('common.save_changes') }}</button>
-      <button type="button" id="delete-folder" class="danger">{{ t('home.delete_folder') }}</button>
-    </div>
-    <small id="fe-msg"></small>
   </form>
 </div>
 
@@ -143,14 +97,10 @@
       <form id="export-csv-form" class="panel-block" autocomplete="off">
         <select id="export-scope" name="scope" autocomplete="off">
           <option value="all">{{ t('home.export.all') }}</option>
-          <option value="folder">{{ t('home.export.folder') }}</option>
           <option value="deck">{{ t('home.export.deck') }}</option>
         </select>
-        <select id="export-folder" name="folder_id" autocomplete="off" hidden>
-          <option value="0" disabled selected>{{ t('home.choose_export_folder') }}</option>{% for f in folders %}<option value="{{ f.id }}">{{ f.name }}</option>{% endfor %}
-        </select>
         <select id="export-deck" name="deck_id" autocomplete="off" hidden>
-          <option value="0" disabled selected>{{ t('home.choose_export_deck') }}</option>{% for d in all_decks %}<option value="{{ d.id }}">{{ d.path }}</option>{% endfor %}
+          <option value="0" disabled selected>{{ t('home.choose_export_deck') }}</option>{% for d in all_decks %}<option value="{{ d.id }}">{{ d.name }}</option>{% endfor %}
         </select>
         <button type="submit">{{ t('home.download_csv') }}</button>
         <small id="export-csv-msg"></small>

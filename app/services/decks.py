@@ -16,24 +16,35 @@ def parse_new_per_day(value):
     return value
 
 
-def check_deck_name(c, folder_id, name, skip_id=0):
+def check_deck_name(c, uid, name, skip_id=0):
     key = normalize_name_key(name)
     rows = c.execute(
-        "SELECT id, name FROM decks WHERE folder_id=? AND id!=?",
-        (folder_id, skip_id),
+        "SELECT id, name FROM decks WHERE user_id=? AND id!=?",
+        (uid, skip_id),
     ).fetchall()
     if any(normalize_name_key(row['name']) == key for row in rows):
         raise error(400, "error.deck_name_exists")
 
 
-def check_folder_name(c, uid, name, skip_id=0):
+def next_deck_pos(c, uid):
+    return c.execute(
+        'SELECT COALESCE(MAX(pos), 0) + 1 FROM decks WHERE user_id=?', (uid,)
+    ).fetchone()[0]
+
+
+def get_or_create_deck(c, uid, name):
+    """Return the user's deck with this name, creating it when missing."""
     key = normalize_name_key(name)
-    rows = c.execute(
-        "SELECT id, name FROM folders WHERE user_id=? AND id!=?",
-        (uid, skip_id),
-    ).fetchall()
-    if any(normalize_name_key(row['name']) == key for row in rows):
-        raise error(400, "error.folder_name_exists")
+    rows = c.execute('SELECT id, name FROM decks WHERE user_id=?', (uid,)).fetchall()
+    for row in rows:
+        if normalize_name_key(row['name']) == key:
+            return {'id': row['id'], 'name': row['name'], 'created': False}
+    check_deck_name(c, uid, name)
+    deck_id = c.execute(
+        'INSERT INTO decks(user_id, name, pos) VALUES(?,?,?)',
+        (uid, name, next_deck_pos(c, uid)),
+    ).lastrowid
+    return {'id': deck_id, 'name': name, 'created': True}
 
 
 def introduced_counts(c, uid, since):

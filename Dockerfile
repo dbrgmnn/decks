@@ -9,7 +9,6 @@ COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY app ./app
-COPY README.md ./README.md
 
 # Run unprivileged; uid 1000 usually matches the host owner of the ./data mount.
 RUN useradd --create-home --uid 1000 app \

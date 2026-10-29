@@ -1,6 +1,6 @@
 # decks
 
-Minimal flashcards app with folders, decks, cards, and FSRS-based study.
+Minimal flashcards app with decks, cards, and FSRS-based study.
 
 ## Run with Docker
 

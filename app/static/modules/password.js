@@ -2,7 +2,7 @@
 
 import {t} from './i18n.js';
 
-export const togglePassword = button => {
+const togglePassword = button => {
   const field = button.closest('.password-field');
   const input = field?.querySelector('input');
   if (!input) return;
