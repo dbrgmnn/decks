@@ -13,6 +13,11 @@ export function initDecks({confirmDelete, errText, openDeckCards}) {
   const newDeckMsg = $('#new-msg');
   const deckGrid = $('.decks');
   const deckNodes = [...document.querySelectorAll('.deck[data-id]')];
+  const deckTabs = [...document.querySelectorAll('.deck-tab')];
+  const accountSheet = $('#account-sheet');
+  const newDeckSheet = $('#new-deck-sheet');
+  const newDeckOpen = $('#new-deck-open');
+  const newDeckClose = $('#new-deck-sheet .close');
 
   const deckData = deck => ({
     id: deck.dataset.id,
@@ -20,6 +25,35 @@ export function initDecks({confirmDelete, errText, openDeckCards}) {
     newPerDay: deck.dataset.newPerDay,
     paused: deck.dataset.paused === '1',
   });
+
+  let activeTab = 'active';
+
+  const isPaused = deck => deck.dataset.paused === '1';
+
+  const updateTabCounts = () => {
+    const active = deckNodes.filter(deck => !isPaused(deck)).length;
+    deckTabs.forEach(tab => {
+      const count = tab.querySelector('.tab-count');
+      if (count) count.textContent = String(tab.dataset.tab === 'active' ? active : deckNodes.length);
+    });
+  };
+
+  const applyTab = tab => {
+    activeTab = tab;
+    deckTabs.forEach(button => {
+      button.setAttribute('aria-pressed', button.dataset.tab === tab ? 'true' : 'false');
+    });
+    deckNodes.forEach(deck => {
+      deck.hidden = tab === 'active' && isPaused(deck);
+    });
+    updateTabCounts();
+  };
+
+  deckTabs.forEach(button => {
+    button.onclick = () => applyTab(button.dataset.tab);
+  });
+
+  if (deckTabs.length) applyTab(activeTab);
 
   const openDeckEdit = deck => {
     const currentDeck = deckData(deck);
@@ -60,6 +94,21 @@ export function initDecks({confirmDelete, errText, openDeckCards}) {
   deckEditClose.onclick = () => {
     deckEditSheet.hidden = true;
   };
+
+  const openNewDeck = () => {
+    if (!newDeckSheet) return;
+    newDeckMsg.textContent = '';
+    accountSheet.hidden = true;
+    newDeckSheet.hidden = false;
+    newDeckForm.querySelector('[name=name]').focus();
+  };
+
+  if (newDeckOpen) newDeckOpen.onclick = openNewDeck;
+  if (newDeckClose) {
+    newDeckClose.onclick = () => {
+      newDeckSheet.hidden = true;
+    };
+  }
 
   if (newDeckForm) {
     newDeckForm.onsubmit = async event => {
@@ -114,6 +163,8 @@ export function initDecks({confirmDelete, errText, openDeckCards}) {
         ? t('home.deck.paused')
         : t('home.deck.stats', {due: deck.dataset.due, new: deck.dataset.new});
     }
+
+    if (deckTabs.length) applyTab(activeTab);
   };
 
   const saveDeckSettings = async (deck, newPerDay, paused) => {

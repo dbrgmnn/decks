@@ -10,6 +10,12 @@
 </header>
 <main class="wrap" data-study-due="{{ stats.due }}" data-study-new="{{ stats.new }}">
   <small id="deck-list-msg"></small>
+  {% if decks %}
+  <nav class="deck-tabs" aria-label="{{ t('home.tabs.label') }}">
+    <button type="button" class="deck-tab" data-tab="active" aria-pressed="true">{{ t('home.tabs.active') }} <span class="tab-count">{{ decks|rejectattr('paused')|list|length }}</span></button>
+    <button type="button" class="deck-tab" data-tab="all" aria-pressed="false">{{ t('home.tabs.all') }} <span class="tab-count">{{ decks|length }}</span></button>
+  </nav>
+  {% endif %}
   <section class="decks">
     {% for d in decks %}
     <article class="deck{% if d.paused %} paused{% endif %}" data-id="{{ d.id }}" data-name="{{ d.name }}" data-new-per-day="{{ d.new_per_day }}" data-paused="{{ 1 if d.paused else 0 }}" data-due="{{ d.due }}" data-new="{{ d.new }}">
@@ -30,11 +36,11 @@
       </div>
     </article>
     {% endfor %}
-    <form class="deck" id="new-deck" method="post" action="/api/decks" autocomplete="off">
-      <input name="name" placeholder="{{ t('home.new_deck') }}" maxlength="60" required autocomplete="off">
-      <button type="submit">{{ t('home.create') }}</button>
-      <small id="new-msg"></small>
-    </form>
+    {% if not decks %}
+    <div class="deck-empty" id="deck-empty">
+      <p>{{ t('home.empty.no_decks') }}</p>
+    </div>
+    {% endif %}
   </section>
 </main>
 
@@ -68,6 +74,16 @@
   </form>
 </div>
 
+<div id="new-deck-sheet" class="sheet" hidden>
+  <button class="close" aria-label="{{ t('common.close') }}">✕</button>
+  <form class="panel" id="new-deck" method="post" action="/api/decks" autocomplete="off">
+    <h2>{{ t('home.new_deck') }}</h2>
+    <input name="name" placeholder="{{ t('home.new_deck') }}" maxlength="60" required autocomplete="off">
+    <button type="submit">{{ t('home.create') }}</button>
+    <small id="new-msg"></small>
+  </form>
+</div>
+
 <div id="deck-edit" class="sheet" hidden>
   <button class="close" aria-label="{{ t('common.close') }}">✕</button>
   <form class="panel" id="deck-form" autocomplete="off">
@@ -88,6 +104,7 @@
   <div class="panel">
     <h2>{{ t('home.account') }}</h2>
     <p class="muted">{{ user.email }}</p>
+    <button type="button" id="new-deck-open">{{ t('home.new_deck') }}</button>
     <h3 class="section">{{ t('home.data') }}</h3>
     <div class="data-actions">
       <button type="button" id="show-export">{{ t('home.export') }}</button>

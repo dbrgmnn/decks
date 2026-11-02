@@ -28,8 +28,28 @@ def test_home_page_lists_all_decks(auth_client, make_deck, make_card):
     assert home_resp.status_code == 200
     assert "Spanish" in home_resp.text
     assert "German" in home_resp.text
-    assert 'id="new-deck"' in home_resp.text
+    assert 'id="new-deck-sheet"' in home_resp.text
+    assert 'data-tab="active"' in home_resp.text
+    assert 'data-tab="all"' in home_resp.text
     assert 'id="tag-filter"' in home_resp.text
+
+
+def test_home_page_shows_empty_state_without_decks(auth_client):
+    response = auth_client.get("/")
+
+    assert response.status_code == 200
+    assert 'id="deck-empty"' in response.text
+    assert 'data-tab="active"' not in response.text
+
+
+def test_home_page_renders_paused_decks_for_the_all_tab(auth_client, make_deck):
+    deck_id = make_deck(name="Paused")
+    auth_client.post(f"/api/decks/{deck_id}/settings", data={"new_per_day": "10", "paused": 1})
+
+    response = auth_client.get("/")
+
+    assert 'data-name="Paused"' in response.text
+    assert 'class="deck paused"' in response.text
 
 
 def test_home_page_shows_a_token_confirmation_before_the_token_sheet(auth_client):

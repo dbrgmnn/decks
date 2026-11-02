@@ -56,6 +56,8 @@ initTouchFeedback();
 initPasswordToggles();
 
 const accountSheet = $('#account-sheet');
+const newDeckSheet = $('#new-deck-sheet');
+const newDeckClose = $('#new-deck-sheet .close');
 const confirmSheet = $('#confirm');
 const confirmCancel = $('#confirm-cancel');
 const tokenConfirmSheet = $('#token-confirm');
@@ -89,6 +91,7 @@ initAccount({confirmDelete: dialogs.confirmDelete, errText});
 
 const escapeActions = [
   [tokenConfirmSheet, () => tokenConfirmCancel?.click()],
+  [newDeckSheet, () => newDeckClose?.click()],
   [accountSheet, () => $('#account-sheet .close')?.click()],
   [confirmSheet, () => confirmCancel?.click()],
   [deckEditSheet, () => deckEditClose?.click()],

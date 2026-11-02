@@ -72,6 +72,13 @@ button.danger:hover,button.danger:active{background:var(--danger-bg);color:var(-
 
 /* --- Deck grid and cards ------------------------------------------------- */
 .decks{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:1rem;margin-bottom:1rem}
+.deck-tabs{display:flex;gap:.5rem;margin-bottom:1rem}
+.deck-tab{flex:1;min-width:0;display:flex;align-items:center;justify-content:center;gap:.4rem;padding:.5rem .6rem}
+.deck-tab[aria-pressed="true"]{background:var(--fg);color:var(--bg);box-shadow:var(--bevel-pressed)}
+.tab-count{font-size:var(--text-sm);opacity:.7}
+.deck-tab[aria-pressed="true"] .tab-count{opacity:1}
+.deck-empty{grid-column:1/-1;padding:1rem;border:var(--hair) solid var(--fg);box-shadow:var(--bevel-pressed)}
+.deck-empty p{margin:0}
 .deck{min-width:0;border:var(--hair) solid var(--fg);padding:1rem;display:flex;flex-direction:column;gap:.5rem}
 .deck[data-id]{position:relative;cursor:pointer;-webkit-touch-callout:none;user-select:none}
 .deck-head{display:flex;align-items:center;gap:.5rem;min-width:0}
@@ -90,12 +97,6 @@ button.danger:hover,button.danger:active{background:var(--danger-bg);color:var(-
 .actions .daily-limit{flex:1;min-width:0;margin:0}
 .actions .edit,.actions .pause{flex:none;position:static;line-height:1}
 .actions .edit{font-size:1.2rem}
-
-/* The new-deck form spans the full row so it never becomes a narrow tile. */
-#new-deck{grid-column:1/-1;flex-direction:row;flex-wrap:wrap;gap:.5rem}
-#new-deck input{flex:1;min-width:0;margin:0}
-#new-deck button{flex:none}
-#new-deck small{flex-basis:100%;margin:0}
 
 /* --- Deck reorder -------------------------------------------------------- */
 .deck{transition:transform var(--dur-reorder) var(--ease-steps),box-shadow var(--dur-reorder) var(--ease-steps)}
@@ -206,6 +207,8 @@ button.danger:hover,button.danger:active{background:var(--danger-bg);color:var(-
 /* --- Account sheet ------------------------------------------------------- */
 .account-actions{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
 #deck-list-msg:empty,#account-sheet small:empty{margin:0}
+#new-deck-open{width:100%}
+#api-token,#pw-form > button{width:100%}
 #account-sheet .panel .muted{margin:.25rem 0 1.3rem}
 #account-sheet #pw-form button{margin-top:.25rem}
 #account-sheet .data-actions,#account-sheet .data-box,#account-sheet #tz,#account-sheet #pw-form,#account-sheet .account-actions{margin-top:1rem}
