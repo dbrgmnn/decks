@@ -45,6 +45,9 @@ input,select,textarea{cursor:text;width:100%;margin-bottom:.5rem;box-shadow:var(
 textarea{display:block;box-sizing:border-box;min-height:5.5rem;line-height:1.35;resize:vertical}
 select{display:block}
 #search{-webkit-appearance:none;appearance:none;margin-bottom:1rem}
+/* Offscreen username field: Chrome otherwise treats the search box as the
+   username for the password form and offers saved logins there. */
+.autofill-decoy{position:fixed;top:-100px;left:-100px;width:1px;height:1px;min-height:0;margin:0;padding:0;border:0;box-shadow:none;pointer-events:none}
 .password-field{position:relative;margin-bottom:.5rem}
 .password-field input{margin-bottom:0;padding-right:3rem}
 .password-toggle{position:absolute;top:50%;right:.45rem;translate:0 -50%;transform:none !important;transition:none !important;width:44px;height:44px;min-height:44px;padding:0;border:0;background:transparent;box-shadow:none;display:grid;place-items:center;color:var(--fg);z-index:1}
