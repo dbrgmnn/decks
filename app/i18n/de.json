@@ -52,6 +52,7 @@
   "home.current_password": "Aktuelles Passwort",
   "home.new_password": "Neues Passwort",
   "home.repeat_new_password": "Neues Passwort wiederholen",
+  "home.account_actions": "Kontoaktionen",
   "home.sign_out": "Abmelden",
   "home.delete_account": "Konto löschen",
   "home.confirm_title": "Löschen?",

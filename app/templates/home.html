@@ -30,11 +30,6 @@
       </div>
     </article>
     {% endfor %}
-    <form class="deck" id="new-deck" method="post" action="/api/decks" autocomplete="off">
-      <input name="name" placeholder="{{ t('home.new_deck') }}" maxlength="60" required autocomplete="off">
-      <button type="submit">{{ t('home.create') }}</button>
-      <small id="new-msg"></small>
-    </form>
   </section>
 </main>
 
@@ -68,6 +63,16 @@
   </form>
 </div>
 
+<div id="new-deck-sheet" class="sheet" hidden>
+  <button class="close" aria-label="{{ t('common.close') }}">✕</button>
+  <form class="panel" id="new-deck" method="post" action="/api/decks" autocomplete="off">
+    <h2>{{ t('home.new_deck') }}</h2>
+    <input name="name" placeholder="{{ t('home.new_deck') }}" maxlength="60" required autocomplete="off">
+    <button type="submit">{{ t('home.create') }}</button>
+    <small id="new-msg"></small>
+  </form>
+</div>
+
 <div id="deck-edit" class="sheet" hidden>
   <button class="close" aria-label="{{ t('common.close') }}">✕</button>
   <form class="panel" id="deck-form" autocomplete="off">
@@ -88,6 +93,7 @@
   <div class="panel">
     <h2>{{ t('home.account') }}</h2>
     <p class="muted">{{ user.email }}</p>
+    <button type="button" id="new-deck-open">{{ t('home.new_deck') }}</button>
     <h3 class="section">{{ t('home.data') }}</h3>
     <div class="data-actions">
       <button type="button" id="show-export">{{ t('home.export') }}</button>
@@ -152,6 +158,7 @@
       <button type="submit">{{ t('home.change_password') }}</button>
       <small id="pw-msg"></small>
     </form>
+    <h3 class="section">{{ t('home.account_actions') }}</h3>
     <div class="form-actions account-actions">
       <button type="button" id="logout">{{ t('home.sign_out') }}</button>
       <button type="button" id="delete-account" class="danger">{{ t('home.delete_account') }}</button>

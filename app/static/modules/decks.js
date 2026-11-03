@@ -11,6 +11,10 @@ export function initDecks({confirmDelete, errText, openDeckCards}) {
   const deckEditClose = $('#deck-edit .close');
   const newDeckForm = $('#new-deck');
   const newDeckMsg = $('#new-msg');
+  const accountSheet = $('#account-sheet');
+  const newDeckSheet = $('#new-deck-sheet');
+  const newDeckOpen = $('#new-deck-open');
+  const newDeckClose = $('#new-deck-sheet .close');
   const deckGrid = $('.decks');
   const deckNodes = [...document.querySelectorAll('.deck[data-id]')];
 
@@ -60,6 +64,21 @@ export function initDecks({confirmDelete, errText, openDeckCards}) {
   deckEditClose.onclick = () => {
     deckEditSheet.hidden = true;
   };
+
+  const openNewDeck = () => {
+    if (!newDeckSheet) return;
+    newDeckMsg.textContent = '';
+    accountSheet.hidden = true;
+    newDeckSheet.hidden = false;
+    newDeckForm.querySelector('[name=name]').focus();
+  };
+
+  if (newDeckOpen) newDeckOpen.onclick = openNewDeck;
+  if (newDeckClose) {
+    newDeckClose.onclick = () => {
+      newDeckSheet.hidden = true;
+    };
+  }
 
   if (newDeckForm) {
     newDeckForm.onsubmit = async event => {

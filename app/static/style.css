@@ -91,12 +91,6 @@ button.danger:hover,button.danger:active{background:var(--danger-bg);color:var(-
 .actions .edit,.actions .pause{flex:none;position:static;line-height:1}
 .actions .edit{font-size:1.2rem}
 
-/* The new-deck form spans the full row so it never becomes a narrow tile. */
-#new-deck{grid-column:1/-1;flex-direction:row;flex-wrap:wrap;gap:.5rem}
-#new-deck input{flex:1;min-width:0;margin:0}
-#new-deck button{flex:none}
-#new-deck small{flex-basis:100%;margin:0}
-
 /* --- Deck reorder -------------------------------------------------------- */
 .deck{transition:transform var(--dur-reorder) var(--ease-steps),box-shadow var(--dur-reorder) var(--ease-steps)}
 .deck.holding{animation:hold .4s steps(8,end) forwards}
@@ -206,9 +200,10 @@ button.danger:hover,button.danger:active{background:var(--danger-bg);color:var(-
 /* --- Account sheet ------------------------------------------------------- */
 .account-actions{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
 #deck-list-msg:empty,#account-sheet small:empty{margin:0}
+#new-deck-open,#api-token,#pw-form > button{width:100%}
 #account-sheet .panel .muted{margin:.25rem 0 1.3rem}
 #account-sheet #pw-form button{margin-top:.25rem}
-#account-sheet .data-actions,#account-sheet .data-box,#account-sheet #tz,#account-sheet #pw-form,#account-sheet .account-actions{margin-top:1rem}
+#account-sheet .data-actions,#account-sheet .data-box,#account-sheet #tz,#account-sheet #pw-form{margin-top:1rem}
 #account-sheet .panel h3.section{margin-top:1.25rem}
 #account-sheet .panel h3.section:first-of-type{margin-top:1rem}
 .panel-block{display:grid;gap:.55rem;padding:.9rem;border:var(--hair) solid var(--fg);box-shadow:var(--bevel-pressed)}

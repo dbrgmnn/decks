@@ -29,6 +29,8 @@ def test_home_page_lists_all_decks(auth_client, make_deck, make_card):
     assert "Spanish" in home_resp.text
     assert "German" in home_resp.text
     assert 'id="new-deck"' in home_resp.text
+    assert 'id="new-deck-sheet"' in home_resp.text
+    assert 'id="new-deck-open"' in home_resp.text
     assert 'id="tag-filter"' in home_resp.text
 
 
