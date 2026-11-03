@@ -73,7 +73,7 @@ initPractice();
 const cards = {};
 const dialogs = createDialogs({
   errText,
-  loadWords: options => cards.loadWords?.(options),
+  refreshList: () => cards.refreshList?.(),
 });
 
 Object.assign(cards, initCards({

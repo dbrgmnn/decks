@@ -1,7 +1,7 @@
 import {$} from './dom.js';
 import {t} from './i18n.js';
 
-export function createDialogs({errText, loadWords}) {
+export function createDialogs({errText, refreshList}) {
   const confirmSheet = $('#confirm');
   const confirmTitle = $('#confirm-title');
   const confirmText = $('#confirm-text');
@@ -68,7 +68,7 @@ export function createDialogs({errText, loadWords}) {
     if (kind === 'account') location.href = '/login';
     else if (kind === 'deck') location.reload();
     else if (kind === 'card') {
-      await loadWords?.({force: true});
+      await refreshList?.();
       document.dispatchEvent(new CustomEvent('dex:home-refresh'));
     }
   };

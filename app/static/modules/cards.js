@@ -1,6 +1,8 @@
 import {$, TRASH_SVG, el} from './dom.js';
 import {t} from './i18n.js';
 
+const SEARCH_DELAY = 250;
+
 export function initCards({confirmDelete, errText}) {
   const searchInput = $('#search');
   const listSheet = $('#list');
@@ -19,12 +21,9 @@ export function initCards({confirmDelete, errText}) {
   let curDeck = null;
   let editing = null;
   let activeTag = '';
-  const cardsByDeck = new Map();
-
-  const getDeckCards = deckId => {
-    const cards = cardsByDeck.get(String(deckId));
-    return Array.isArray(cards) ? cards : [];
-  };
+  let cardsSeq = 0;
+  let tagsSeq = 0;
+  let searchTimer = null;
 
   const setCurrentDeck = deck => {
     curDeck = deck;
@@ -45,63 +44,25 @@ export function initCards({confirmDelete, errText}) {
     return tags;
   };
 
-  const renderTagFilter = allCards => {
-    if (!tagFilter) return;
-
-    const tags = [];
-    const seen = new Set();
-    for (const card of allCards) {
-      for (const tag of cardTags(card)) {
-        const key = tag.toLocaleLowerCase();
-        if (seen.has(key)) continue;
-        seen.add(key);
-        tags.push(tag);
-      }
-    }
-    tags.sort((a, b) => a.localeCompare(b));
-
-    if (activeTag && !seen.has(activeTag.toLocaleLowerCase())) activeTag = '';
-    tagFilter.hidden = tags.length === 0;
-
-    // Rebuild only when the tag set changes, so an open menu is not replaced
-    // while the search field is being typed into.
-    const signature = tags.join('\u0000');
-    if (tagFilter.dataset.tags !== signature) {
-      tagFilter.dataset.tags = signature;
-      const options = [new Option(t('home.all_tags'), '')];
-      for (const tag of tags) options.push(new Option(tag, tag));
-      tagFilter.replaceChildren(...options);
-    }
-    tagFilter.value = activeTag;
+  const renderTitle = (shown, total) => {
+    const count = shown === total ? String(total) : t('cards.range', {shown, total});
+    listTitle.textContent = `${curDeck.name} (${count})`;
   };
 
-  const renderWords = () => {
+  const renderWords = (cards, total, query) => {
     if (!curDeck) return;
-
-    const allCards = getDeckCards(curDeck.id);
-    renderTagFilter(allCards);
-
-    const query = searchInput.value.trim().toLowerCase();
-    const tagKey = activeTag.toLocaleLowerCase();
-    const filteredCards = allCards.filter(card => {
-      if (tagKey && !cardTags(card).some(tag => tag.toLocaleLowerCase() === tagKey)) return false;
-      if (query.length < 2) return true;
-      return [card.front, card.back].some(text => (text || '').toLowerCase().includes(query));
-    });
-
     wordsList.replaceChildren();
 
-    if (!filteredCards.length) {
-      const count = allCards.length ? t('cards.range', {shown: 0, total: allCards.length}) : '0';
-      listTitle.textContent = `${curDeck.name} (${count})`;
-      if (allCards.length && (query.length >= 2 || activeTag)) {
+    if (!cards.length) {
+      renderTitle(0, total);
+      if (total && (query.length >= 2 || activeTag)) {
         wordsList.append(el('li', t('cards.no_matches'), 'empty'));
       }
       return;
     }
 
     const fragment = document.createDocumentFragment();
-    for (const card of filteredCards) {
+    for (const card of cards) {
       const li = el('li');
       li.append(el('b', card.front), el('span', card.back));
 
@@ -120,31 +81,71 @@ export function initCards({confirmDelete, errText}) {
     }
 
     wordsList.append(fragment);
-    const count = filteredCards.length === allCards.length
-      ? String(filteredCards.length)
-      : t('cards.range', {shown: filteredCards.length, total: allCards.length});
-    listTitle.textContent = `${curDeck.name} (${count})`;
+    renderTitle(cards.length, total);
   };
 
-  const loadWords = async ({force = false} = {}) => {
+  const fetchCards = async () => {
     if (!curDeck) return;
-    if (!force && cardsByDeck.has(String(curDeck.id))) {
-      renderWords();
-      return;
-    }
+    const seq = ++cardsSeq;
+    const params = new URLSearchParams();
+    const query = searchInput.value.trim();
+    if (query.length >= 2) params.set('q', query);
+    if (activeTag) params.set('tag', activeTag);
+    if (!params.has('q') && !params.has('tag')) params.set('recent', '1');
 
     let response;
     try {
-      response = await fetch(`/api/decks/${curDeck.id}/cards`);
+      response = await fetch(`/api/decks/${curDeck.id}/cards?${params}`);
     } catch {
       return;
     }
-    // A deck deleted elsewhere answers with an error object, not a list.
     if (!response.ok) return;
+
     const cards = await response.json();
-    if (!Array.isArray(cards)) return;
-    cardsByDeck.set(String(curDeck.id), cards);
-    renderWords();
+    if (!Array.isArray(cards) || seq !== cardsSeq) return;
+
+    const total = Number(response.headers.get('X-Total-Count'));
+    renderWords(cards, Number.isFinite(total) ? total : cards.length, query);
+  };
+
+  const loadTags = async () => {
+    if (!curDeck || !tagFilter) return [];
+    const seq = ++tagsSeq;
+
+    let response;
+    try {
+      response = await fetch(`/api/decks/${curDeck.id}/tags`);
+    } catch {
+      return [];
+    }
+    if (!response.ok) return [];
+
+    const tags = await response.json();
+    if (!Array.isArray(tags) || seq !== tagsSeq) return [];
+
+    if (activeTag) {
+      const match = tags.find(tag => tag.toLocaleLowerCase() === activeTag.toLocaleLowerCase());
+      activeTag = match || '';
+    }
+
+    // Rebuild only when the tag set changes, so an open menu is not replaced
+    // while the search field is being typed into.
+    const signature = tags.join('\u0000');
+    if (tagFilter.dataset.tags !== signature) {
+      tagFilter.dataset.tags = signature;
+      const options = [new Option(t('home.recent'), '')];
+      for (const tag of tags) options.push(new Option(tag, tag));
+      tagFilter.replaceChildren(...options);
+    }
+    tagFilter.value = activeTag;
+    tagFilter.hidden = tags.length === 0;
+    return tags;
+  };
+
+  const refreshList = async () => {
+    if (!curDeck) return;
+    await loadTags();
+    await fetchCards();
   };
 
   const closeAddSheet = async ({refresh = false} = {}) => {
@@ -154,8 +155,7 @@ export function initCards({confirmDelete, errText}) {
     editing = null;
 
     if (refresh && curDeck && !listSheet.hidden) {
-      cardsByDeck.delete(String(curDeck.id));
-      await loadWords({force: true});
+      await refreshList();
     }
   };
 
@@ -163,8 +163,10 @@ export function initCards({confirmDelete, errText}) {
     setCurrentDeck(deck);
     activeTag = '';
     searchInput.value = '';
+    wordsList.replaceChildren();
+    listTitle.textContent = deck.name;
     listSheet.hidden = false;
-    await loadWords();
+    await refreshList();
   };
 
   const openEdit = card => {
@@ -180,11 +182,15 @@ export function initCards({confirmDelete, errText}) {
     addForm.front.focus();
   };
 
-  searchInput.oninput = renderWords;
+  searchInput.oninput = () => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(fetchCards, SEARCH_DELAY);
+  };
+
   if (tagFilter) {
     tagFilter.onchange = () => {
       activeTag = tagFilter.value;
-      renderWords();
+      fetchCards();
     };
   }
 
@@ -240,12 +246,11 @@ export function initCards({confirmDelete, errText}) {
 
     addMsg.textContent = t('common.saved');
     addForm.reset();
-    cardsByDeck.delete(String(curDeck.id));
     document.dispatchEvent(new CustomEvent('dex:home-refresh'));
     addForm.front.focus();
 
     // Keep the list fresh if the current deck is already open.
-    if (!listSheet.hidden) await loadWords({force: true});
+    if (!listSheet.hidden) await refreshList();
   };
 
   listClose.onclick = () => {
@@ -257,7 +262,7 @@ export function initCards({confirmDelete, errText}) {
   };
 
   return {
-    loadWords,
+    refreshList,
     openDeckCards,
   };
 }

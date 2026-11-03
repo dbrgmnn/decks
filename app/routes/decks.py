@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Form, Request
+from fastapi import APIRouter, Depends, Form, Request, Response
 
 from .. import auth, db
 from ..i18n import error
@@ -73,15 +73,47 @@ def delete_deck(deck_id: int, user=Depends(auth.current_user)):
     return {'ok': True}
 
 
+RECENT_LIMIT = 50
+
+
 @router.get('/api/decks/{deck_id}/cards')
-def deck_cards(deck_id: int, user=Depends(auth.current_user)):
+def deck_cards(
+    deck_id: int,
+    response: Response,
+    q: str = '',
+    tag: str = '',
+    recent: bool = False,
+    user=Depends(auth.current_user),
+):
     uid = user['id']
     with db.conn() as c:
         own_deck(c, uid, deck_id)
-        rows = c.execute(
-            'SELECT id, front, back, note, tags FROM cards WHERE deck_id=? ORDER BY id DESC',
-            (deck_id,),
-        ).fetchall()
+        total = c.execute(
+            'SELECT COUNT(*) FROM cards WHERE deck_id=?', (deck_id,)
+        ).fetchone()[0]
+
+        where = ['deck_id=?']
+        params = [deck_id]
+
+        needle = q.strip().casefold()
+        if needle:
+            where.append('(instr(casefold(front), ?) > 0 OR instr(casefold(back), ?) > 0)')
+            params.extend([needle, needle])
+
+        tag_key = tag.strip().casefold()
+        if tag_key:
+            where.append("instr(',' || casefold(tags) || ',', ?) > 0")
+            params.append(f',{tag_key},')
+
+        sql = (
+            'SELECT id, front, back, note, tags FROM cards '
+            f"WHERE {' AND '.join(where)} ORDER BY id DESC"
+        )
+        if recent:
+            sql += f' LIMIT {RECENT_LIMIT}'
+        rows = c.execute(sql, params).fetchall()
+
+    response.headers['X-Total-Count'] = str(total)
     return [
         {
             'id': row['id'],
@@ -92,6 +124,26 @@ def deck_cards(deck_id: int, user=Depends(auth.current_user)):
         }
         for row in rows
     ]
+
+
+@router.get('/api/decks/{deck_id}/tags')
+def deck_tags(deck_id: int, user=Depends(auth.current_user)):
+    uid = user['id']
+    with db.conn() as c:
+        own_deck(c, uid, deck_id)
+        rows = c.execute('SELECT tags FROM cards WHERE deck_id=?', (deck_id,)).fetchall()
+
+    tags = []
+    seen = set()
+    for row in rows:
+        for tag in tags_from_db(row['tags']):
+            key = tag.casefold()
+            if key in seen:
+                continue
+            seen.add(key)
+            tags.append(tag)
+    tags.sort(key=lambda value: value.casefold())
+    return tags
 
 
 @router.post('/api/decks/order')

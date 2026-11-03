@@ -74,6 +74,10 @@ def create_schema(c):
         c.execute(sql)
 
 
+def _casefold(value):
+    return value.casefold() if isinstance(value, str) else value
+
+
 class _Connection:
     def __init__(self, connection):
         self._connection = connection
@@ -92,6 +96,7 @@ def conn():
     c = sqlite3.connect(DATA_DIR / "decks.db", timeout=10)
     c.row_factory = sqlite3.Row
     c.execute("PRAGMA foreign_keys=ON")
+    c.create_function('casefold', 1, _casefold)
     return _Connection(c)
 
 
