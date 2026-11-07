@@ -1,5 +1,5 @@
 /* ============================================================================
-   decks - design tokens
+   Decks - design tokens
    ----------------------------------------------------------------------------
    The single source of truth for the whole look. Loaded before style.css (app)
    and before offline.css (offline page), so every surface shares one palette,

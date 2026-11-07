@@ -1,4 +1,4 @@
-# decks
+# Decks
 
 Minimal flashcards app with decks, cards, and FSRS-based study.
 
