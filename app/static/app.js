@@ -4,6 +4,7 @@ import {initSessionGuard} from './modules/session.js';
 import {initTheme} from './modules/theme.js';
 import {initKeyboardHints} from './modules/keyboard.js';
 import {initServiceWorker} from './modules/pwa.js';
+import {initConnectionGuard} from './modules/connection.js';
 import {initTouchFeedback} from './modules/touch.js';
 import {initPasswordToggles} from './modules/password.js';
 import {createDialogs} from './modules/dialogs.js';
@@ -15,6 +16,7 @@ import {initAccount} from './modules/account.js';
 initSessionGuard();
 initTheme();
 initKeyboardHints();
+initConnectionGuard();
 
 // Lock background scroll while a sheet is open (prevents the page behind the
 // keyboard from scrolling), but keep the sheet itself scrollable.

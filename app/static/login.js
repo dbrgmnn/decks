@@ -1,11 +1,13 @@
 import {$, errText, syncThemeColor} from './modules/dom.js';
 import {t} from './modules/i18n.js';
 import {initServiceWorker} from './modules/pwa.js';
+import {initConnectionGuard} from './modules/connection.js';
 import {initTouchFeedback} from './modules/touch.js';
 import {initPasswordToggles, resetPassword} from './modules/password.js';
 
 syncThemeColor();
 initServiceWorker();
+initConnectionGuard();
 initTouchFeedback();
 initPasswordToggles();
 

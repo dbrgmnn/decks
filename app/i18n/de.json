@@ -171,5 +171,10 @@
   "error.tag_too_long": "Tag „{tag}“ ist zu lang (max. {limit} Zeichen)",
   "error.too_many_tags": "Verwende höchstens {limit} Tags",
   "error.tag_reserved_line": "Tag „{tag}“ in Zeile {line} darf , ; oder / nicht enthalten",
-  "error.tag_too_long_line": "Tag „{tag}“ in Zeile {line} ist zu lang (max. {limit} Zeichen)"
+  "error.tag_too_long_line": "Tag „{tag}“ in Zeile {line} ist zu lang (max. {limit} Zeichen)",
+  "offline.title": "Keine Verbindung",
+  "offline.text": "Deine Decks liegen auf dem Server. Stelle die Verbindung wieder her, um weiterzulernen.",
+  "offline.retry": "Erneut versuchen",
+  "offline.checking": "Wird geprüft…",
+  "offline.still": "Immer noch offline. Prüfe deine Verbindung."
 }

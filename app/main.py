@@ -1,6 +1,6 @@
 import secrets
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -32,6 +32,13 @@ app.add_middleware(
     max_age=60 * 60 * 24 * 30,
 )
 app.mount("/static", StaticFiles(directory=BASE / "static"), name="static")
+
+
+@app.get("/healthz", include_in_schema=False)
+async def healthz() -> Response:
+    """Tiny probe for the offline guard; it must never hit the database."""
+    return Response(status_code=204)
+
 
 db.init()
 app.include_router(auth_routes.router)

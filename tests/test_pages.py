@@ -1,10 +1,22 @@
-from tests.conftest import signup_user
-
-
 def test_login_page_renders_for_unauthenticated_user(client):
     response = client.get("/login")
     assert response.status_code == 200
     assert "Decks" in response.text
+
+
+def test_offline_fallback_page_is_served(client):
+    response = client.get("/static/offline.html")
+
+    assert response.status_code == 200
+    assert "location.reload" in response.text
+
+
+def test_health_endpoint_is_lightweight_and_uncached(client):
+    response = client.get("/healthz")
+
+    assert response.status_code == 204
+    assert response.content == b""
+    assert response.headers["cache-control"] == "no-store"
 
 
 def test_login_page_redirects_when_authenticated(auth_client):

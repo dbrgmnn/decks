@@ -171,5 +171,10 @@
   "error.tag_too_long": "Tag “{tag}” is too long (max {limit})",
   "error.too_many_tags": "Use at most {limit} tags",
   "error.tag_reserved_line": "Tag “{tag}” on line {line} cannot contain , ; or /",
-  "error.tag_too_long_line": "Tag “{tag}” on line {line} is too long (max {limit})"
+  "error.tag_too_long_line": "Tag “{tag}” on line {line} is too long (max {limit})",
+  "offline.title": "No connection",
+  "offline.text": "Your decks live on the server. Reconnect to keep studying.",
+  "offline.retry": "Try again",
+  "offline.checking": "Checking…",
+  "offline.still": "Still offline. Check your connection."
 }
