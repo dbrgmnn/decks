@@ -1,8 +1,10 @@
+import json
+
 from fastapi import APIRouter, Depends, Request
-from fastapi.responses import FileResponse, RedirectResponse
+from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 from .. import auth, db, i18n, srs
 from ..services.decks import NEW_PER_DAY_VALUES, introduced_counts
-from ..web import BASE, page
+from ..web import BASE, asset, page
 
 router = APIRouter()
 
@@ -16,6 +18,14 @@ def login_page(request: Request):
 def service_worker():
     # Served from the site root so the worker scope covers the whole app.
     return FileResponse(BASE / 'static' / 'sw.js', media_type='application/javascript')
+
+@router.get('/site.webmanifest', include_in_schema=False)
+def web_manifest():
+    # Version icon URLs by mtime: installed web apps cache icons aggressively.
+    data = json.loads((BASE / 'static' / 'icons' / 'site.webmanifest').read_text())
+    for icon in data['icons']:
+        icon['src'] = asset(icon['src'].removeprefix('/static/'))
+    return JSONResponse(data, media_type='application/manifest+json')
 
 @router.get('/')
 def home(request: Request, user=Depends(auth.current_user)):
