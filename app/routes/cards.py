@@ -3,7 +3,7 @@ from pydantic import BaseModel, Field
 
 from .. import auth, db
 from ..i18n import error
-from ..services.cards import find_duplicate
+from ..services.cards import find_duplicate, front_key
 from ..services.decks import get_or_create_deck
 from ..services.ownership import own_card, own_deck
 from ..services.tags import join_tags, parse_tags, tags_from_db
@@ -64,7 +64,7 @@ def create_card(
             deck_name = clean_deck_name(payload.deck, 'field.deck_name', 60)
             deck = get_or_create_deck(c, uid, deck_name)
 
-        existing = find_duplicate(c, deck['id'], front, back)
+        existing = find_duplicate(c, deck['id'], front)
         if existing:
             response.status_code = 200
             return {
@@ -105,10 +105,11 @@ def update_card(
 
     with db.conn() as c:
         row = own_card(c, uid, card_id)
-        # Duplicate detection stays scoped to the card's current deck.
-        existing = find_duplicate(c, row['deck_id'], front, back, exclude_id=card_id)
-        if existing:
-            raise error(400, 'error.card_exists')
+        # Existing duplicates may still be edited; only a changed front can add one.
+        if front_key(front) != front_key(row['front']):
+            existing = find_duplicate(c, row['deck_id'], front, exclude_id=card_id)
+            if existing:
+                raise error(400, 'error.card_exists')
         c.execute(
             'UPDATE cards SET front=?, back=?, note=?, tags=? WHERE id=?',
             (front, back, note, join_tags(tags), card_id),

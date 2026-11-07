@@ -6,7 +6,7 @@ from fastapi.responses import StreamingResponse
 
 from .. import auth, db
 from ..i18n import error
-from ..services.cards import card_key
+from ..services.cards import front_key
 from ..services.decks import check_deck_name, next_deck_pos
 from ..services.ownership import own_deck
 from ..services.tags import join_tags, parse_tags
@@ -134,14 +134,14 @@ def import_cards_csv(file: UploadFile = File(...), user=Depends(auth.current_use
             keys = card_cache.get(deck_id)
             if keys is None:
                 keys = {
-                    card_key(r['front'], r['back'])
+                    front_key(r['front'])
                     for r in c.execute(
-                        'SELECT front, back FROM cards WHERE deck_id=?', (deck_id,)
+                        'SELECT front FROM cards WHERE deck_id=?', (deck_id,)
                     )
                 }
                 card_cache[deck_id] = keys
 
-            key = card_key(front, back)
+            key = front_key(front)
             if key in keys:
                 continue
             c.execute(

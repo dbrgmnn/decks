@@ -140,7 +140,7 @@
   "error.unknown_tz": "Unbekannte Zeitzone",
   "error.unknown_language": "Unbekannte Sprache",
   "error.password_incorrect": "Das Passwort ist falsch",
-  "error.card_exists": "Diese Karte existiert bereits im Deck",
+  "error.card_exists": "Eine Karte mit dieser Vorderseite existiert bereits im Deck",
   "error.deck_name_exists": "Ein Deck mit diesem Namen existiert bereits",
   "error.daily_limit_invalid": "Wähle ein gültiges Tageslimit",
   "error.daily_limit_not_allowed": "Wähle eines der erlaubten Tageslimits",

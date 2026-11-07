@@ -88,13 +88,17 @@ def test_import_stores_tags(auth_client):
     assert tags == "A1,food"
 
 
-def test_import_skips_existing_duplicate_cards(auth_client):
-    body = "deck,front,back,note,tags\nD,front,back,note,A1\n"
+def test_import_skips_existing_duplicate_fronts(auth_client):
+    body = (
+        "deck,front,back,note,tags\n"
+        "D,front,back,note,A1\n"
+        "D,Front,another back,another,A2\n"
+    )
     first = auth_client.post(
         "/api/import/cards.csv",
         files={"file": ("cards.csv", body.encode(), "text/csv")},
     )
-    assert first.json()["cards"] == 1
+    assert first.json() == {"ok": True, "decks": 1, "cards": 1}
 
     second = auth_client.post(
         "/api/import/cards.csv",
@@ -169,7 +173,7 @@ def test_export_requires_valid_scope_and_ownership(client, auth_client, make_dec
 
 
 def test_import_skips_non_ascii_duplicates(auth_client):
-    body = "deck,front,back,note,tags\nDeck,Привет,Hello,,\nDeck,привет,Hello,,\n"
+    body = "deck,front,back,note,tags\nDeck,Привет,Hello,,\nDeck,привет,Другой перевод,,\n"
     response = auth_client.post(
         "/api/import/cards.csv",
         files={"file": ("cards.csv", body.encode(), "text/csv")},

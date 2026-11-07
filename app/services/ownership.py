@@ -13,7 +13,7 @@ def own_deck(c, uid, deck_id):
 
 def own_card(c, uid, card_id):
     row = c.execute(
-        "SELECT c.id, c.state, c.deck_id FROM cards c JOIN decks d ON d.id=c.deck_id WHERE c.id=? AND d.user_id=?",
+        "SELECT c.id, c.front, c.state, c.deck_id FROM cards c JOIN decks d ON d.id=c.deck_id WHERE c.id=? AND d.user_id=?",
         (card_id, uid),
     ).fetchone()
     if not row:

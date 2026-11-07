@@ -1,3 +1,4 @@
+from app import db
 from tests.conftest import signup_user
 
 
@@ -170,7 +171,7 @@ def test_create_card_rejects_too_long_fields(auth_client, make_deck):
     assert too_long_note.json()["code"] == "field_too_long"
 
 
-def test_create_card_rejects_duplicate_in_same_deck(auth_client, make_deck):
+def test_create_card_returns_existing_card_for_same_front(auth_client, make_deck):
     deck_id = make_deck()
     first = auth_client.post(
         "/api/cards",
@@ -180,14 +181,14 @@ def test_create_card_rejects_duplicate_in_same_deck(auth_client, make_deck):
 
     duplicate = auth_client.post(
         "/api/cards",
-        json={"deck_id": deck_id, "front": "hello", "back": "WORLD"},
+        json={"deck_id": deck_id, "front": "hello", "back": "Another translation"},
     )
     assert duplicate.status_code == 200
     assert duplicate.json()["card"]["created"] is False
     assert duplicate.json()["card"]["id"] == first.json()["card"]["id"]
 
 
-def test_create_card_detects_non_ascii_duplicates(auth_client, make_deck):
+def test_create_card_detects_non_ascii_front_duplicates(auth_client, make_deck):
     deck_id = make_deck()
 
     first = auth_client.post(
@@ -196,7 +197,7 @@ def test_create_card_detects_non_ascii_duplicates(auth_client, make_deck):
     )
     duplicate = auth_client.post(
         "/api/cards",
-        json={"deck_id": deck_id, "front": "привет", "back": "Hello"},
+        json={"deck_id": deck_id, "front": "привет", "back": "Another translation"},
     )
     assert first.status_code == 201
     assert duplicate.status_code == 200
@@ -208,14 +209,14 @@ def test_create_card_detects_non_ascii_duplicates(auth_client, make_deck):
     )
     umlaut_duplicate = auth_client.post(
         "/api/cards",
-        json={"deck_id": deck_id, "front": "äpfel", "back": "Apples"},
+        json={"deck_id": deck_id, "front": "äpfel", "back": "Another translation"},
     )
     assert umlaut.status_code == 201
     assert umlaut_duplicate.status_code == 200
     assert umlaut_duplicate.json()["card"]["id"] == umlaut.json()["card"]["id"]
 
 
-def test_create_card_allows_same_text_in_different_decks(auth_client, make_deck):
+def test_create_card_allows_same_front_in_different_decks(auth_client, make_deck):
     first_deck = make_deck(name="Deck1")
     second_deck = make_deck(name="Deck2")
 
@@ -225,7 +226,7 @@ def test_create_card_allows_same_text_in_different_decks(auth_client, make_deck)
     )
     second = auth_client.post(
         "/api/cards",
-        json={"deck_id": second_deck, "front": "Hello", "back": "World"},
+        json={"deck_id": second_deck, "front": "Hello", "back": "Other world"},
     )
     assert first.status_code == 201
     assert second.status_code == 201
@@ -351,13 +352,34 @@ def test_update_card_rejects_duplicate_with_another_card_in_deck(auth_client, ma
     make_card(deck_id=deck_id, front="Card 1", back="Back 1")
     second_id = make_card(deck_id=deck_id, front="Card 2", back="Back 2")
 
-    # Trying to update second card to have the same front/back as the first
+    # Trying to update the second card to the first card's front.
     response = auth_client.put(
         f"/api/cards/{second_id}",
-        json={"front": "card 1", "back": "back 1"},
+        json={"front": "card 1", "back": "different back"},
     )
     assert response.status_code == 400
     assert response.json()["code"] == "card_exists"
+
+
+def test_update_card_allows_editing_an_existing_front_duplicate(auth_client, make_deck, make_card):
+    deck_id = make_deck()
+    make_card(deck_id=deck_id, front="Same front", back="One")
+    with db.conn() as c:
+        second_id = c.execute(
+            "INSERT INTO cards(deck_id, front, back) VALUES(?,?,?)",
+            (deck_id, "Same front", "Two"),
+        ).lastrowid
+
+    response = auth_client.put(
+        f"/api/cards/{second_id}",
+        json={"front": "same front", "back": "Updated"},
+    )
+    assert response.status_code == 200
+
+    with db.conn() as c:
+        row = c.execute("SELECT front, back FROM cards WHERE id=?", (second_id,)).fetchone()
+    assert row["front"] == "same front"
+    assert row["back"] == "Updated"
 
 
 def test_update_card_requires_owned_card(client, auth_client, make_card):
