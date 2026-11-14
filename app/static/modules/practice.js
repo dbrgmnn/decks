@@ -30,6 +30,7 @@ export function initPractice() {
   const main = document.querySelector('main.wrap');
 
   const ratingLabel = rating => t(`practice.rating.${rating}`);
+  const badgeLabel = kind => t(`practice.badge_${kind}`);
 
   if (speakButton && !canSpeak()) speakButton.hidden = true;
 
@@ -197,9 +198,8 @@ export function initPractice() {
       back.textContent = cardData.back;
       note.textContent = cardData.note;
       if (speakButton) speakButton.hidden = true;
-      const isNew = cardData.kind === 'new';
       badge.hidden = false;
-      badge.textContent = isNew ? t('practice.badge_new') : t('practice.badge_review');
+      badge.textContent = badgeLabel(cardData.kind);
       if (speakButton) {
         speakButton.setAttribute('aria-label', t('practice.pronounce', {front: cardData.front}));
         speakButton.title = t('practice.pronounce', {front: cardData.front});

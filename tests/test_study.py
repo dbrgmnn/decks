@@ -118,6 +118,77 @@ def test_due_reviews_served_before_new_cards(auth_client, make_deck, make_card):
     assert served["front"] == "Due Card"
 
 
+def test_session_serves_reviews_then_new_then_learning(auth_client, make_deck, make_card):
+    deck_id = make_deck(new_per_day="1")
+    review_id = make_card(deck_id=deck_id, front="Review")
+    new_id = make_card(deck_id=deck_id, front="New")
+    learning_id = make_card(deck_id=deck_id, front="Learning")
+
+    review_state, _ = srs.review(None, 4)
+    learning_state, _ = srs.review(None, 3)
+    past = "2020-01-01T00:00:00+00:00"
+    with db.conn() as c:
+        c.execute("UPDATE cards SET state=?, due=? WHERE id=?", (review_state, past, review_id))
+        c.execute("UPDATE cards SET state=?, due=? WHERE id=?", (learning_state, past, learning_id))
+        # The review card was introduced before today, so it does not eat today's new quota.
+        c.execute("INSERT INTO reviews(card_id, rating, ts) VALUES(?,?,?)", (review_id, 3, past))
+
+    first = auth_client.get(f"/api/next/{deck_id}").json()
+    assert (first["id"], first["kind"], first["left"]) == (review_id, "review", 3)
+    auth_client.post(f"/api/rate/{review_id}", data={"rating": 3})
+
+    second = auth_client.get(f"/api/next/{deck_id}").json()
+    assert (second["id"], second["kind"], second["left"]) == (new_id, "new", 2)
+    auth_client.post(f"/api/rate/{new_id}", data={"rating": 3})
+
+    third = auth_client.get(f"/api/next/{deck_id}").json()
+    assert (third["id"], third["kind"], third["left"]) == (learning_id, "learning", 1)
+
+
+def test_active_queue_serves_reviews_then_new_then_learning(auth_client, make_deck, make_card):
+    deck_id = make_deck(new_per_day="1")
+    review_id = make_card(deck_id=deck_id, front="Review")
+    new_id = make_card(deck_id=deck_id, front="New")
+    learning_id = make_card(deck_id=deck_id, front="Learning")
+
+    review_state, _ = srs.review(None, 4)
+    learning_state, _ = srs.review(None, 3)
+    past = "2020-01-01T00:00:00+00:00"
+    with db.conn() as c:
+        c.execute("UPDATE cards SET state=?, due=? WHERE id=?", (review_state, past, review_id))
+        c.execute("UPDATE cards SET state=?, due=? WHERE id=?", (learning_state, past, learning_id))
+        # The review card was introduced before today, so it does not eat today's new quota.
+        c.execute("INSERT INTO reviews(card_id, rating, ts) VALUES(?,?,?)", (review_id, 3, past))
+
+    first = auth_client.get("/api/next/active").json()
+    assert (first["id"], first["kind"], first["left"]) == (review_id, "review", 3)
+    auth_client.post(f"/api/rate/{review_id}", data={"rating": 3})
+
+    second = auth_client.get("/api/next/active").json()
+    assert (second["id"], second["kind"], second["left"]) == (new_id, "new", 2)
+    auth_client.post(f"/api/rate/{new_id}", data={"rating": 3})
+
+    third = auth_client.get("/api/next/active").json()
+    assert (third["id"], third["kind"], third["left"]) == (learning_id, "learning", 1)
+
+
+def test_card_rated_again_returns_as_learning(auth_client, make_deck, make_card):
+    deck_id = make_deck(new_per_day="1")
+    card_id = make_card(deck_id=deck_id, front="Again")
+
+    served = auth_client.get(f"/api/next/{deck_id}").json()
+    assert served["kind"] == "new"
+    auth_client.post(f"/api/rate/{card_id}", data={"rating": 1})
+
+    # The learning step is in the future; make it due to check how it is labelled.
+    with db.conn() as c:
+        c.execute("UPDATE cards SET due=? WHERE id=?", ("2020-01-01T00:00:00+00:00", card_id))
+
+    served = auth_client.get(f"/api/next/{deck_id}").json()
+    assert served["kind"] == "learning"
+    assert served["left"] == 1
+
+
 def test_paused_deck_is_not_served(auth_client, make_deck, make_card):
     deck_id = make_deck()
     make_card(deck_id=deck_id)

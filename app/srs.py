@@ -1,3 +1,4 @@
+import json
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 from fsrs import Scheduler, Card, Rating
@@ -9,6 +10,16 @@ def review(state_json, rating):
     card = Card.from_json(state_json) if state_json else Card()
     card, _ = _sched.review_card(card, Rating(rating))
     return card.to_json(), card.due.astimezone(timezone.utc).isoformat()
+
+def card_kind(state_json):
+    """Classify a stored FSRS state as new, learning (incl. relearning) or review."""
+    if not state_json:
+        return 'new'
+    try:
+        state = json.loads(state_json).get('state')
+    except (ValueError, TypeError, AttributeError):
+        return 'review'
+    return 'learning' if state in (1, 3) else 'review'
 
 def now():
     return datetime.now(timezone.utc).isoformat()

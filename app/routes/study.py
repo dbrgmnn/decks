@@ -13,6 +13,28 @@ def _active_decks(c, uid):
     return c.execute('SELECT id, new_per_day FROM decks WHERE user_id=? AND paused=0 ORDER BY pos, id', (uid,)).fetchall()
 
 
+# FSRS state numbers: 1 = learning, 2 = review, 3 = relearning. Malformed
+# state text is treated as a graduated review so it is never served as new.
+_STATE_NUMBER = "COALESCE(CASE WHEN json_valid(state) THEN json_extract(state, '$.state') END, 0)"
+_REVIEW_CONDITION = f"{_STATE_NUMBER} NOT IN (1, 3)"
+_LEARNING_CONDITION = f"{_STATE_NUMBER} IN (1, 3)"
+
+
+def _card_payload(row, left):
+    return {
+        'id': row['id'],
+        'deck_id': row['deck_id'],
+        'front': row['front'],
+        'back': row['back'],
+        'note': row['note'],
+        'tags': tags_from_db(row['tags']),
+        'kind': srs.card_kind(row['state']),
+        'state': row['state'],
+        'due': row['due'],
+        'left': left,
+    }
+
+
 @router.get('/api/next/active')
 def next_active_card(user=Depends(auth.current_user)):
     uid = user['id']
@@ -25,21 +47,29 @@ def next_active_card(user=Depends(auth.current_user)):
 
         introduced = introduced_counts(c, uid, today)
 
-        due_candidates = c.execute(
-            """SELECT id, deck_id, front, back, note, tags
+        # Session order: accumulated reviews, then today's new quota, then
+        # cards already rated in this session (learning and relearning).
+        due_review = c.execute(
+            f"""SELECT id, deck_id, front, back, note, tags, state, due
             FROM cards
             WHERE deck_id IN (SELECT id FROM decks WHERE user_id=? AND paused=0)
-              AND state IS NOT NULL AND due<=?
+              AND state IS NOT NULL AND due<=? AND {_REVIEW_CONDITION}
             ORDER BY RANDOM()
             LIMIT 1""",
             (uid, now),
         ).fetchone()
-
-        due_left = c.execute(
-            """SELECT COUNT(*)
+        review_left = c.execute(
+            f"""SELECT COUNT(*)
             FROM cards
             WHERE deck_id IN (SELECT id FROM decks WHERE user_id=? AND paused=0)
-              AND state IS NOT NULL AND due<=?""",
+              AND state IS NOT NULL AND due<=? AND {_REVIEW_CONDITION}""",
+            (uid, now),
+        ).fetchone()[0]
+        learning_left = c.execute(
+            f"""SELECT COUNT(*)
+            FROM cards
+            WHERE deck_id IN (SELECT id FROM decks WHERE user_id=? AND paused=0)
+              AND state IS NOT NULL AND due<=? AND {_LEARNING_CONDITION}""",
             (uid, now),
         ).fetchone()[0]
 
@@ -60,48 +90,36 @@ def next_active_card(user=Depends(auth.current_user)):
             if can_new > 0:
                 eligible_new_decks.append(deck['id'])
 
-        if due_candidates:
-            row = c.execute('SELECT state, due FROM cards WHERE id=?', (due_candidates['id'],)).fetchone()
-            return {
-                'id': due_candidates['id'],
-                'deck_id': due_candidates['deck_id'],
-                'front': due_candidates['front'],
-                'back': due_candidates['back'],
-                'note': due_candidates['note'],
-                'tags': tags_from_db(due_candidates['tags']),
-                'kind': 'review',
-                'state': row['state'],
-                'due': row['due'],
-                'left': due_left + actual_new_left,
-            }
+        left = review_left + learning_left + actual_new_left
 
-        if actual_new_left <= 0 or not eligible_new_decks:
-            return None
+        if due_review:
+            return _card_payload(due_review, left)
 
-        placeholders = ','.join('?' * len(eligible_new_decks))
-        new_row = c.execute(
-            f"""SELECT id, deck_id, front, back, note, tags
+        if actual_new_left > 0 and eligible_new_decks:
+            placeholders = ','.join('?' * len(eligible_new_decks))
+            new_row = c.execute(
+                f"""SELECT id, deck_id, front, back, note, tags, state, due
+                FROM cards
+                WHERE deck_id IN ({placeholders}) AND state IS NULL
+                ORDER BY RANDOM()
+                LIMIT 1""",
+                eligible_new_decks,
+            ).fetchone()
+            if new_row:
+                return _card_payload(new_row, left)
+
+        due_learning = c.execute(
+            f"""SELECT id, deck_id, front, back, note, tags, state, due
             FROM cards
-            WHERE deck_id IN ({placeholders}) AND state IS NULL
+            WHERE deck_id IN (SELECT id FROM decks WHERE user_id=? AND paused=0)
+              AND state IS NOT NULL AND due<=? AND {_LEARNING_CONDITION}
             ORDER BY RANDOM()
             LIMIT 1""",
-            eligible_new_decks,
+            (uid, now),
         ).fetchone()
-        if not new_row:
-            return None
-        row = c.execute('SELECT state, due FROM cards WHERE id=?', (new_row['id'],)).fetchone()
-        return {
-            'id': new_row['id'],
-            'deck_id': new_row['deck_id'],
-            'front': new_row['front'],
-            'back': new_row['back'],
-            'note': new_row['note'],
-            'tags': tags_from_db(new_row['tags']),
-            'kind': 'new',
-            'state': row['state'],
-            'due': row['due'],
-            'left': actual_new_left,
-        }
+        if due_learning:
+            return _card_payload(due_learning, left)
+        return None
 
 
 @router.get('/api/next/{deck_id}')
@@ -122,58 +140,55 @@ def next_card(deck_id: int, user=Depends(auth.current_user)):
             (deck_id,),
         ).fetchone()[0]
         actual_new_left = min(unseen, new_left)
-        # Due review cards always come before unseen cards.
-        due_row = c.execute(
-            """SELECT id, front, back, note, tags
+
+        review_left = c.execute(
+            f"""SELECT COUNT(*) FROM cards
+            WHERE deck_id=? AND state IS NOT NULL AND due<=? AND {_REVIEW_CONDITION}""",
+            (deck_id, now),
+        ).fetchone()[0]
+        learning_left = c.execute(
+            f"""SELECT COUNT(*) FROM cards
+            WHERE deck_id=? AND state IS NOT NULL AND due<=? AND {_LEARNING_CONDITION}""",
+            (deck_id, now),
+        ).fetchone()[0]
+        left = review_left + learning_left + actual_new_left
+
+        # Same order as the active queue: accumulated reviews, new cards, then
+        # cards rated earlier in this session.
+        due_review = c.execute(
+            f"""SELECT id, deck_id, front, back, note, tags, state, due
             FROM cards
-            WHERE deck_id=? AND state IS NOT NULL AND due<=?
+            WHERE deck_id=? AND state IS NOT NULL AND due<=? AND {_REVIEW_CONDITION}
             ORDER BY RANDOM()
             LIMIT 1""",
             (deck_id, now),
         ).fetchone()
-        if due_row:
-            due_left = c.execute(
-                'SELECT COUNT(*) FROM cards WHERE deck_id=? AND state IS NOT NULL AND due<=?',
-                (deck_id, now),
-            ).fetchone()[0]
-            state_row = c.execute('SELECT state, due FROM cards WHERE id=?', (due_row['id'],)).fetchone()
-            return {
-                'id': due_row['id'],
-                'deck_id': deck_id,
-                'front': due_row['front'],
-                'back': due_row['back'],
-                'note': due_row['note'],
-                'tags': tags_from_db(due_row['tags']),
-                'kind': 'review',
-                'state': state_row['state'],
-                'due': state_row['due'],
-                'left': due_left + actual_new_left,
-            }
-        if actual_new_left <= 0:
-            return None
-        new_row = c.execute(
-            """SELECT id, front, back, note, tags
+        if due_review:
+            return _card_payload(due_review, left)
+
+        if actual_new_left > 0:
+            new_row = c.execute(
+                """SELECT id, deck_id, front, back, note, tags, state, due
+                FROM cards
+                WHERE deck_id=? AND state IS NULL
+                ORDER BY RANDOM()
+                LIMIT 1""",
+                (deck_id,),
+            ).fetchone()
+            if new_row:
+                return _card_payload(new_row, left)
+
+        due_learning = c.execute(
+            f"""SELECT id, deck_id, front, back, note, tags, state, due
             FROM cards
-            WHERE deck_id=? AND state IS NULL
+            WHERE deck_id=? AND state IS NOT NULL AND due<=? AND {_LEARNING_CONDITION}
             ORDER BY RANDOM()
             LIMIT 1""",
-            (deck_id,),
+            (deck_id, now),
         ).fetchone()
-        if not new_row:
-            return None
-        state_row = c.execute('SELECT state, due FROM cards WHERE id=?', (new_row['id'],)).fetchone()
-    return {
-        'id': new_row['id'],
-        'deck_id': deck_id,
-        'front': new_row['front'],
-        'back': new_row['back'],
-        'note': new_row['note'],
-        'tags': tags_from_db(new_row['tags']),
-        'kind': 'new',
-        'state': state_row['state'],
-        'due': state_row['due'],
-        'left': actual_new_left,
-    }
+        if due_learning:
+            return _card_payload(due_learning, left)
+        return None
 
 
 @router.post('/api/rate/{card_id}')
